@@ -1,4 +1,4 @@
-<?php namespace SamPoyigi\Paypal_express;
+<?php namespace SamPoyigi\PayRegister;
 
 use System\Classes\BaseExtension;
 
