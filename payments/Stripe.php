@@ -1,4 +1,4 @@
-<?php namespace SamPoyigi\Stripe\Payments;
+<?php namespace SamPoyigi\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 
@@ -65,6 +65,14 @@ class Stripe extends BasePaymentGateway
 
         // pass array $data and load view files
         $this->load->view('stripe/stripe', $data);
+    }
+
+    public function getHiddenFields()
+    {
+        return [
+            'stripe_publishable_key' => '',
+            'stripe_token' => '',
+        ];
     }
 
     public function processPaymentForm($data, $host, $order)

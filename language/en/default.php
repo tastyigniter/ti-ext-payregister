@@ -1,6 +1,16 @@
 <?php
 
 return [
+
+    'label_order_total'  => 'Minimum Total',
+    'label_order_status' => 'Order Status',
+
+    'alert_min_total' => 'Order total is below the minimum order total for %s.',
+    'alert_min_order_total' => 'You need to spend %s or more to use %s</p>',
+
+    'help_order_total'  => 'The total amount the order must reach before this payment gateway becomes active',
+    'help_order_status' => 'Default order status when this payment method is used.',
+
     'cod' => [
         '_text_title'        => 'Cash On Delivery',
         'text_tab_general'   => 'General',
@@ -8,17 +18,8 @@ return [
         'text_payment_desc'  => 'Accept cash on delivery during checkout',
 
         'label_title'        => 'Title',
-        'label_order_total'  => 'Minimum Total',
-        'label_order_status' => 'Order Status',
         'label_status'       => 'Status',
         'label_priority'     => 'Priority',
-
-        'alert_min_total' => 'Order total is below the payment minimum order total.',
-
-        'help_order_total'  => 'The total amount the order must reach before this payment gateway becomes active',
-        'help_order_status' => 'Default order status when cod is the payment method',
-
-        'alert_min_order_total' => 'You need to spend %s or more to use this payment method</p>',
     ],
 
     'paypal' => [
@@ -38,15 +39,9 @@ return [
         'label_api_signature' => 'API Signature',
         'label_api_mode'      => 'Mode',
         'label_api_action'    => 'Payment Action',
-        'label_order_total'   => 'Order Total',
-        'label_order_status'  => 'Order Status',
         'label_priority'      => 'Priority',
         'label_status'        => 'Status',
 
-        'help_order_total'  => 'The total amount the order must reach before this payment gateway becomes active',
-        'help_order_status' => 'Default order status when paypal is the payment method',
-
-        'alert_min_order_total' => 'You need to spend %s or more to use this payment method</p>',
         'alert_error_server'    => '<p class="alert-danger">Sorry an error occurred, please try again</p>',
     ],
 
@@ -78,8 +73,6 @@ return [
         'label_transaction_mode' => 'Transaction Mode',
         'label_transaction_type' => 'Transaction Type',
         'label_accepted_cards'   => 'Accepted Cards',
-        'label_order_total'      => 'Order Total',
-        'label_order_status'     => 'Order Status',
         'label_priority'         => 'Priority',
         'label_status'           => 'Status',
         'label_card_number'      => 'CARD NUMBER',
@@ -121,12 +114,8 @@ return [
         'text_cavv_response_A' => 'Card attempt—passed validation—issuer unavailable (U.S.-issued card/non-U.S. acquirer)',
         'text_cavv_response_B' => 'Card passed validation, information only, no liability shift',
 
-        'help_order_total'  => 'The total amount the order must reach before this payment gateway becomes active',
-        'help_order_status' => 'Default order status when Authorize.Net (AIM) is the selected payment method',
-
         'error_cc_number' => 'The selected payment is invalid, please contact us',
 
-        'alert_min_order_total'  => 'You need to spend %s or more to use this payment method</p>',
         'alert_acceptable_cards' => 'We only accept %s',
         'alert_error_contacting' => '<p class="alert-danger">There was a problem while contacting the payment gateway. Please try again.</p>',
     ],
@@ -155,19 +144,10 @@ return [
         'label_live_secret_key'      => 'Live Secret Key',
         'label_live_publishable_key' => 'Live Publishable Key',
         'label_force_ssl'            => 'Force SSL',
-        'label_order_total'          => 'Order Total',
-        'label_order_status'         => 'Order Status',
         'label_priority'             => 'Priority',
         'label_status'               => 'Status',
         'label_card_number'          => 'CARD NUMBER',
         'label_card_expiry'          => 'EXPIRY DATE',
         'label_card_cvc'             => 'CV CODE',
-
-        'help_order_total'  => 'The total amount the order must reach before this payment gateway becomes active',
-        'help_order_status' => 'Default order status when Stripe is the selected payment method',
-
-        'alert_min_order_total'  => 'You need to spend %s or more to use this payment method</p>',
-        'alert_error_contacting' => '<p class="alert-danger">There was a problem while contacting the payment gateway. Please try again.</p>',
-
     ],
 ];

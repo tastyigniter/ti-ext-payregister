@@ -1,8 +1,8 @@
-<?php namespace SamPoyigi\Paypal_express\Payments;
+<?php namespace SamPoyigi\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 
-class Paypal_express extends BasePaymentGateway
+class PaypalExpress extends BasePaymentGateway
 {
 //	public function __construct($controller = null, $params = []) {
 //		parent::__construct($controller, $params );
@@ -93,7 +93,7 @@ class Paypal_express extends BasePaymentGateway
         }
 
         $this->alert->set('danger', lang('alert_error_server'));
-        $this->redirect('checkout');
+        $this->redirect('checkout/checkout');
     }
 
     public function cancel()
@@ -118,7 +118,7 @@ class Paypal_express extends BasePaymentGateway
             $token = $this->input->get('token');                                                // retrieve token from $_GET data
 
             $this->alert->set('alert', lang('alert_error_server'));
-            $this->redirect('checkout');
+            $this->redirect('checkout/checkout');
         }
     }
 }

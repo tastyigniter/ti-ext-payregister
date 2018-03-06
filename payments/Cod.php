@@ -1,54 +1,37 @@
-<?php namespace SamPoyigi\Cod\Payments;
+<?php namespace SamPoyigi\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
+use Admin\Models\Statuses_model;
+use ApplicationException;
 
 class Cod extends BasePaymentGateway
 {
-    public function onRender()
+    public function isApplicable($total, $host)
     {
-        $this->lang->load('cod/cod');
-
-        $data['code'] = $this->setting('code');
-        $data['title'] = $this->setting('title', $data['code']);
-
-        $order_data = $this->session->userdata('order_data');
-        $data['payment'] = !empty($order_data['payment']) ? $order_data['payment'] : '';
-        $data['minimum_order_total'] = $this->setting('order_total', 0);
-        $data['order_total'] = $this->cart->total();
-
-        $this->load->view('cod/cod', $data);
+        return $host->minOrderTotal <= $total;
     }
 
+    /**
+     * @param array $data
+     * @param \Admin\Models\Payments_model $host
+     * @param \Admin\Models\Orders_model $order
+     *
+     * @throws \ApplicationException
+     */
     public function processPaymentForm($data, $host, $order)
     {
-        $this->lang->load('cod/cod');
+        if (!$paymentMethod = $order->payment)
+            throw new ApplicationException('Payment method not found');
 
-        $order_data = $this->session->userdata('order_data');                        // retrieve order details from session userdata
-        $cart_contents = $this->session->userdata('cart_contents');                                                // retrieve cart contents
+        if (!$this->isApplicable($order->order_total, $host))
+            throw new ApplicationException(sprintf(
+                lang('sampoyigi.payregister::default.alert_min_order_total'),
+                currency_format($host->minOrderTotal),
+                $host->name
+            ));
 
-        if (empty($order_data) AND empty($cart_contents)) {
-            return FALSE;
-        }
+        $status = Statuses_model::find($host->order_status);
 
-        if (!empty($order_data['payment_settings']) AND !empty($order_data['payment']) AND $order_data['payment'] == 'cod') {                                            // else if payment method is cash on delivery
-
-            $payment_settings = !empty($order_data['payment_settings']) ? $order_data['payment_settings'] : [];
-
-            if (!empty($payment_settings['order_total']) AND $cart_contents['order_total'] < $payment_settings['order_total']) {
-                $this->alert->set('danger', lang('alert_min_total'));
-
-                return FALSE;
-            }
-
-            if (isset($payment_settings['order_status']) AND is_numeric($payment_settings['order_status'])) {
-                $order_data['status_id'] = $payment_settings['order_status'];
-            }
-
-            $this->load->model('Orders_model');
-
-            if ($this->Orders_model->completeOrder($order_data['order_id'], $order_data, $cart_contents)) {
-                $this->redirect('checkout/success');                                    // $this->redirect to checkout success page with returned order id
-            }
-        }
+        $order->completeOrder($status);
     }
 }

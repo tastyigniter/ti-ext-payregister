@@ -7,22 +7,22 @@ class Extension extends BaseExtension
     public function registerPaymentGateways()
     {
         return [
-            'Cod\Payments\Cod'                             => [
+            'SamPoyigi\PayRegister\Payments\Cod'                             => [
                 'code'        => 'cod',
                 'name'        => 'lang:cod::default.text_payment_title',
                 'description' => 'lang:cod::default.text_payment_desc',
             ],
-            'Paypal_express\Payments\Paypal_express'       => [
+            'SamPoyigi\PayRegister\Payments\PaypalExpress'       => [
                 'code'        => 'paypal_express',
                 'name'        => 'lang:paypal_express::default.text_payment_title',
                 'description' => 'lang:paypal_express::default.text_payment_desc',
             ],
-            'Authorize_net_aim\Payments\Authorize_net_aim' => [
+            'SamPoyigi\PayRegister\Payments\AuthorizeNetAim' => [
                 'code'        => 'authorize_net_aim',
                 'name'        => 'lang:authorize_net_aim::default.text_payment_title',
                 'description' => 'lang:authorize_net_aim::default.text_payment_desc',
             ],
-            'Stripe\Payments\Stripe'                       => [
+            'SamPoyigi\PayRegister\Payments\Stripe'                       => [
                 'code'        => 'stripe',
                 'name'        => 'lang:stripe::default.text_payment_title',
                 'description' => 'lang:stripe::default.text_payment_desc',

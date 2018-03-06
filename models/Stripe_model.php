@@ -40,7 +40,7 @@ class Stripe_model extends TI_Model
         if (isset($settings['live_secret_key']) AND $settings['transaction_mode'] === 'live') {
             $options['HTTPHEADER'] = ["Authorization: Bearer ".$settings['live_secret_key']];
         }
-        else if (isset($settings['live_secret_key'])) {
+        else if (isset($settings['test_secret_key'])) {
             $options['HTTPHEADER'] = ["Authorization: Bearer ".$settings['test_secret_key']];
         }
 

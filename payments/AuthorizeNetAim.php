@@ -1,8 +1,8 @@
-<?php namespace SamPoyigi\Authorize_net_aim\Payments;
+<?php namespace SamPoyigi\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 
-class Authorize_net_aim extends BasePaymentGateway
+class AuthorizeNetAim extends BasePaymentGateway
 {
 //	public function __construct($controller = null, $params = []) {
 //		parent::__construct($controller, $params);
@@ -13,6 +13,17 @@ class Authorize_net_aim extends BasePaymentGateway
 //		$this->load->library('location');                                                        // load the location library
 //		$this->location->initialize();
 //	}
+
+    public function getAcceptedCards()
+    {
+        return [
+            'visa' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_visa',
+            'mastercard' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_mastercard',
+            'american_express' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_american_express',
+            'jcb' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_jcb',
+            'diners_club' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_diners_club',
+        ];
+    }
 
     public function onRender()
     {
