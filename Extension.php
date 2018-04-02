@@ -9,23 +9,23 @@ class Extension extends BaseExtension
         return [
             'SamPoyigi\PayRegister\Payments\Cod'                             => [
                 'code'        => 'cod',
-                'name'        => 'lang:cod::default.text_payment_title',
-                'description' => 'lang:cod::default.text_payment_desc',
+                'name'        => 'lang:sampoyigi.payregister::default.cod.text_payment_title',
+                'description' => 'lang:sampoyigi.payregister::default.cod.text_payment_desc',
             ],
             'SamPoyigi\PayRegister\Payments\PaypalExpress'       => [
                 'code'        => 'paypal_express',
-                'name'        => 'lang:paypal_express::default.text_payment_title',
-                'description' => 'lang:paypal_express::default.text_payment_desc',
+                'name'        => 'lang:sampoyigi.payregister::default.paypal.text_payment_title',
+                'description' => 'lang:sampoyigi.payregister::default.paypal.text_payment_desc',
             ],
             'SamPoyigi\PayRegister\Payments\AuthorizeNetAim' => [
                 'code'        => 'authorize_net_aim',
-                'name'        => 'lang:authorize_net_aim::default.text_payment_title',
-                'description' => 'lang:authorize_net_aim::default.text_payment_desc',
+                'name'        => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_payment_title',
+                'description' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_payment_desc',
             ],
             'SamPoyigi\PayRegister\Payments\Stripe'                       => [
                 'code'        => 'stripe',
-                'name'        => 'lang:stripe::default.text_payment_title',
-                'description' => 'lang:stripe::default.text_payment_desc',
+                'name'        => 'lang:sampoyigi.payregister::default.stripe.text_payment_title',
+                'description' => 'lang:sampoyigi.payregister::default.stripe.text_payment_desc',
             ],
         ];
     }
