@@ -69,6 +69,7 @@ return [
 
         'label_title'            => 'Title',
         'label_api_login_id'     => 'API Login ID',
+        'label_client_key'  => 'Client Key',
         'label_transaction_key'  => 'Transaction Key',
         'label_transaction_mode' => 'Transaction Mode',
         'label_transaction_type' => 'Transaction Type',

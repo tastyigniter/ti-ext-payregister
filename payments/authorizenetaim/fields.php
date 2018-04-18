@@ -6,6 +6,10 @@ return [
             'label'   => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_api_login_id',
             'type'    => 'text',
         ],
+        'client_key'  => [
+            'label'   => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_client_key',
+            'type'    => 'text',
+        ],
         'transaction_key'  => [
             'label'   => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_transaction_key',
             'type'    => 'text',

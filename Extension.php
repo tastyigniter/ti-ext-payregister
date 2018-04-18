@@ -13,12 +13,12 @@ class Extension extends BaseExtension
                 'description' => 'lang:sampoyigi.payregister::default.cod.text_payment_desc',
             ],
             'SamPoyigi\PayRegister\Payments\PaypalExpress'       => [
-                'code'        => 'paypal_express',
+                'code'        => 'paypalexpress',
                 'name'        => 'lang:sampoyigi.payregister::default.paypal.text_payment_title',
                 'description' => 'lang:sampoyigi.payregister::default.paypal.text_payment_desc',
             ],
             'SamPoyigi\PayRegister\Payments\AuthorizeNetAim' => [
-                'code'        => 'authorize_net_aim',
+                'code'        => 'authorizenetaim',
                 'name'        => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_payment_title',
                 'description' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_payment_desc',
             ],

@@ -1,27 +1,61 @@
 <?php namespace SamPoyigi\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
+use ApplicationException;
+use Exception;
+use Omnipay\Omnipay;
 
 class AuthorizeNetAim extends BasePaymentGateway
 {
-//	public function __construct($controller = null, $params = []) {
-//		parent::__construct($controller, $params);
-//		$this->load->model('Orders_model');
-//		$this->load->model('Addresses_model');
-//		$this->load->model('Countries_model');
-//
-//		$this->load->library('location');                                                        // load the location library
-//		$this->location->initialize();
-//	}
+    public function getHiddenFields()
+    {
+        return [
+            'authorizenetaim_DataValue'      => '',
+            'authorizenetaim_DataDescriptor' => '',
+        ];
+    }
+
+    public function getClientKey()
+    {
+        return $this->model->client_key;
+    }
+
+    public function getTransactionKey()
+    {
+        return $this->model->transaction_key;
+    }
+
+    public function getApiLoginID()
+    {
+        return $this->model->api_login_id;
+    }
+
+    public function isTestMode()
+    {
+        return $this->model->transaction_mode != 'live';
+    }
+
+    public function getEndPoint()
+    {
+        return $this->isTestMode() ? 'https://jstest.authorize.net' : 'https://js.authorize.net';
+    }
+
+    public function beforeRenderPaymentForm($host, $controller)
+    {
+        $endpoint = $this->getEndPoint();
+        $controller->addJs($endpoint.'/v1/Accept.js', 'authorize-accept-js');
+        $controller->addJs($endpoint.'/v3/AcceptUI.js', 'authorize-accept-ui-js');
+        $controller->addJs('~/extensions/sampoyigi/payregister/assets/authorizenetaim.js', 'authorizenetaim-js');
+    }
 
     public function getAcceptedCards()
     {
         return [
-            'visa' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_visa',
-            'mastercard' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_mastercard',
+            'visa'             => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_visa',
+            'mastercard'       => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_mastercard',
             'american_express' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_american_express',
-            'jcb' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_jcb',
-            'diners_club' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_diners_club',
+            'jcb'              => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_jcb',
+            'diners_club'      => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_diners_club',
         ];
     }
 
@@ -124,144 +158,72 @@ class AuthorizeNetAim extends BasePaymentGateway
         $this->load->view('authorize_net_aim/authorize_net_aim', $data);
     }
 
+    /**
+     * @param array $data
+     * @param \Admin\Models\Payments_model $host
+     * @param \Admin\Models\Orders_model $order
+     *
+     * @return mixed
+     */
     public function processPaymentForm($data, $host, $order)
     {
-        $this->lang->load('authorize_net_aim/authorize_net_aim');
+        $paymentMethod = $order->payment_method;
+        if (!$paymentMethod OR $paymentMethod->code != $host->code)
+            throw new ApplicationException('Payment method not found');
 
-        $order_data = $this->session->userdata('order_data');                        // retrieve order details from session userdata
-        $cart_contents = $this->session->userdata('cart_contents');                                                // retrieve cart contents
+        if (!$this->isApplicable($order->order_total, $host))
+            throw new ApplicationException(sprintf(
+                lang('sampoyigi.payregister::default.alert_min_order_total'),
+                currency_format($host->order_total),
+                $host->name
+            ));
 
-        if (empty($order_data) OR empty($cart_contents)) {
-            return FALSE;
-        }
+        try {
+            $gateway = $this->createGateway($host);
+            $fields = $this->getPaymentFormFields($order, $data);
+            $response = $gateway->purchase($fields)->send();
 
-        $this->form_validation->reset_validation();
-        $this->form_validation->set_rules('authorize_cc_number', 'lang:label_card_number', 'required|integer|max:16');
-        $this->form_validation->set_rules('authorize_cc_exp_month', 'lang:label_card_expiry', 'required|integer|max:2');
-        $this->form_validation->set_rules('authorize_cc_exp_year', 'lang:label_card_expiry', 'required|integer|max:4');
-        $this->form_validation->set_rules('authorize_cc_cvc', 'lang:label_card_cvc', 'required|integer|max:4');
-        $this->form_validation->set_rules('authorize_same_address', 'lang:label_same_address');
-
-        if ($this->input->post('authorize_same_address') != '1') {
-            if ($this->input->post('authorize_address_id') === 'new') {
-                $this->form_validation->set_rules('authorize_address_id', 'lang:label_address_id');
-                $this->form_validation->set_rules('authorize_address_1', 'lang:label_address_1', 'required|min:3|max:128');
-                $this->form_validation->set_rules('authorize_address_2', 'lang:label_address_2', 'max:128');
-                $this->form_validation->set_rules('authorize_city', 'lang:label_city', 'required|min:2|max:128');
-                $this->form_validation->set_rules('authorize_state', 'lang:label_state', 'max:128');
-                $this->form_validation->set_rules('authorize_postcode', 'lang:label_postcode', 'min:2|max:10');
-                $this->form_validation->set_rules('authorize_country_id', 'lang:label_country', 'required|integer');
-            }
-            else {
-                $this->form_validation->set_rules('authorize_address_id', 'lang:label_address_id', 'required|integer');
-            }
-        }
-
-        if ($this->form_validation->run() === TRUE) {                                            // checks if form validation routines ran successfully
-            $validated = TRUE;
-        }
-        else {
-            return FALSE;
-        }
-
-        if ($validated === TRUE AND !empty($order_data['payment']) AND $order_data['payment'] == 'authorize_net_aim') {    // check if payment method is equal to paypal
-
-            $payment_settings = !empty($order_data['payment_settings']) ? $order_data['payment_settings'] : [];
-
-            if (!empty($payment_settings['order_total']) AND $cart_contents['order_total'] < $payment_settings['order_total']) {
-                $this->alert->set('danger', lang('alert_min_total'));
+            if (!$response->isSuccessful()) {
+                $order->logPaymentAttempt('Payment error -> '.$response->getMessage(), 1, $fields, $response->getData());
 
                 return FALSE;
             }
 
-            if ($this->validCreditCard($this->input->post('authorize_cc_number'), $payment_settings['accepted_cards']) === FALSE) {
-                $accepted_cards = '';
-                foreach ($payment_settings['accepted_cards'] as $card_type) {
-                    $accepted_cards .= ucwords(str_replace('_', ' ', $card_type)).', ';
-                }
-
-                $this->alert->set('danger', sprintf(lang('alert_acceptable_cards'), trim($accepted_cards, ", ")));
-
-                return FALSE;
+            if ($order->markAsPaymentProcessed()) {
+                $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
+                $order->updateOrderStatus($paymentMethod->order_status);
             }
-
-            $this->load->model('authorize_net_aim/Authorize_net_aim_model');
-            $response = $this->Authorize_net_aim_model->authorizeAndCapture($order_data);
-
-            if (isset($response[1], $response[4], $response[8]) AND (int)$response[8] == $order_data['order_id']) {
-
-                if ($response[1] == '2' OR $response[1] == '3') {
-                    $order_data['status_id'] = $this->config->item('canceled_order_status');
-                }
-                else if (isset($payment_settings['order_status']) AND is_numeric($payment_settings['order_status'])) {
-                    $order_data['status_id'] = $payment_settings['order_status'];
-                }
-
-                $success = FALSE;
-                if (($response[1] == '1' OR $response[1] == '4') AND $this->Orders_model->completeOrder($order_data['order_id'], $order_data, $cart_contents)) {
-                    $success = TRUE;
-                }
-
-                $order_history = [
-                    'object_id'  => $order_data['order_id'],
-                    'status_id'  => $order_data['status_id'],
-                    'notify'     => '0',
-                    'comment'    => $this->Authorize_net_aim_model->parseResponse($response),
-                    'date_added' => mdate('%Y-%m-%d %H:%i:%s', time()),
-                ];
-
-                $this->load->model('Statuses_model');
-                $this->Statuses_model->addStatusHistory('order', $order_history);
-
-                if ($success) $this->redirect('checkout/success');                                    // $this->redirect to checkout success page with returned order id
-
-                $this->alert->set('danger', $response[4]);
-
-                return FALSE;
-            }
+        } catch (Exception $ex) {
+            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
 
-    protected function validCreditCard($number = null, $accepted_cards = [])
+    protected function createGateway($host)
     {
-        // Credit cards
-        $cards = [
-            'visa'             => [
-                'type'    => 'visa',
-                'pattern' => '/^4/',
-                'length'  => [13, 16],
-            ],
-            'mastercard'       => [
-                'type'    => 'mastercard',
-                'pattern' => '/^(5[0-5]|2[2-7])/',
-                'length'  => [16],
-            ],
-            'american_express' => [
-                'type'    => 'american_express',
-                'pattern' => '/^3[47]/',
-                'format'  => '/(\d{1,4})(\d{1,6})?(\d{1,5})?/',
-                'length'  => [15],
-            ],
-            'diners_club'      => [
-                'type'    => 'diners_club',
-                'pattern' => '/^3[0689]/',
-                'length'  => [14],
-            ],
-            'jcb'              => [
-                'type'    => 'jcb',
-                'pattern' => '/^35/',
-                'length'  => [16],
-            ],
+        $gateway = Omnipay::create('AuthorizeNet_AIM');
+
+        $gateway->setApiLoginId($host->api_login_id);
+        $gateway->setTransactionKey($host->transaction_key);
+        $gateway->setHashSecret($host->hash_secret);
+        $gateway->setTestMode($host->transaction_mode != 'live');
+        $gateway->setDeveloperMode($host->transaction_mode != 'live');
+
+        return $gateway;
+    }
+
+    protected function getPaymentFormFields($order, $data = [])
+    {
+        $cancelUrl = $this->makeEntryPointUrl('paypal_cancel_url').'/'.$order->hash;
+        $returnUrl = $this->makeEntryPointUrl('paypal_return_url').'/'.$order->hash;
+
+        return [
+            'amount'               => number_format($order->order_total, 2, '.', ''),
+            'opaqueDataDescriptor' => array_get($data, 'authorizenetaim_DataDescriptor'),
+            'opaqueDataValue'      => array_get($data, 'authorizenetaim_DataValue'),
+            'transactionId'        => $order->order_id,
+            'currency'             => currency()->getUserCurrency(),
+            'cancelUrl'            => $cancelUrl.'?redirect='.array_get($data, 'cancelPage'),
+            'returnUrl'            => $returnUrl.'?redirect='.array_get($data, 'successPage'),
         ];
-
-        $number = preg_replace('/[^0-9]/', '', $number);
-
-        foreach ($cards as $type => $card) {
-            if (preg_match($card['pattern'], $number) AND in_array(strlen($number), $card['length'])) {
-                return in_array($card['type'], $accepted_cards);
-            }
-        }
-
-        return FALSE;
     }
 }

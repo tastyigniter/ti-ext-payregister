@@ -1,124 +1,135 @@
 <?php namespace SamPoyigi\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
+use Exception;
+use Log;
+use Main\Classes\MainController;
+use October\Rain\Exception\ApplicationException;
+use Omnipay\Omnipay;
+use Redirect;
 
 class PaypalExpress extends BasePaymentGateway
 {
-//	public function __construct($controller = null, $params = []) {
-//		parent::__construct($controller, $params );
-//		$this->load->model('Orders_model');
-//		$this->load->model('paypal_express/Paypal_model');
-//		$this->lang->load('paypal_express/paypal_express');
-//	}
-
-    public function onRender()
+    public function registerEntryPoints()
     {
-        $data['code'] = $this->setting('code');
-        $data['title'] = $this->setting('title', $data['code']);
-
-        $order_data = $this->session->userdata('order_data');                           // retrieve order details from session userdata
-        $data['payment'] = !empty($order_data['payment']) ? $order_data['payment'] : '';
-        $data['minimum_order_total'] = $this->setting('order_total', 0);
-        $data['order_total'] = $this->cart->total();
-
-        // pass array $data and load view files
-        $this->load->view('paypal_express/paypal_express', $data);
+        return [
+            'paypal_return_url' => 'processReturnUrl',
+            'paypal_cancel_url' => 'processCancelUrl',
+        ];
     }
 
+    /**
+     * @param array $data
+     * @param \Admin\Models\Payments_model $host
+     * @param \Admin\Models\Orders_model $order
+     *
+     * @return mixed
+     */
     public function processPaymentForm($data, $host, $order)
     {
-        $order_data = $this->session->userdata('order_data');                        // retrieve order details from session userdata
-        $cart_contents = $this->session->userdata('cart_contents');                                                // retrieve cart contents
+        $paymentMethod = $order->payment_method;
+        if (!$paymentMethod OR $paymentMethod->code != $host->code)
+            throw new ApplicationException('Payment method not found');
 
-        if (empty($order_data) OR empty($cart_contents)) {
-            return FALSE;
-        }
+        if (!$this->isApplicable($order->order_total, $host))
+            throw new ApplicationException(sprintf(
+                lang('sampoyigi.payregister::default.alert_min_order_total'),
+                currency_format($host->order_total),
+                $host->name
+            ));
 
-        if (!empty($order_data['payment']) AND $order_data['payment'] == 'paypal_express') {    // check if payment method is equal to paypal
+        try {
+            $gateway = $this->createGateway($host);
+            $fields = $this->getPaymentFormFields($order, $data);
+            $response = $gateway->purchase($fields)->send();
 
-            $payment_settings = !empty($order_data['payment_settings']) ? $order_data['payment_settings'] : [];
+            if ($response->isRedirect())
+                return Redirect::to($response->getRedirectUrl());
 
-            if (!empty($payment_settings['order_total']) AND $cart_contents['order_total'] < $payment_settings['order_total']) {
-                $this->alert->set('danger', lang('alert_min_total'));
-
-                return FALSE;
-            }
-
-            $this->load->model('paypal_express/Paypal_model');
-            $response = $this->Paypal_model->setExpressCheckout($order_data, $this->cart->contents());
-
-            if (isset($response['ACK']) AND (strtoupper($response['ACK']) === 'SUCCESS' OR strtoupper($response['ACK']) === 'SUCCESSWITHWARNING')) {
-                $payment = isset($order_data['payment_settings']) ? $order_data['payment_settings'] : [];
-                if (isset($payment['ext_data']['api_mode']) AND $payment['ext_data']['api_mode'] === 'sandbox') {
-                    $api_mode = '.sandbox';
-                }
-                else {
-                    $api_mode = '';
-                }
-
-                $this->redirect('https://www'.$api_mode.'.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token='.$response['TOKEN'].'');
-            }
+            $order->logPaymentAttempt('Payment error -> '.$response->getMessage(), 1, $fields, $response->getData());
+            return false;
+        } catch (Exception $ex) {
+            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
 
-    public function authorize()
+    public function processReturnUrl($params)
     {
-        $order_data = $this->session->userdata('order_data');                            // retrieve order details from session userdata
-        $cart_contents = $this->session->userdata('cart_contents');                                                // retrieve cart contents
+        $hash = $params[0] ?? null;
+        $order = $this->createOrderModel()->whereHash($hash)->first();
+        if (!$hash OR !$order)
+            throw new ApplicationException('No order found');
 
-        if (!empty($order_data) AND $this->input->get('token') AND $this->input->get('PayerID')) {                        // check if token and PayerID is in $_GET data
+        if (!strlen($redirectPage = input('redirect')))
+            throw new ApplicationException('No redirect page found');
 
-            $token = $this->input->get('token');                                                // retrieve token from $_GET data
-            $payer_id = $this->input->get('PayerID');                                            // retrieve PayerID from $_GET data
+        if (!$paymentMethod = $order->payment_method OR $paymentMethod->getGatewayClass() != static::class)
+            throw new ApplicationException('No valid payment method found');
 
-            $customer_id = (!$this->customer->islogged()) ? '' : $this->customer->getId();
-            $order_id = (is_numeric($order_data['order_id'])) ? $order_data['order_id'] : FALSE;
-            $order_info = $this->Orders_model->getOrder($order_id, $order_data['customer_id']);    // retrieve order details array from getMainOrder method in Orders model
+        $gateway = $this->makePayPalGateway($paymentMethod);
+        $fields = $this->getPaymentFormFields($order);
+        $response = $gateway->completePurchase($fields)->send();
 
-            $transaction_id = $this->Paypal_model->doExpressCheckout($token, $payer_id, $order_info);
-
-            if ($transaction_id AND $order_info) {
-
-                $payment_settings = !empty($order_data['payment_settings']) ? $order_data['payment_settings'] : [];
-                if (isset($payment_settings['order_status']) AND is_numeric($payment_settings['order_status'])) {
-                    $order_data['status_id'] = $payment_settings['order_status'];
-                }
-
-                $transaction_details = $this->Paypal_model->getTransactionDetails($transaction_id, $order_info);
-                $this->Paypal_model->addPaypalOrder($transaction_id, $order_id, $customer_id, $transaction_details);
-                $this->Orders_model->completeOrder($order_id, $order_data, $cart_contents);
-
-                $this->redirect('checkout/success');
+        if ($response->isSuccessful()) {
+            if ($order->markAsPaymentProcessed()) {
+                $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
+                $order->updateOrderStatus($paymentMethod->order_status);
             }
-        }
 
-        $this->alert->set('danger', lang('alert_error_server'));
-        $this->redirect('checkout/checkout');
+            $controller = MainController::getController() ?: new MainController;
+
+            return Redirect::to($controller->pageUrl($redirectPage, [
+                'hash' => $hash,
+            ]));
+        }
     }
 
-    public function cancel()
+    public function processCancelUrl($params)
     {
-        $order_data = $this->session->userdata('order_data');                            // retrieve order details from session userdata
+        $hash = $params[0] ?? null;
+        $order = $this->createOrderModel()->whereHash($hash)->first();
+        if (!$hash OR !$order)
+            throw new ApplicationException('No order found');
 
-        if (!empty($order_data) AND $this->input->get('token')) {                        // check if token and PayerID is in $_GET data
+        if (!strlen($redirectPage = input('redirect')))
+            throw new ApplicationException('No redirect page found');
 
-            $this->load->model('Statuses_model');
-            $status = $this->Statuses_model->getStatus($this->config->item('canceled_order_status'));
+        if (!$paymentMethod = $order->payment_method OR $paymentMethod->getGatewayClass() != static::class)
+            throw new ApplicationException('No valid payment method found');
 
-            $order_history = [
-                'object_id'  => $order_data['order_id'],
-                'status_id'  => $status['status_id'],
-                'notify'     => '0',
-                'comment'    => $status['status_comment'],
-                'date_added' => mdate('%Y-%m-%d %H:%i:%s', time()),
-            ];
+        $order->logPaymentAttempt('Payment canceled by customer', 0, input());
 
-            $this->Statuses_model->addStatusHistory('order', $order_history);
+        $controller = MainController::getController() ?: new MainController;
 
-            $token = $this->input->get('token');                                                // retrieve token from $_GET data
+        return Redirect::to($controller->pageUrl($redirectPage, [
+            'hash' => null,
+        ]));
+    }
 
-            $this->alert->set('alert', lang('alert_error_server'));
-            $this->redirect('checkout/checkout');
-        }
+    protected function createGateway($host)
+    {
+        $gateway = Omnipay::create('PayPal_Express');
+
+        $gateway->setUsername($host->api_user);
+        $gateway->setPassword($host->api_pass);
+        $gateway->setSignature($host->api_signature);
+        $gateway->setTestMode($host->api_mode == 'sandbox');
+        $gateway->setBrandName(setting('site_name'));
+
+        return $gateway;
+    }
+
+    protected function getPaymentFormFields($order, $data = [])
+    {
+        $cancelUrl = $this->makeEntryPointUrl('paypal_cancel_url').'/'.$order->hash;
+        $returnUrl = $this->makeEntryPointUrl('paypal_return_url').'/'.$order->hash;
+
+        return [
+            'amount'        => number_format($order->order_total, 2, '.', ''),
+            'transactionId' => $order->order_id,
+            'currency'      => currency()->getUserCurrency(),
+            'cancelUrl'     => $cancelUrl.'?redirect='.array_get($data, 'cancelPage'),
+            'returnUrl'     => $returnUrl.'?redirect='.array_get($data, 'successPage'),
+        ];
     }
 }

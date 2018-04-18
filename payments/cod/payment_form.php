@@ -2,7 +2,7 @@
     class="radio"
 >
     <label>
-        <?php if (!$paymentMethod->isApplicable($order->total, $paymentMethod)) { ?>
+        <?php if (!$paymentMethod->isApplicable($order->order_total, $paymentMethod)) { ?>
             <input type="radio" name="payment" value="" disabled/>
         <?php } else { ?>
             <input
@@ -13,10 +13,10 @@
         <?php } ?>
         <?= $paymentMethod->name; ?>
     </label>
-    <?php if (!$paymentMethod->isApplicable($order->total, $paymentMethod)) { ?>
+    <?php if (!$paymentMethod->isApplicable($order->order_total, $paymentMethod)) { ?>
         <span class="text-info"><?= sprintf(
                 lang('sampoyigi.payregister::default.alert_min_order_total'),
-                currency_format($paymentMethod->minOrderTotal),
+                currency_format($paymentMethod->order_total),
                 $paymentMethod->name
             ); ?></span>
     <?php } ?>
