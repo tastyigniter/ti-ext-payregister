@@ -10,7 +10,7 @@ class Stripe extends BasePaymentGateway
     public function getHiddenFields()
     {
         return [
-            'stripe_token'           => '',
+            'stripe_token' => '',
         ];
     }
 
@@ -56,14 +56,14 @@ class Stripe extends BasePaymentGateway
 
             if (!$response->isSuccessful()) {
                 $order->logPaymentAttempt('Payment error -> '.$response->getMessage(), 1, $fields, $response->getData());
-                return false;
+
+                return FALSE;
             }
 
             if ($order->markAsPaymentProcessed()) {
                 $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
                 $order->updateOrderStatus($paymentMethod->order_status);
             }
-
         } catch (Exception $ex) {
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }

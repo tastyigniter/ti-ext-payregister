@@ -5,7 +5,7 @@ return [
     'label_order_total'  => 'Minimum Total',
     'label_order_status' => 'Order Status',
 
-    'alert_min_total' => 'Order total is below the minimum order total for %s.',
+    'alert_min_total'       => 'Order total is below the minimum order total for %s.',
     'alert_min_order_total' => 'You need to spend %s or more to use %s</p>',
 
     'help_order_total'  => 'The total amount the order must reach before this payment gateway becomes active',
@@ -17,9 +17,9 @@ return [
         'text_payment_title' => 'Cash On Delivery',
         'text_payment_desc'  => 'Accept cash on delivery during checkout',
 
-        'label_title'        => 'Title',
-        'label_status'       => 'Status',
-        'label_priority'     => 'Priority',
+        'label_title'    => 'Title',
+        'label_status'   => 'Status',
+        'label_priority' => 'Priority',
     ],
 
     'paypal' => [
@@ -42,7 +42,7 @@ return [
         'label_priority'      => 'Priority',
         'label_status'        => 'Status',
 
-        'alert_error_server'    => '<p class="alert-danger">Sorry an error occurred, please try again</p>',
+        'alert_error_server' => '<p class="alert-danger">Sorry an error occurred, please try again</p>',
     ],
 
     'authorize_net_aim' => [
@@ -69,7 +69,7 @@ return [
 
         'label_title'            => 'Title',
         'label_api_login_id'     => 'API Login ID',
-        'label_client_key'  => 'Client Key',
+        'label_client_key'       => 'Client Key',
         'label_transaction_key'  => 'Transaction Key',
         'label_transaction_mode' => 'Transaction Mode',
         'label_transaction_type' => 'Transaction Type',

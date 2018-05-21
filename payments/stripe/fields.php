@@ -60,7 +60,7 @@ return [
         'order_status'         => [
             'label'   => 'lang:sampoyigi.payregister::default.label_order_status',
             'type'    => 'select',
-            'options'    => ['Admin\Models\Statuses_model', 'getDropdownOptionsForOrder'],
+            'options' => ['Admin\Models\Statuses_model', 'getDropdownOptionsForOrder'],
             'comment' => 'lang:sampoyigi.payregister::default.help_order_status',
         ],
     ],

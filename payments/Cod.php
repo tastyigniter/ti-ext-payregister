@@ -1,9 +1,7 @@
 <?php namespace SamPoyigi\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
-use Admin\Models\Statuses_model;
 use ApplicationException;
-use Cart;
 
 class Cod extends BasePaymentGateway
 {

@@ -2,7 +2,6 @@
 
 use Admin\Classes\BasePaymentGateway;
 use Exception;
-use Log;
 use Main\Classes\MainController;
 use October\Rain\Exception\ApplicationException;
 use Omnipay\Omnipay;
@@ -47,7 +46,8 @@ class PaypalExpress extends BasePaymentGateway
                 return Redirect::to($response->getRedirectUrl());
 
             $order->logPaymentAttempt('Payment error -> '.$response->getMessage(), 1, $fields, $response->getData());
-            return false;
+
+            return FALSE;
         } catch (Exception $ex) {
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }

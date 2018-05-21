@@ -3,21 +3,21 @@
 return [
     'fields' => [
         'api_login_id'     => [
-            'label'   => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_api_login_id',
-            'type'    => 'text',
+            'label' => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_api_login_id',
+            'type'  => 'text',
         ],
-        'client_key'  => [
-            'label'   => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_client_key',
-            'type'    => 'text',
+        'client_key'       => [
+            'label' => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_client_key',
+            'type'  => 'text',
         ],
         'transaction_key'  => [
-            'label'   => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_transaction_key',
-            'type'    => 'text',
+            'label' => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_transaction_key',
+            'type'  => 'text',
         ],
         'transaction_mode' => [
             'label'   => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_transaction_mode',
             'type'    => 'radio',
-            'default'    => 'test',
+            'default' => 'test',
             'options' => [
                 'live'      => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_go_live',
                 'test'      => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_test',
@@ -27,18 +27,18 @@ return [
         'transaction_type' => [
             'label'   => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_transaction_type',
             'type'    => 'radio',
-            'default'    => 'auth_capture',
+            'default' => 'auth_capture',
             'options' => [
                 'auth_only'    => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_auth_only',
                 'auth_capture' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_auth_capture',
             ],
         ],
-        'accepted_cards' => [
-            'label'   => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_accepted_cards',
-            'type'    => 'select',
-            'multiOption'    => true,
-            'default'    => ['visa', 'mastercard', 'american_express', 'jcb', 'diners_club'],
-            'options'    => 'getAcceptedCards',
+        'accepted_cards'   => [
+            'label'       => 'lang:sampoyigi.payregister::default.authorize_net_aim.label_accepted_cards',
+            'type'        => 'select',
+            'multiOption' => TRUE,
+            'default'     => ['visa', 'mastercard', 'american_express', 'jcb', 'diners_club'],
+            'options'     => 'getAcceptedCards',
         ],
         'order_total'      => [
             'label'   => 'lang:sampoyigi.payregister::default.label_order_total',
@@ -48,7 +48,7 @@ return [
         'order_status'     => [
             'label'   => 'lang:sampoyigi.payregister::default.label_order_status',
             'type'    => 'select',
-            'options'    => ['Admin\Models\Statuses_model', 'getDropdownOptionsForOrder'],
+            'options' => ['Admin\Models\Statuses_model', 'getDropdownOptionsForOrder'],
             'comment' => 'lang:sampoyigi.payregister::default.help_order_status',
         ],
     ],
