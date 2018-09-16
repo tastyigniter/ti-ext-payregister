@@ -15,7 +15,7 @@
     </label>
     <?php if (!$paymentMethod->isApplicable($order->order_total, $paymentMethod)) { ?>
         <span class="text-info"><?= sprintf(
-                lang('sampoyigi.payregister::default.alert_min_order_total'),
+                lang('igniter.payregister::default.alert_min_order_total'),
                 currency_format($paymentMethod->order_total),
                 $paymentMethod->name
             ); ?></span>

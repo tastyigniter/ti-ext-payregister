@@ -1,4 +1,4 @@
-<?php namespace SamPoyigi\PayRegister\Payments;
+<?php namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 use ApplicationException;
@@ -24,7 +24,7 @@ class Cod extends BasePaymentGateway
 
         if (!$this->isApplicable($order->order_total, $host))
             throw new ApplicationException(sprintf(
-                lang('sampoyigi.payregister::default.alert_min_order_total'),
+                lang('igniter.payregister::default.alert_min_order_total'),
                 currency_format($host->order_total),
                 $host->name
             ));

@@ -1,4 +1,4 @@
-<?php namespace SamPoyigi\PayRegister\Payments;
+<?php namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 use ApplicationException;
@@ -10,7 +10,7 @@ class AuthorizeNetAim extends BasePaymentGateway
     public function getHiddenFields()
     {
         return [
-            'authorizenetaim_DataValue'      => '',
+            'authorizenetaim_DataValue' => '',
             'authorizenetaim_DataDescriptor' => '',
         ];
     }
@@ -45,17 +45,17 @@ class AuthorizeNetAim extends BasePaymentGateway
         $endpoint = $this->getEndPoint();
         $controller->addJs($endpoint.'/v1/Accept.js', 'authorize-accept-js');
         $controller->addJs($endpoint.'/v3/AcceptUI.js', 'authorize-accept-ui-js');
-        $controller->addJs('~/extensions/sampoyigi/payregister/assets/authorizenetaim.js', 'authorizenetaim-js');
+        $controller->addJs('~/extensions/igniter/payregister/assets/authorizenetaim.js', 'authorizenetaim-js');
     }
 
     public function getAcceptedCards()
     {
         return [
-            'visa'             => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_visa',
-            'mastercard'       => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_mastercard',
-            'american_express' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_american_express',
-            'jcb'              => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_jcb',
-            'diners_club'      => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_diners_club',
+            'visa' => 'lang:igniter.payregister::default.authorize_net_aim.text_visa',
+            'mastercard' => 'lang:igniter.payregister::default.authorize_net_aim.text_mastercard',
+            'american_express' => 'lang:igniter.payregister::default.authorize_net_aim.text_american_express',
+            'jcb' => 'lang:igniter.payregister::default.authorize_net_aim.text_jcb',
+            'diners_club' => 'lang:igniter.payregister::default.authorize_net_aim.text_diners_club',
         ];
     }
 
@@ -135,13 +135,13 @@ class AuthorizeNetAim extends BasePaymentGateway
 
             $data['addresses'][] = [                                                    // create array of address data to pass to view
                 'address_id' => $address['address_id'],
-                'address_1'  => $address['address_1'],
-                'address_2'  => $address['address_2'],
-                'city'       => $address['city'],
-                'state'      => $address['state'],
-                'postcode'   => $address['postcode'],
+                'address_1' => $address['address_1'],
+                'address_2' => $address['address_2'],
+                'city' => $address['city'],
+                'state' => $address['state'],
+                'postcode' => $address['postcode'],
                 'country_id' => $address['country_id'],
-                'address'    => str_replace('<br />', ', ', $this->country->addressFormat($address)),
+                'address' => str_replace('<br />', ', ', $this->country->addressFormat($address)),
             ];
         }
 
@@ -150,7 +150,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         foreach ($results as $result) {                                                            // loop through crountries array
             $data['countries'][] = [                                                        // create array of countries data to pass to view
                 'country_id' => $result['country_id'],
-                'name'       => $result['country_name'],
+                'name' => $result['country_name'],
             ];
         }
 
@@ -173,7 +173,7 @@ class AuthorizeNetAim extends BasePaymentGateway
 
         if (!$this->isApplicable($order->order_total, $host))
             throw new ApplicationException(sprintf(
-                lang('sampoyigi.payregister::default.alert_min_order_total'),
+                lang('igniter.payregister::default.alert_min_order_total'),
                 currency_format($host->order_total),
                 $host->name
             ));
@@ -193,7 +193,8 @@ class AuthorizeNetAim extends BasePaymentGateway
                 $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
                 $order->updateOrderStatus($paymentMethod->order_status);
             }
-        } catch (Exception $ex) {
+        }
+        catch (Exception $ex) {
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
@@ -217,13 +218,13 @@ class AuthorizeNetAim extends BasePaymentGateway
         $returnUrl = $this->makeEntryPointUrl('paypal_return_url').'/'.$order->hash;
 
         return [
-            'amount'               => number_format($order->order_total, 2, '.', ''),
+            'amount' => number_format($order->order_total, 2, '.', ''),
             'opaqueDataDescriptor' => array_get($data, 'authorizenetaim_DataDescriptor'),
-            'opaqueDataValue'      => array_get($data, 'authorizenetaim_DataValue'),
-            'transactionId'        => $order->order_id,
-            'currency'             => currency()->getUserCurrency(),
-            'cancelUrl'            => $cancelUrl.'?redirect='.array_get($data, 'cancelPage'),
-            'returnUrl'            => $returnUrl.'?redirect='.array_get($data, 'successPage'),
+            'opaqueDataValue' => array_get($data, 'authorizenetaim_DataValue'),
+            'transactionId' => $order->order_id,
+            'currency' => currency()->getUserCurrency(),
+            'cancelUrl' => $cancelUrl.'?redirect='.array_get($data, 'cancelPage'),
+            'returnUrl' => $returnUrl.'?redirect='.array_get($data, 'successPage'),
         ];
     }
 }

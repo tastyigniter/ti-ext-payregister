@@ -1,4 +1,4 @@
-<?php namespace SamPoyigi\PayRegister\Payments;
+<?php namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 use ApplicationException;
@@ -31,9 +31,9 @@ class Stripe extends BasePaymentGateway
 
     public function beforeRenderPaymentForm($host, $controller)
     {
-        $controller->addCss('~/extensions/sampoyigi/payregister/assets/stripe.css', 'stripe-css');
+        $controller->addCss('~/extensions/igniter/payregister/assets/stripe.css', 'stripe-css');
         $controller->addJs('https://js.stripe.com/v3/', 'stripe-js');
-        $controller->addJs('~/extensions/sampoyigi/payregister/assets/process.stripe.js', 'process-stripe-js');
+        $controller->addJs('~/extensions/igniter/payregister/assets/process.stripe.js', 'process-stripe-js');
     }
 
     public function processPaymentForm($data, $host, $order)
@@ -44,7 +44,7 @@ class Stripe extends BasePaymentGateway
 
         if (!$this->isApplicable($order->order_total, $host))
             throw new ApplicationException(sprintf(
-                lang('sampoyigi.payregister::default.alert_min_order_total'),
+                lang('igniter.payregister::default.alert_min_order_total'),
                 currency_format($host->order_total),
                 $host->name
             ));
@@ -64,7 +64,8 @@ class Stripe extends BasePaymentGateway
                 $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
                 $order->updateOrderStatus($paymentMethod->order_status);
             }
-        } catch (Exception $ex) {
+        }
+        catch (Exception $ex) {
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
@@ -82,10 +83,10 @@ class Stripe extends BasePaymentGateway
     {
 
         return [
-            'amount'        => number_format($order->order_total, 2, '.', ''),
+            'amount' => number_format($order->order_total, 2, '.', ''),
             'transactionId' => $order->order_id,
-            'currency'      => currency()->getUserCurrency(),
-            'token'         => array_get($data, 'stripe_token'),
+            'currency' => currency()->getUserCurrency(),
+            'token' => array_get($data, 'stripe_token'),
         ];
     }
 }

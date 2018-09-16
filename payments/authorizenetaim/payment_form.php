@@ -13,7 +13,7 @@
     </label>
     <?php if (!$paymentMethod->isApplicable($order->order_total, $paymentMethod)) { ?>
         <span class="text-info"><?= sprintf(
-                lang('sampoyigi.payregister::default.alert_min_order_total'),
+                lang('igniter.payregister::default.alert_min_order_total'),
                 currency_format($paymentMethod->order_total),
                 $paymentMethod->name
             ); ?></span>
@@ -41,14 +41,15 @@
     <?php } ?>
 
     <div class="form-group">
-        <label for="input-card-number"><?= lang('sampoyigi.payregister::default.authorize_net_aim.label_card_number'); ?></label>
+        <label
+            for="input-card-number"><?= lang('igniter.payregister::default.authorize_net_aim.label_card_number'); ?></label>
         <div class="input-group">
             <input
                 type="text"
                 id="authorizenetaim-card-number"
                 class="form-control"
                 value=""
-                placeholder="<?= lang('sampoyigi.payregister::default.authorize_net_aim.text_cc_number'); ?>"
+                placeholder="<?= lang('igniter.payregister::default.authorize_net_aim.text_cc_number'); ?>"
                 autocomplete="off"
                 required
             />
@@ -58,7 +59,8 @@
     <div class="row">
         <div class="col-xs-7 col-md-7">
             <div class="form-group">
-                <label for="input-expiry-month"><?= lang('sampoyigi.payregister::default.authorize_net_aim.label_card_expiry'); ?></label>
+                <label
+                    for="input-expiry-month"><?= lang('igniter.payregister::default.authorize_net_aim.label_card_expiry'); ?></label>
                 <div class="row">
                     <div class="col-xs-6 col-lg-6">
                         <input
@@ -66,7 +68,7 @@
                             class="form-control"
                             id="authorizenetaim-expiry-month"
                             value=""
-                            placeholder="<?= lang('sampoyigi.payregister::default.authorize_net_aim.text_exp_month'); ?>"
+                            placeholder="<?= lang('igniter.payregister::default.authorize_net_aim.text_exp_month'); ?>"
                             autocomplete="off"
                             required
                         />
@@ -77,7 +79,7 @@
                             class="form-control"
                             id="authorizenetaim-expiry-year"
                             value=""
-                            placeholder="<?= lang('sampoyigi.payregister::default.authorize_net_aim.text_exp_year'); ?>"
+                            placeholder="<?= lang('igniter.payregister::default.authorize_net_aim.text_exp_year'); ?>"
                             autocomplete="off"
                             required
                         />
@@ -87,13 +89,14 @@
         </div>
         <div class="col-xs-5 col-md-5 pull-right">
             <div class="form-group">
-                <label for="input-card-cvc"><?= lang('sampoyigi.payregister::default.authorize_net_aim.label_card_cvc'); ?></label>
+                <label
+                    for="input-card-cvc"><?= lang('igniter.payregister::default.authorize_net_aim.label_card_cvc'); ?></label>
                 <input
                     type="text"
                     class="form-control"
                     id="authorizenetaim-card-cvc"
                     value=""
-                    placeholder="<?= lang('sampoyigi.payregister::default.authorize_net_aim.text_cc_cvc'); ?>"
+                    placeholder="<?= lang('igniter.payregister::default.authorize_net_aim.text_cc_cvc'); ?>"
                     autocomplete="off"
                     required
                 />
@@ -106,7 +109,7 @@
             class="form-control"
             id="authorizenetaim-postcode"
             value=""
-            placeholder="<?= lang('sampoyigi.cart::default.checkout.label_postcode'); ?>"
+            placeholder="<?= lang('igniter.cart::default.checkout.label_postcode'); ?>"
         />
     </div>
 

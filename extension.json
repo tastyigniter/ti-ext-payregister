@@ -1,15 +1,9 @@
 {
-  "code": "sampoyigi.payregister",
+  "code": "igniter.payregister",
   "name": "Pay Register",
   "description": "Allows you to accept credit card payments using PayPal payment gateway during checkout.",
-  "version": "1.1.0",
+  "version": "1.1.0-beta.2",
   "author": "SamPoyigi",
-  "icon": "fa-paypal",
-  "homepage": "https://github.com/sampoyigi/ti-payregister-extension",
-  "tags": {
-    "1.0.0": "Initial tag of paypal express payment extension",
-    "1.0.1": "Fixed paypal express extension error logging",
-    "1.0.2": "Fixed issue with permission rule not being applied on extensions",
-    "1.1.0": "Update code to use latest Extension API"
-  }
+  "icon": "fa-money",
+  "homepage": "https://github.com/tastyigniter/ti-ext-payregister"
 }

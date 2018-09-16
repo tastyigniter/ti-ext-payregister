@@ -1,4 +1,4 @@
-<?php namespace SamPoyigi\PayRegister;
+<?php namespace Igniter\PayRegister;
 
 use System\Classes\BaseExtension;
 
@@ -7,25 +7,25 @@ class Extension extends BaseExtension
     public function registerPaymentGateways()
     {
         return [
-            'SamPoyigi\PayRegister\Payments\Cod'             => [
-                'code'        => 'cod',
-                'name'        => 'lang:sampoyigi.payregister::default.cod.text_payment_title',
-                'description' => 'lang:sampoyigi.payregister::default.cod.text_payment_desc',
+            'Igniter\PayRegister\Payments\Cod' => [
+                'code' => 'cod',
+                'name' => 'lang:igniter.payregister::default.cod.text_payment_title',
+                'description' => 'lang:igniter.payregister::default.cod.text_payment_desc',
             ],
-            'SamPoyigi\PayRegister\Payments\PaypalExpress'   => [
-                'code'        => 'paypalexpress',
-                'name'        => 'lang:sampoyigi.payregister::default.paypal.text_payment_title',
-                'description' => 'lang:sampoyigi.payregister::default.paypal.text_payment_desc',
+            'Igniter\PayRegister\Payments\PaypalExpress' => [
+                'code' => 'paypalexpress',
+                'name' => 'lang:igniter.payregister::default.paypal.text_payment_title',
+                'description' => 'lang:igniter.payregister::default.paypal.text_payment_desc',
             ],
-            'SamPoyigi\PayRegister\Payments\AuthorizeNetAim' => [
-                'code'        => 'authorizenetaim',
-                'name'        => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_payment_title',
-                'description' => 'lang:sampoyigi.payregister::default.authorize_net_aim.text_payment_desc',
+            'Igniter\PayRegister\Payments\AuthorizeNetAim' => [
+                'code' => 'authorizenetaim',
+                'name' => 'lang:igniter.payregister::default.authorize_net_aim.text_payment_title',
+                'description' => 'lang:igniter.payregister::default.authorize_net_aim.text_payment_desc',
             ],
-            'SamPoyigi\PayRegister\Payments\Stripe'          => [
-                'code'        => 'stripe',
-                'name'        => 'lang:sampoyigi.payregister::default.stripe.text_payment_title',
-                'description' => 'lang:sampoyigi.payregister::default.stripe.text_payment_desc',
+            'Igniter\PayRegister\Payments\Stripe' => [
+                'code' => 'stripe',
+                'name' => 'lang:igniter.payregister::default.stripe.text_payment_title',
+                'description' => 'lang:igniter.payregister::default.stripe.text_payment_desc',
             ],
         ];
     }
@@ -33,20 +33,20 @@ class Extension extends BaseExtension
     public function registerPermissions()
     {
         return [
-            'Payment.Cod'             => [
+            'Payment.Cod' => [
                 'description' => 'Ability to manage cash on delivery payment',
-                'action'      => ['manage'],
+                'action' => ['manage'],
             ],
-            'Payment.PaypalExpress'   => [
-                'action'      => ['manage'],
+            'Payment.PaypalExpress' => [
+                'action' => ['manage'],
                 'description' => 'Ability to manage paypal express payment',
             ],
             'Payment.AuthorizeNetAIM' => [
-                'action'      => ['manage'],
+                'action' => ['manage'],
                 'description' => 'Ability to manage Authorize.Net payment extension',
             ],
-            'Payment.Stripe'          => [
-                'action'      => ['manage'],
+            'Payment.Stripe' => [
+                'action' => ['manage'],
                 'description' => 'Ability to manage Stripe payment extension',
             ],
         ];

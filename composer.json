@@ -1,5 +1,5 @@
 {
-  "name": "sampoyigi/payregister",
+  "name": "igniter/payregister",
   "type": "igniter-extension",
   "description": "Payment register for TastyIgniter",
   "keywords": ["tastyigniter", "paypal", "stripe", "payment", "gateway"],
@@ -11,7 +11,6 @@
   ],
   "require": {
     "php": ">=7.0",
-    "composer/installers": "~1.0",
     "omnipay/authorizenet": "~2.3",
     "omnipay/paypal": "~2.3",
     "omnipay/stripe": "~2.3"

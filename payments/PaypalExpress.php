@@ -1,4 +1,4 @@
-<?php namespace SamPoyigi\PayRegister\Payments;
+<?php namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 use Exception;
@@ -32,7 +32,7 @@ class PaypalExpress extends BasePaymentGateway
 
         if (!$this->isApplicable($order->order_total, $host))
             throw new ApplicationException(sprintf(
-                lang('sampoyigi.payregister::default.alert_min_order_total'),
+                lang('igniter.payregister::default.alert_min_order_total'),
                 currency_format($host->order_total),
                 $host->name
             ));
@@ -48,7 +48,8 @@ class PaypalExpress extends BasePaymentGateway
             $order->logPaymentAttempt('Payment error -> '.$response->getMessage(), 1, $fields, $response->getData());
 
             return FALSE;
-        } catch (Exception $ex) {
+        }
+        catch (Exception $ex) {
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
@@ -125,11 +126,11 @@ class PaypalExpress extends BasePaymentGateway
         $returnUrl = $this->makeEntryPointUrl('paypal_return_url').'/'.$order->hash;
 
         return [
-            'amount'        => number_format($order->order_total, 2, '.', ''),
+            'amount' => number_format($order->order_total, 2, '.', ''),
             'transactionId' => $order->order_id,
-            'currency'      => currency()->getUserCurrency(),
-            'cancelUrl'     => $cancelUrl.'?redirect='.array_get($data, 'cancelPage'),
-            'returnUrl'     => $returnUrl.'?redirect='.array_get($data, 'successPage'),
+            'currency' => currency()->getUserCurrency(),
+            'cancelUrl' => $cancelUrl.'?redirect='.array_get($data, 'cancelPage'),
+            'returnUrl' => $returnUrl.'?redirect='.array_get($data, 'successPage'),
         ];
     }
 }
