@@ -191,7 +191,7 @@ class AuthorizeNetAim extends BasePaymentGateway
 
             if ($order->markAsPaymentProcessed()) {
                 $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
-                $order->updateOrderStatus($paymentMethod->order_status);
+                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
             }
         }
         catch (Exception $ex) {

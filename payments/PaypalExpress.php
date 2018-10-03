@@ -2,13 +2,14 @@
 
 use Admin\Classes\BasePaymentGateway;
 use Exception;
-use Main\Classes\MainController;
 use October\Rain\Exception\ApplicationException;
 use Omnipay\Omnipay;
 use Redirect;
 
 class PaypalExpress extends BasePaymentGateway
 {
+    protected $orderModel = 'Igniter\Cart\Models\Orders_model';
+
     public function registerEntryPoints()
     {
         return [
@@ -67,21 +68,17 @@ class PaypalExpress extends BasePaymentGateway
         if (!$paymentMethod = $order->payment_method OR $paymentMethod->getGatewayClass() != static::class)
             throw new ApplicationException('No valid payment method found');
 
-        $gateway = $this->makePayPalGateway($paymentMethod);
+        $gateway = $this->createGateway($paymentMethod);
         $fields = $this->getPaymentFormFields($order);
         $response = $gateway->completePurchase($fields)->send();
 
         if ($response->isSuccessful()) {
             if ($order->markAsPaymentProcessed()) {
                 $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
-                $order->updateOrderStatus($paymentMethod->order_status);
+                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
             }
 
-            $controller = MainController::getController() ?: new MainController;
-
-            return Redirect::to($controller->pageUrl($redirectPage, [
-                'hash' => $hash,
-            ]));
+            return Redirect::to($order->getUrl($redirectPage));
         }
     }
 
@@ -100,11 +97,7 @@ class PaypalExpress extends BasePaymentGateway
 
         $order->logPaymentAttempt('Payment canceled by customer', 0, input());
 
-        $controller = MainController::getController() ?: new MainController;
-
-        return Redirect::to($controller->pageUrl($redirectPage, [
-            'hash' => null,
-        ]));
+        return Redirect::to($order->getUrl($redirectPage, null));
     }
 
     protected function createGateway($host)

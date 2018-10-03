@@ -30,7 +30,7 @@ class Cod extends BasePaymentGateway
             ));
 
         if ($order->markAsPaymentProcessed()) {
-            $order->updateOrderStatus($host->order_status);
+            $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
         }
     }
 }

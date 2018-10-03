@@ -36,6 +36,15 @@ class Stripe extends BasePaymentGateway
         $controller->addJs('~/extensions/igniter/payregister/assets/process.stripe.js', 'process-stripe-js');
     }
 
+    /**
+     * Processes payment using passed data.
+     *
+     * @param array $data
+     * @param \Admin\Models\Payments_model $host
+     * @param \Admin\Models\Orders_model $order
+     *
+     * @throws \ApplicationException
+     */
     public function processPaymentForm($data, $host, $order)
     {
         $paymentMethod = $order->payment_method;
@@ -62,7 +71,7 @@ class Stripe extends BasePaymentGateway
 
             if ($order->markAsPaymentProcessed()) {
                 $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
-                $order->updateOrderStatus($paymentMethod->order_status);
+                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
             }
         }
         catch (Exception $ex) {

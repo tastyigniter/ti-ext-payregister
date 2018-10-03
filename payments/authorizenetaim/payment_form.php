@@ -1,24 +1,3 @@
-<div class="radio">
-    <label>
-        <?php if (!$paymentMethod->isApplicable($order->order_total, $paymentMethod)) { ?>
-            <input type="radio" name="payment" value="" disabled/>
-        <?php } else { ?>
-            <input
-                type="radio"
-                name="payment"
-                value="authorizenetaim"
-            />
-        <?php } ?>
-        <?= $paymentMethod->name; ?>
-    </label>
-    <?php if (!$paymentMethod->isApplicable($order->order_total, $paymentMethod)) { ?>
-        <span class="text-info"><?= sprintf(
-                lang('igniter.payregister::default.alert_min_order_total'),
-                currency_format($paymentMethod->order_total),
-                $paymentMethod->name
-            ); ?></span>
-    <?php } ?>
-</div>
 <div class="payment-card-icons">
     <i class="fa fa-cc-visa fa-2x"></i>
     <i class="fa fa-cc-mastercard fa-2x"></i>
@@ -53,7 +32,9 @@
                 autocomplete="off"
                 required
             />
-            <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
+            <span class="input-group-prepend">
+                <span class="input-group-text"><i class="fa fa-credit-card"></i></span>
+            </span>
         </div>
     </div>
     <div class="row">
