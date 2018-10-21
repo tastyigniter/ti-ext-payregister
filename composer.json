@@ -1,14 +1,7 @@
 {
   "name": "igniter/payregister",
   "type": "igniter-extension",
-  "description": "Payment register for TastyIgniter",
   "keywords": ["tastyigniter", "paypal", "stripe", "payment", "gateway"],
-  "authors": [
-    {
-      "name": "Samuel Adepoyigi",
-      "email": "sam@sampoyigi.com"
-    }
-  ],
   "require": {
     "php": ">=7.0",
     "omnipay/authorizenet": "~2.3",
