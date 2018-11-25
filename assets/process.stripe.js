@@ -86,7 +86,7 @@
         return this
     }
 
-    $(document).ready(function () {
+    $(document).render(function () {
         $('#stripePaymentForm').processStripe()
     })
 }(window.jQuery)
