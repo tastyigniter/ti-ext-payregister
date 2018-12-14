@@ -4,9 +4,10 @@
   "keywords": ["tastyigniter", "paypal", "stripe", "payment", "gateway"],
   "require": {
     "php": ">=7.0",
-    "omnipay/authorizenet": "~2.3",
-    "omnipay/paypal": "~2.3",
-    "omnipay/stripe": "~2.3"
+    "php-http/guzzle6-adapter": "~2.0",
+    "omnipay/authorizenet": "~3.0",
+    "omnipay/paypal": "~3.0",
+    "omnipay/stripe": "~3.0"
   },
   "minimum-stability": "dev"
 }
