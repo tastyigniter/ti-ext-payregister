@@ -35,18 +35,18 @@ class Extension extends BaseExtension
         return [
             'Payment.Cod' => [
                 'description' => 'Ability to manage cash on delivery payment',
-                'action' => ['manage'],
+                'group' => 'payment',
             ],
             'Payment.PaypalExpress' => [
-                'action' => ['manage'],
+                'group' => 'payment',
                 'description' => 'Ability to manage paypal express payment',
             ],
             'Payment.AuthorizeNetAIM' => [
-                'action' => ['manage'],
+                'group' => 'payment',
                 'description' => 'Ability to manage Authorize.Net payment extension',
             ],
             'Payment.Stripe' => [
-                'action' => ['manage'],
+                'group' => 'payment',
                 'description' => 'Ability to manage Stripe payment extension',
             ],
         ];
