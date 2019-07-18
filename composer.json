@@ -3,7 +3,7 @@
   "type": "igniter-extension",
   "keywords": ["tastyigniter", "paypal", "stripe", "payment", "gateway"],
   "require": {
-    "php": ">=7.0",
+    "php": ">=7.1",
     "php-http/guzzle6-adapter": "~2.0",
     "omnipay/authorizenet": "~3.0",
     "omnipay/paypal": "~3.0",

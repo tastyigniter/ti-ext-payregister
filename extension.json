@@ -2,7 +2,7 @@
   "code": "igniter.payregister",
   "name": "Pay Register",
   "description": "Allows you to accept credit card payments using PayPal payment gateway during checkout.",
-  "version": "v1.1.0-beta.5",
+  "version": "v1.1.0-beta.6",
   "author": "SamPoyigi",
   "icon": "fa-money",
   "homepage": "https://github.com/tastyigniter/ti-ext-payregister"
