@@ -78,7 +78,10 @@ class PaypalExpress extends BasePaymentGateway
                 $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
             }
 
-            return Redirect::to($order->getUrl($redirectPage));
+            return Redirect::to(page_url($redirectPage, [
+                'id' => $order->getKey(),
+                'hash' => $order->hash,
+            ]));
         }
     }
 
