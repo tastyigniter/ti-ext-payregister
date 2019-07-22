@@ -1,20 +1,21 @@
-<div class="payment-card-icons">
-    <i class="fa fa-cc-visa fa-2x"></i>
-    <i class="fa fa-cc-mastercard fa-2x"></i>
-    <i class="fa fa-cc-amex fa-2x"></i>
-    <i class="fa fa-cc-diners-club fa-2x"></i>
-    <i class="fa fa-cc-jcb fa-2x"></i>
-</div>
 <div
     id="authorizeNetAimPaymentForm"
     class="wrap-horizontal"
     data-client-key="<?= $paymentMethod->getClientKey() ?>"
     data-api-login-id="<?= $paymentMethod->getApiLoginID() ?>"
-    data-trigger="[name='payment']"
+    data-trigger="[type=radio][name=payment]"
     data-trigger-action="show"
     data-trigger-condition="value[authorizenetaim]"
     data-trigger-closest-parent="form"
 >
+    <div class="payment-card-icons py-2">
+        <i class="fab fa-cc-visa"></i>
+        <i class="fab fa-cc-mastercard"></i>
+        <i class="fab fa-cc-amex"></i>
+        <i class="fab fa-cc-diners-club"></i>
+        <i class="fab fa-cc-jcb"></i>
+    </div>
+
     <?php foreach ($paymentMethod->getHiddenFields() as $name => $value) { ?>
         <input type="hidden" name="<?= $name; ?>" value="<?= $value; ?>"/>
     <?php } ?>

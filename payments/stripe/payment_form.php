@@ -4,7 +4,7 @@
     data-publishable-key="<?= $paymentMethod->getPublishableKey() ?>"
     data-card-selector="#stripe-card-element"
     data-error-selector="#stripe-card-errors"
-    data-trigger="[name='payment']"
+    data-trigger="[type=radio][name=payment]"
     data-trigger-action="show"
     data-trigger-condition="value[stripe]"
     data-trigger-closest-parent="form"

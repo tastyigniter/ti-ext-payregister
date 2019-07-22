@@ -19,9 +19,9 @@ return [
             'type' => 'radio',
             'default' => 'test',
             'options' => [
-                'live' => 'lang:igniter.payregister::default.authorize_net_aim.text_go_live',
                 'test' => 'lang:igniter.payregister::default.authorize_net_aim.text_test',
                 'test_live' => 'lang:igniter.payregister::default.authorize_net_aim.text_test_live',
+                'live' => 'lang:igniter.payregister::default.authorize_net_aim.text_go_live',
             ],
         ],
         'transaction_type' => [

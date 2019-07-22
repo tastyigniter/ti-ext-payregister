@@ -7,8 +7,8 @@ return [
             'type' => 'radio',
             'default' => 'test',
             'options' => [
-                'live' => 'lang:igniter.payregister::default.stripe.text_live',
                 'test' => 'lang:igniter.payregister::default.stripe.text_test',
+                'live' => 'lang:igniter.payregister::default.stripe.text_live',
             ],
         ],
         'live_secret_key' => [
