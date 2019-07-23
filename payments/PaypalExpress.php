@@ -8,8 +8,6 @@ use Redirect;
 
 class PaypalExpress extends BasePaymentGateway
 {
-    protected $orderModel = 'Igniter\Cart\Models\Orders_model';
-
     public function registerEntryPoints()
     {
         return [
@@ -47,8 +45,7 @@ class PaypalExpress extends BasePaymentGateway
                 return Redirect::to($response->getRedirectUrl());
 
             $order->logPaymentAttempt('Payment error -> '.$response->getMessage(), 1, $fields, $response->getData());
-
-            return FALSE;
+            throw new ApplicationException($response->getMessage());
         }
         catch (Exception $ex) {
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
@@ -58,21 +55,31 @@ class PaypalExpress extends BasePaymentGateway
     public function processReturnUrl($params)
     {
         $hash = $params[0] ?? null;
-        $order = $this->createOrderModel()->whereHash($hash)->first();
-        if (!$hash OR !$order)
-            throw new ApplicationException('No order found');
+        $redirectPage = input('redirect');
+        $cancelPage = input('cancel');
 
-        if (!strlen($redirectPage = input('redirect')))
-            throw new ApplicationException('No redirect page found');
+        try {
+            $order = $this->createOrderModel()->whereHash($hash)->first();
+            if (!$hash OR !$order)
+                throw new ApplicationException('No order found');
 
-        if (!$paymentMethod = $order->payment_method OR $paymentMethod->getGatewayClass() != static::class)
-            throw new ApplicationException('No valid payment method found');
+            if (!strlen($redirectPage))
+                throw new ApplicationException('No redirect page found');
 
-        $gateway = $this->createGateway($paymentMethod);
-        $fields = $this->getPaymentFormFields($order);
-        $response = $gateway->completePurchase($fields)->send();
+            if (!strlen($cancelPage))
+                throw new ApplicationException('No cancel page found');
 
-        if ($response->isSuccessful()) {
+            $paymentMethod = $order->payment_method;
+            if (!$paymentMethod OR $paymentMethod->getGatewayClass() != static::class)
+                throw new ApplicationException('No valid payment method found');
+
+            $gateway = $this->createGateway($paymentMethod);
+            $fields = $this->getPaymentFormFields($order);
+            $response = $gateway->completePurchase($fields)->send();
+
+            if (!$response->isSuccessful())
+                throw new ApplicationException('Sorry, your payment was not successful. Please contact your bank or try again later.');
+
             if ($order->markAsPaymentProcessed()) {
                 $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
                 $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
@@ -83,6 +90,11 @@ class PaypalExpress extends BasePaymentGateway
                 'hash' => $order->hash,
             ]));
         }
+        catch (Exception $ex) {
+            flash()->warning($ex->getMessage())->important();
+        }
+
+        return Redirect::to(page_url($cancelPage));
     }
 
     public function processCancelUrl($params)
@@ -95,7 +107,8 @@ class PaypalExpress extends BasePaymentGateway
         if (!strlen($redirectPage = input('redirect')))
             throw new ApplicationException('No redirect page found');
 
-        if (!$paymentMethod = $order->payment_method OR $paymentMethod->getGatewayClass() != static::class)
+        $paymentMethod = $order->payment_method;
+        if (!$paymentMethod OR $paymentMethod->getGatewayClass() != static::class)
             throw new ApplicationException('No valid payment method found');
 
         $order->logPaymentAttempt('Payment canceled by customer', 0, input());
@@ -120,13 +133,14 @@ class PaypalExpress extends BasePaymentGateway
     {
         $cancelUrl = $this->makeEntryPointUrl('paypal_cancel_url').'/'.$order->hash;
         $returnUrl = $this->makeEntryPointUrl('paypal_return_url').'/'.$order->hash;
+        $returnUrl .= '?redirect='.array_get($data, 'successPage').'&cancel='.array_get($data, 'cancelPage');
 
         return [
             'amount' => number_format($order->order_total, 2, '.', ''),
             'transactionId' => $order->order_id,
             'currency' => currency()->getUserCurrency(),
             'cancelUrl' => $cancelUrl.'?redirect='.array_get($data, 'cancelPage'),
-            'returnUrl' => $returnUrl.'?redirect='.array_get($data, 'successPage'),
+            'returnUrl' => $returnUrl,
         ];
     }
 }
