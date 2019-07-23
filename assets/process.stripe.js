@@ -11,10 +11,13 @@
         if (this.options.publishableKey === undefined)
             throw new Error('Missing stripe publishable key')
 
-        this.init()
+        $('[name=payment][value=stripe]', this.$checkoutForm).on('change', $.proxy(this.init, this))
     }
 
     ProcessStripe.prototype.init = function () {
+        if (this.stripe !== null)
+            return
+
         // Create a Stripe client.
         this.stripe = Stripe(this.options.publishableKey)
 
@@ -47,13 +50,13 @@
         // Prevent the form from submitting with the default action
         event.preventDefault()
 
-        this.stripe.createToken(this.card).then(function (result) {
+        this.stripe.createPaymentMethod('card', this.card).then(function (result) {
             if (result.error) {
                 // Inform the user if there was an error.
                 $form.find(this.options.errorSelector).html(result.error.message);
             } else {
                 // Insert the token into the form so it gets submitted to the server
-                $form.find('input[name="stripe_token"]').val(result.token.id);
+                $form.find('input[name="stripe_payment_method"]').val(result.paymentMethod.id);
 
                 // Switch back to default to submit form
                 $form.unbind('submitCheckoutForm').submit()

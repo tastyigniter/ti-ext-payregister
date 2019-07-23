@@ -4,13 +4,22 @@ use Admin\Classes\BasePaymentGateway;
 use ApplicationException;
 use Exception;
 use Omnipay\Omnipay;
+use Redirect;
+use Session;
 
 class Stripe extends BasePaymentGateway
 {
+    public function registerEntryPoints()
+    {
+        return [
+            'stripe_return_url' => 'processReturnUrl',
+        ];
+    }
+
     public function getHiddenFields()
     {
         return [
-            'stripe_token' => '',
+            'stripe_payment_method' => '',
         ];
     }
 
@@ -43,6 +52,7 @@ class Stripe extends BasePaymentGateway
      * @param \Admin\Models\Payments_model $host
      * @param \Admin\Models\Orders_model $order
      *
+     * @return bool|\Illuminate\Http\RedirectResponse
      * @throws \ApplicationException
      */
     public function processPaymentForm($data, $host, $order)
@@ -63,10 +73,15 @@ class Stripe extends BasePaymentGateway
             $fields = $this->getPaymentFormFields($order, $data);
             $response = $gateway->purchase($fields)->send();
 
+            if ($response->getStatus() == 'requires_source_action') {
+                Session::put('ti_payregister_stripe_intent', $response->getPaymentIntentReference());
+
+                return Redirect::to($this->getRedirectUrl($response));
+            }
+
             if (!$response->isSuccessful()) {
                 $order->logPaymentAttempt('Payment error -> '.$response->getMessage(), 1, $fields, $response->getData());
-
-                return FALSE;
+                throw new Exception($response->getMessage());
             }
 
             if ($order->markAsPaymentProcessed()) {
@@ -75,13 +90,63 @@ class Stripe extends BasePaymentGateway
             }
         }
         catch (Exception $ex) {
+            \Log::error($ex->getMessage());
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
 
+    public function processReturnUrl($params)
+    {
+        $hash = $params[0] ?? null;
+        $redirectPage = input('redirect');
+        $cancelPage = input('cancel');
+
+        try {
+            $order = $this->createOrderModel()->whereHash($hash)->first();
+            if (!$hash OR !$order)
+                throw new ApplicationException('No order found');
+
+            if (!strlen($redirectPage))
+                throw new ApplicationException('No redirect page found');
+
+            if (!strlen($cancelPage))
+                throw new ApplicationException('No cancel page found');
+
+            $paymentMethod = $order->payment_method;
+            if (!$paymentMethod OR $paymentMethod->getGatewayClass() != static::class)
+                throw new ApplicationException('No valid payment method found');
+
+            $gateway = $this->createGateway();
+            $fields = $this->getPaymentFormFields($order);
+            $fields['paymentIntentReference'] = Session::get('ti_payregister_stripe_intent');
+            $response = $gateway->completePurchase($fields)->send();
+
+            if (!$response->isSuccessful())
+                throw new ApplicationException('Sorry, your payment was not successful. Please contact your bank or try again later.');
+
+            if ($order->markAsPaymentProcessed()) {
+                $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
+                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
+            }
+
+            return Redirect::to(page_url($redirectPage, [
+                'id' => $order->getKey(),
+                'hash' => $order->hash,
+            ]));
+        }
+        catch (Exception $ex) {
+            flash()->warning($ex->getMessage())->important();
+        }
+
+        return Redirect::to(page_url($cancelPage));
+    }
+
+    /**
+     * @return \Omnipay\Common\GatewayInterface|\Omnipay\Stripe\Gateway
+     */
     protected function createGateway()
     {
-        $gateway = Omnipay::create('Stripe');
+        $gateway = Omnipay::create('Stripe\PaymentIntents');
 
         $gateway->setApiKey($this->getSecretKey());
 
@@ -90,12 +155,21 @@ class Stripe extends BasePaymentGateway
 
     protected function getPaymentFormFields($order, $data = [])
     {
+        $returnUrl = $this->makeEntryPointUrl('stripe_return_url').'/'.$order->hash;
+        $returnUrl .= '?redirect='.array_get($data, 'successPage').'&cancel='.array_get($data, 'cancelPage');
 
         return [
             'amount' => number_format($order->order_total, 2, '.', ''),
-            'transactionId' => $order->order_id,
             'currency' => currency()->getUserCurrency(),
-            'token' => array_get($data, 'stripe_token'),
+            'transactionId' => $order->order_id,
+            'paymentMethod' => array_get($data, 'stripe_payment_method'),
+            'returnUrl' => $returnUrl,
+            'confirm' => TRUE,
         ];
+    }
+
+    protected function getRedirectUrl($response)
+    {
+        return array_get($response->getData(), 'next_action.redirect_to_url.url');
     }
 }
