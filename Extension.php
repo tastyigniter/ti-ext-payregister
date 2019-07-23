@@ -27,6 +27,16 @@ class Extension extends BaseExtension
                 'name' => 'lang:igniter.payregister::default.stripe.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.stripe.text_payment_desc',
             ],
+            'Igniter\PayRegister\Payments\Mollie' => [
+                'code' => 'mollie',
+                'name' => 'lang:igniter.payregister::default.mollie.text_payment_title',
+                'description' => 'lang:igniter.payregister::default.mollie.text_payment_desc',
+            ],
+            'Igniter\PayRegister\Payments\Square' => [
+                'code' => 'square',
+                'name' => 'lang:igniter.payregister::default.square.text_payment_title',
+                'description' => 'lang:igniter.payregister::default.square.text_payment_desc',
+            ],
         ];
     }
 

@@ -1,13 +1,15 @@
 {
   "name": "igniter/payregister",
   "type": "igniter-extension",
-  "keywords": ["tastyigniter", "paypal", "stripe", "payment", "gateway"],
+  "keywords": ["tastyigniter", "paypal", "stripe", "payment", "gateway", "authorizenet", "mollie"],
   "require": {
     "php": ">=7.1",
     "php-http/guzzle6-adapter": "~2.0",
     "omnipay/authorizenet": "~3.0",
     "omnipay/paypal": "~3.0",
     "omnipay/stripe": "3.1.x-dev",
+    "omnipay/mollie": "~5.1",
+    "transportersio/omnipay-square": "~2.0"
   },
   "minimum-stability": "dev"
 }

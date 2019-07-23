@@ -47,7 +47,6 @@ return [
 
     'authorize_net_aim' => [
         '_text_title' => 'Authorize.Net',
-        'text_tab_general' => 'General',
         'text_payment_title' => 'Authorize.Net (AIM)',
         'text_payment_desc' => 'Accept credit card payments though Authorize.Net',
         'text_go_live' => 'Go Live',
@@ -61,11 +60,6 @@ return [
         'text_american_express' => 'American Express',
         'text_jcb' => 'JCB',
         'text_diners_club' => 'Diners Club',
-        'text_cc_number' => 'Valid Card Number',
-        'text_exp_month' => 'MM',
-        'text_exp_year' => 'YY',
-        'text_cc_cvc' => 'CVC',
-        'text_add_new_address' => 'Enter my billing address',
 
         'label_title' => 'Title',
         'label_api_login_id' => 'API Login ID',
@@ -76,49 +70,8 @@ return [
         'label_accepted_cards' => 'Accepted Cards',
         'label_priority' => 'Priority',
         'label_status' => 'Status',
-        'label_card_number' => 'CARD NUMBER',
-        'label_card_expiry' => 'EXPIRY DATE',
-        'label_card_cvc' => 'CV CODE',
-        'label_same_address' => 'My billing address is same as my delivery address',
-
-        'text_tab_general' => 'General',
-        'text_avs_response_A' => 'Address (Street) matches, ZIP does not',
-        'text_avs_response_B' => 'Address information not provided for AVS check',
-        'text_avs_response_E' => 'AVS error',
-        'text_avs_response_G' => 'Non-U.S. Card Issuing Bank',
-        'text_avs_response_N' => 'No Match on Address (Street) or ZIP',
-        'text_avs_response_P' => 'AVS not applicable for this transaction',
-        'text_avs_response_R' => 'Retry—System unavailable or timed out',
-        'text_avs_response_S' => 'Service not supported by issuer',
-        'text_avs_response_U' => 'Address information is unavailable',
-        'text_avs_response_W' => 'Nine digit ZIP matches, Address (Street) does not',
-        'text_avs_response_X' => 'Address (Street) and nine digit ZIP match',
-        'text_avs_response_Y' => 'Address (Street) and five digit ZIP match',
-        'text_avs_response_Z' => 'Five digit ZIP matches, Address (Street) does not',
-
-        'text_ccv_response_M' => 'Match',
-        'text_ccv_response_N' => 'No Match',
-        'text_ccv_response_P' => 'Not Processed',
-        'text_ccv_response_S' => 'Should have been present',
-        'text_ccv_response_U' => 'Issuer unable to process request',
-
-        'text_cavv_response_0' => 'Card not validated because erroneous data was submitted',
-        'text_cavv_response_1' => 'Card failed validation',
-        'text_cavv_response_2' => 'Card passed validation',
-        'text_cavv_response_3' => 'Card validation could not be performed; issuer attempt incomplete',
-        'text_cavv_response_4' => 'Card validation could not be performed; issuer system error',
-        'text_cavv_response_5' => 'Reserved for future use',
-        'text_cavv_response_6' => 'Reserved for future use',
-        'text_cavv_response_7' => 'Card attempt—failed validation—issuer available (U.S.-issued card/non-U.S acquirer)',
-        'text_cavv_response_8' => 'Card attempt—passed validation—issuer available (U.S.-issued card/non-U.S. acquirer)',
-        'text_cavv_response_9' => 'Card attempt—failed validation—issuer unavailable (U.S.-issued card/non-U.S. acquirer)',
-        'text_cavv_response_A' => 'Card attempt—passed validation—issuer unavailable (U.S.-issued card/non-U.S. acquirer)',
-        'text_cavv_response_B' => 'Card passed validation, information only, no liability shift',
-
-        'error_cc_number' => 'The selected payment is invalid, please contact us',
 
         'alert_acceptable_cards' => 'We only accept %s',
-        'alert_error_contacting' => '<p class="alert-danger">There was a problem while contacting the payment gateway. Please try again.</p>',
     ],
 
     'stripe' => [
@@ -130,10 +83,6 @@ return [
         'text_description' => 'Pay by Credit Card using Stripe',
         'text_live' => 'Live',
         'text_test' => 'Test',
-        'text_cc_number' => 'Valid Card Number',
-        'text_exp_month' => 'MM',
-        'text_exp_year' => 'YY',
-        'text_cc_cvc' => 'CVC',
         'text_stripe_charge_description' => '%s Charge for %s',
         'text_payment_status' => 'Payment %s (%s)',
 
@@ -147,8 +96,41 @@ return [
         'label_force_ssl' => 'Force SSL',
         'label_priority' => 'Priority',
         'label_status' => 'Status',
-        'label_card_number' => 'CARD NUMBER',
-        'label_card_expiry' => 'EXPIRY DATE',
-        'label_card_cvc' => 'CV CODE',
+    ],
+
+    'mollie' => [
+        '_text_title' => 'Mollie',
+        'text_payment_title' => 'Mollie Payment',
+        'text_payment_desc' => 'Accept credit card payments using Mollie API',
+
+        'text_description' => 'Pay by Credit Card using Mollie',
+        'text_payment_status' => 'Payment %s (%s)',
+
+        'label_transaction_mode' => 'Transaction Mode',
+        'label_test_api_key' => 'Test API Key',
+        'label_live_api_key' => 'Live API Key',
+    ],
+
+    'square' => [
+        '_text_title' => 'Square',
+        'text_payment_title' => 'Square Payment',
+        'text_payment_desc' => 'Accept credit card payments using Square',
+
+        'text_description' => 'Pay by Credit Card using Square',
+        'text_live' => 'Live',
+        'text_test' => 'Test',
+        'text_payment_status' => 'Payment %s (%s)',
+
+        'label_title' => 'Title',
+        'label_description' => 'Description',
+        'label_transaction_mode' => 'Transaction Mode',
+        'label_test_app_id' => 'Test Application ID',
+        'label_test_access_token' => 'Test Access Token',
+        'label_test_location_id' => 'Test Location ID',
+        'label_live_app_id' => 'Live Application ID',
+        'label_live_access_token' => 'Live Access Token',
+        'label_live_location_id' => 'Live Location ID',
+
+        'help_square' => 'Get Square API Keys from <a href="https://developer.squareup.com">here</a>',
     ],
 ];

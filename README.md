@@ -8,8 +8,6 @@ A standardized way to add online payments using [Omnipay](https://omnipay.thephp
 - Cash On Delivery
 - PayPal Express
 - Stripe
-
-**Coming soon**
 - Mollie
 - Square
 
