@@ -10,13 +10,13 @@
 
     <button
         type="button"
-        class="AcceptUI hide"
+        class="AcceptUI"
         data-billingAddressOptions='{"show":false, "required":false}'
-        data-api-login-id="<?= $paymentMethod->getApiLoginID() ?>"
-        data-client-key="<?= $paymentMethod->getClientKey() ?>"
+        data-apiLoginID="<?= $paymentMethod->getApiLoginID() ?>"
+        data-clientKey="<?= $paymentMethod->getClientKey() ?>"
         data-paymentOptions='{"showCreditCard": true, "showBankAccount": false}'
         data-acceptUIFormHeaderTxt="Card Information"
-        data-responseHandler="responseHandler"
+        data-responseHandler="authorizeNetAimResponseHandler"
     ></button>
 
     <div id="authorizenetaim-errors" class="text-danger"></div>
