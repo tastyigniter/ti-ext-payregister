@@ -39,26 +39,4 @@ class Extension extends BaseExtension
             ],
         ];
     }
-
-    public function registerPermissions()
-    {
-        return [
-            'Payment.Cod' => [
-                'description' => 'Ability to manage cash on delivery payment',
-                'group' => 'payment',
-            ],
-            'Payment.PaypalExpress' => [
-                'group' => 'payment',
-                'description' => 'Ability to manage paypal express payment',
-            ],
-            'Payment.AuthorizeNetAIM' => [
-                'group' => 'payment',
-                'description' => 'Ability to manage Authorize.Net payment extension',
-            ],
-            'Payment.Stripe' => [
-                'group' => 'payment',
-                'description' => 'Ability to manage Stripe payment extension',
-            ],
-        ];
-    }
 }
