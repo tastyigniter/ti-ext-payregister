@@ -34,15 +34,17 @@
     }
 
     ProcessStripe.prototype.validationErrorHandler = function (event) {
+        var $el = this.$checkoutForm.find(this.options.errorSelector)
         if (event.error) {
-            $(this.options.errorSelector).html(event.error.message);
+            $el.html(event.error.message);
         } else {
-            $(this.options.errorSelector).empty();
+            $el.empty();
         }
     }
 
     ProcessStripe.prototype.submitFormHandler = function (event) {
-        var $form = this.$checkoutForm,
+        var self = this,
+            $form = this.$checkoutForm,
             $paymentInput = $form.find('input[name="payment"]:checked')
 
         if ($paymentInput.val() !== 'stripe') return
@@ -53,7 +55,7 @@
         this.stripe.createPaymentMethod('card', this.card).then(function (result) {
             if (result.error) {
                 // Inform the user if there was an error.
-                $form.find(this.options.errorSelector).html(result.error.message);
+                self.validationErrorHandler(result)
             } else {
                 // Insert the token into the form so it gets submitted to the server
                 $form.find('input[name="stripe_payment_method"]').val(result.paymentMethod.id);
