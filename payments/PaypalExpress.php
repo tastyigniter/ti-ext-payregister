@@ -1,8 +1,8 @@
 <?php namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
+use ApplicationException;
 use Exception;
-use October\Rain\Exception\ApplicationException;
 use Omnipay\Omnipay;
 use Redirect;
 
