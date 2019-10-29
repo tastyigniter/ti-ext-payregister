@@ -103,6 +103,8 @@ return [
         'text_payment_title' => 'Mollie Payment',
         'text_payment_desc' => 'Accept credit card payments using Mollie API',
 
+        'text_live' => 'Live',
+        'text_test' => 'Test',
         'text_description' => 'Pay by Credit Card using Mollie',
         'text_payment_status' => 'Payment %s (%s)',
 
