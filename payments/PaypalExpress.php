@@ -113,7 +113,7 @@ class PaypalExpress extends BasePaymentGateway
 
         $order->logPaymentAttempt('Payment canceled by customer', 0, input());
 
-        return Redirect::to($order->getUrl($redirectPage, null));
+        return Redirect::to(page_url($redirectPage));
     }
 
     protected function createGateway($host)
