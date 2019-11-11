@@ -42,7 +42,7 @@ return [
         ],
         'order_total' => [
             'label' => 'lang:igniter.payregister::default.label_order_total',
-            'type' => 'number',
+            'type' => 'money',
             'comment' => 'lang:igniter.payregister::default.help_order_total',
         ],
         'order_status' => [
