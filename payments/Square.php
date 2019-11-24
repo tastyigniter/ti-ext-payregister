@@ -3,6 +3,7 @@
 use Admin\Classes\BasePaymentGateway;
 use ApplicationException;
 use Exception;
+use Illuminate\Support\Facades\Log;
 use Omnipay\Omnipay;
 
 class Square extends BasePaymentGateway
@@ -73,13 +74,12 @@ class Square extends BasePaymentGateway
                 throw new Exception($response->getMessage());
             }
 
-            if ($order->markAsPaymentProcessed()) {
-                $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
-                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
-            }
+            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
+            $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
+            $order->markAsPaymentProcessed();
         }
         catch (Exception $ex) {
-            \Log::error($ex->getMessage());
+            Log::error($ex->getMessage());
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
