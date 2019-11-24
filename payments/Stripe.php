@@ -74,10 +74,10 @@ class Stripe extends BasePaymentGateway
             $fields = $this->getPaymentFormFields($order, $data);
             $response = $gateway->purchase($fields)->send();
 
-            if ($response->getStatus() == 'requires_source_action') {
+            if ($response->isRedirect()) {
                 Session::put('ti_payregister_stripe_intent', $response->getPaymentIntentReference());
 
-                return Redirect::to($this->getRedirectUrl($response));
+                return Redirect::to($response->getRedirectUrl());
             }
 
             if (!$response->isSuccessful()) {
@@ -165,10 +165,5 @@ class Stripe extends BasePaymentGateway
             'returnUrl' => $returnUrl,
             'confirm' => TRUE,
         ];
-    }
-
-    protected function getRedirectUrl($response)
-    {
-        return array_get($response->getData(), 'next_action.redirect_to_url.url');
     }
 }
