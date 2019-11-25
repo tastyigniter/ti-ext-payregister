@@ -64,7 +64,7 @@
                 $form.unbind('submitCheckoutForm').submit()
             }
         });
-    },
+    }
 
     ProcessStripe.DEFAULTS = {
         publishableKey: undefined,
