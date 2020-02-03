@@ -53,7 +53,18 @@
     }
 
     ProcessSquare.prototype.onResponseReceived = function (errors, nonce, cardData) {
-        var $form = this.$checkoutForm
+        var self = this,
+            $form = this.$checkoutForm,
+            verificationDetails = {
+                intent: 'CHARGE',
+                amount: this.options.orderTotal.toString(),
+                currencyCode: this.options.currencyCode,
+                billingContact: {
+                    givenName: $('input[name="first_name"]', this.$checkoutForm).val(),
+                    familyName: $('input[name="last_name"]', this.$checkoutForm).val(),
+                }
+            }
+
         if (errors) {
             var $el = '<b>Encountered errors:</b>';
             errors.forEach(function (error) {
@@ -63,15 +74,22 @@
             return;
         }
 
-        $form.find('input[name="square_card_nonce"]').val(nonce);
+        this.square.verifyBuyer(nonce, verificationDetails, function (err, response) {
+            if (err == null) {
+                $form.find('input[name="square_card_nonce"]').val(nonce);
+                $form.find('input[name="square_card_token"]').val(response.token);
 
-        // Switch back to default to submit form
-        $form.unbind('submitCheckoutForm').submit()
+                // Switch back to default to submit form
+                $form.unbind('submitCheckoutForm').submit()
+            }
+        });
     }
 
     ProcessSquare.DEFAULTS = {
         applicationId: undefined,
         locationId: undefined,
+        orderTotal: undefined,
+        currencyCode: undefined,
         errorSelector: '#square-card-errors',
         cardFields: {
             cardNumber: {

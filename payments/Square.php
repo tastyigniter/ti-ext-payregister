@@ -15,6 +15,7 @@ class Square extends BasePaymentGateway
     {
         return [
             'square_card_nonce' => '',
+            'square_card_token' => '',
         ];
     }
 
@@ -40,7 +41,8 @@ class Square extends BasePaymentGateway
 
     public function beforeRenderPaymentForm($host, $controller)
     {
-        $controller->addJs('https://js.squareup.com/v2/paymentform', 'square-js');
+        $endpoint = $this->isTestMode() ? 'squareupsandbox' : 'squareup';
+        $controller->addJs('https://js.'.$endpoint.'.com/v2/paymentform', 'square-js');
         $controller->addJs('~/extensions/igniter/payregister/assets/process.square.js', 'process-square-js');
     }
 
@@ -94,6 +96,7 @@ class Square extends BasePaymentGateway
     {
         $gateway = Omnipay::create('Square');
 
+        $gateway->setTestMode($this->isTestMode());
         $gateway->setAppId($this->getAppId());
         $gateway->setAccessToken($this->getAccessToken());
         $gateway->setLocationId($this->getLocationId());

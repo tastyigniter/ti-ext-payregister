@@ -3,6 +3,8 @@
     class="payment-form"
     data-application-id="<?= $paymentMethod->getAppId() ?>"
     data-location-id="<?= $paymentMethod->getLocationId() ?>"
+    data-order-total="<?= Cart::total() ?>"
+    data-currency-code="<?= currency()->getUserCurrency() ?>"
     data-error-selector="#square-card-errors"
     data-trigger="[type=radio][name=payment]"
     data-trigger-action="show"
