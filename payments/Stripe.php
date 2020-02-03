@@ -3,6 +3,7 @@
 use Admin\Classes\BasePaymentGateway;
 use ApplicationException;
 use Exception;
+use Igniter\Flame\Traits\EventEmitter;
 use Illuminate\Support\Facades\Log;
 use Omnipay\Omnipay;
 use Redirect;
@@ -10,6 +11,8 @@ use Session;
 
 class Stripe extends BasePaymentGateway
 {
+    use EventEmitter;
+
     public function registerEntryPoints()
     {
         return [
@@ -72,6 +75,7 @@ class Stripe extends BasePaymentGateway
         try {
             $gateway = $this->createGateway();
             $fields = $this->getPaymentFormFields($order, $data);
+
             $response = $gateway->purchase($fields)->send();
 
             if ($response->isRedirect()) {
@@ -157,7 +161,7 @@ class Stripe extends BasePaymentGateway
         $returnUrl = $this->makeEntryPointUrl('stripe_return_url').'/'.$order->hash;
         $returnUrl .= '?redirect='.array_get($data, 'successPage').'&cancel='.array_get($data, 'cancelPage');
 
-        return [
+        $fields = [
             'amount' => number_format($order->order_total, 2, '.', ''),
             'currency' => currency()->getUserCurrency(),
             'transactionId' => $order->order_id,
@@ -165,5 +169,9 @@ class Stripe extends BasePaymentGateway
             'returnUrl' => $returnUrl,
             'confirm' => TRUE,
         ];
+
+        $this->fireSystemEvent('payregister.stripe.extendFields', [&$fields, $order, $data]);
+
+        return $fields;
     }
 }

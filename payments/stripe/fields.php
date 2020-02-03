@@ -14,6 +14,7 @@ return [
         'live_secret_key' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_live_secret_key',
             'type' => 'text',
+            'span' => 'left',
             'trigger' => [
                 'action' => 'show',
                 'field' => 'transaction_mode',
@@ -23,6 +24,7 @@ return [
         'live_publishable_key' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_live_publishable_key',
             'type' => 'text',
+            'span' => 'right',
             'trigger' => [
                 'action' => 'show',
                 'field' => 'transaction_mode',
@@ -32,6 +34,7 @@ return [
         'test_secret_key' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_test_secret_key',
             'type' => 'text',
+            'span' => 'left',
             'trigger' => [
                 'action' => 'show',
                 'field' => 'transaction_mode',
@@ -41,26 +44,24 @@ return [
         'test_publishable_key' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_test_publishable_key',
             'type' => 'text',
+            'span' => 'right',
             'trigger' => [
                 'action' => 'show',
                 'field' => 'transaction_mode',
                 'condition' => 'value[test]',
             ],
         ],
-        'force_ssl' => [
-            'label' => 'lang:igniter.payregister::default.stripe.label_force_ssl',
-            'type' => 'switch',
-            'default' => TRUE,
-        ],
         'order_total' => [
             'label' => 'lang:igniter.payregister::default.label_order_total',
             'type' => 'money',
+            'span' => 'left',
             'comment' => 'lang:igniter.payregister::default.help_order_total',
         ],
         'order_status' => [
             'label' => 'lang:igniter.payregister::default.label_order_status',
             'type' => 'select',
             'options' => ['Admin\Models\Statuses_model', 'getDropdownOptionsForOrder'],
+            'span' => 'right',
             'comment' => 'lang:igniter.payregister::default.help_order_status',
         ],
     ],

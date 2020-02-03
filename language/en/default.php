@@ -93,7 +93,6 @@ return [
         'label_test_publishable_key' => 'Test Publishable Key',
         'label_live_secret_key' => 'Live Secret Key',
         'label_live_publishable_key' => 'Live Publishable Key',
-        'label_force_ssl' => 'Force SSL',
         'label_priority' => 'Priority',
         'label_status' => 'Status',
     ],
