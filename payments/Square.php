@@ -3,11 +3,14 @@
 use Admin\Classes\BasePaymentGateway;
 use ApplicationException;
 use Exception;
+use Igniter\Flame\Traits\EventEmitter;
 use Illuminate\Support\Facades\Log;
 use Omnipay\Omnipay;
 
 class Square extends BasePaymentGateway
 {
+    use EventEmitter;
+
     public function getHiddenFields()
     {
         return [
@@ -100,13 +103,18 @@ class Square extends BasePaymentGateway
 
     protected function getPaymentFormFields($order, $data = [])
     {
-        return [
+        $fields = [
             'idempotencyKey' => uniqid(),
             'amount' => number_format($order->order_total, 2, '.', ''),
             'currency' => currency()->getUserCurrency(),
             'nonce' => array_get($data, 'square_card_nonce'),
+            'token' => array_get($data, 'square_card_token'),
             'note' => 'Payment for Order '.$order->order_id,
             'referenceId' => (string)$order->order_id,
         ];
+
+        $this->fireSystemEvent('payregister.square.extendFields', [&$fields, $order, $data]);
+
+        return $fields;
     }
 }
