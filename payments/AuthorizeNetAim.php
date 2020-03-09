@@ -57,7 +57,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         $endpoint = $this->getEndPoint();
         $controller->addJs($endpoint.'/v1/Accept.js', 'authorize-accept-js');
         $controller->addJs($endpoint.'/v3/AcceptUI.js', 'authorize-accept-ui-js');
-        $controller->addJs('~/extensions/igniter/payregister/assets/authorizenetaim.js', 'authorizenetaim-js');
+        $controller->addJs('$/igniter/payregister/assets/authorizenetaim.js', 'authorizenetaim-js');
     }
 
     /**
