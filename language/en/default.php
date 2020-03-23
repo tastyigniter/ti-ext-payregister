@@ -1,14 +1,20 @@
 <?php
 
 return [
+    'text_this_payment' => 'this payment method',
 
+    'label_order_fee_type' => 'Additional Fee Type',
+    'label_order_fee' => 'Additional Fee',
     'label_order_total' => 'Minimum Total',
     'label_order_status' => 'Order Status',
 
     'alert_min_total' => 'Order total is below the minimum order total for %s.',
     'alert_min_order_total' => 'You need to spend %s or more to pay with %s.',
+    'alert_order_fee' => 'There\'s an additional fee of %s when you pay with %s.',
+    'alert_missing_applicable_fee' => 'Missing additional fee for %s payment.',
 
     'help_order_total' => 'The total amount the order must reach before this payment gateway becomes active',
+    'help_order_fee' => 'Extra charge to the order total when this payment gateway becomes active',
     'help_order_status' => 'Default order status when this payment method is used.',
 
     'cod' => [
