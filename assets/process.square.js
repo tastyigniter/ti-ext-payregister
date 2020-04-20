@@ -6,15 +6,14 @@
         this.options = options || {}
         this.$checkoutForm = this.$el.closest('#checkout-form')
         this.square = null
-        this.formLoaded = false
 
-        if (this.options.applicationId === undefined)
-            throw new Error('Missing square application id')
-
-        this.init()
+        $('[name=payment][value=square]', this.$checkoutForm).on('change', $.proxy(this.init, this))
     }
 
     ProcessSquare.prototype.init = function () {
+        if (!$('#'+this.options.cardFields.card.elementId).length)
+            return
+
         var spOptions = {
             applicationId: this.options.applicationId,
             locationId: this.options.locationId,
@@ -25,19 +24,14 @@
             }
         }
 
+        if (this.options.applicationId === undefined)
+            throw new Error('Missing square application id')
+
         this.square = new SqPaymentForm($.extend(spOptions, this.options.cardFields))
-
-        $('[name=payment][value=square]', this.$checkoutForm).on('change', $.proxy(this.buildForm, this))
-    }
-
-    ProcessSquare.prototype.buildForm = function () {
-        if (this.formLoaded || !SqPaymentForm.isSupportedBrowser())
-            return
 
         this.square.build()
 
         this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
-        this.formLoaded = true
     }
 
     ProcessSquare.prototype.submitFormHandler = function (event) {
@@ -91,23 +85,19 @@
         orderTotal: undefined,
         currencyCode: undefined,
         errorSelector: '#square-card-errors',
+        // Customize the CSS for SqPaymentForm iframe elements
         cardFields: {
-            cardNumber: {
-                elementId: 'sq-card-number',
-                placeholder: '• • • •  • • • •  • • • •  • • • •'
+            card: {
+                elementId: 'sq-card',
+                inputStyle: {
+                    fontSize: '16px',
+                    autoFillColor: '#000',    //Sets color of card nbr & exp. date
+                    color: '#000',            //Sets color of CVV & Zip
+                    placeholderColor: '#A5A5A5', //Sets placeholder text color
+                    backgroundColor: '#FFF',  //Card entry background color
+                    cardIconColor: '#A5A5A5', //Card Icon color
+                },
             },
-            cvv: {
-                elementId: 'sq-cvv',
-                placeholder: 'CVV'
-            },
-            expirationDate: {
-                elementId: 'sq-expiration-date',
-                placeholder: 'MM/YY'
-            },
-            postalCode: {
-                elementId: 'sq-postal-code',
-                placeholder: 'Postal'
-            }
         }
     }
 

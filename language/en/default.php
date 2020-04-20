@@ -2,11 +2,14 @@
 
 return [
     'text_this_payment' => 'this payment method',
+    'text_save_card_profile' => 'Save card details for later.',
 
     'label_order_fee_type' => 'Additional Fee Type',
     'label_order_fee' => 'Additional Fee',
     'label_order_total' => 'Minimum Total',
     'label_order_status' => 'Order Status',
+
+    'button_delete_card' => 'Delete or use a different card.',
 
     'alert_min_total' => 'Order total is below the minimum order total for %s.',
     'alert_min_order_total' => 'You need to spend %s or more to pay with %s.',
@@ -85,6 +88,7 @@ return [
         'text_tab_general' => 'General',
         'text_payment_title' => 'Stripe Payment',
         'text_payment_desc' => 'Accept credit card payments using Stripe',
+        'text_credit_or_debit' => 'Credit or debit card',
 
         'text_description' => 'Pay by Credit Card using Stripe',
         'text_live' => 'Live',

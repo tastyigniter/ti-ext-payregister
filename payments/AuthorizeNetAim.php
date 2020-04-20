@@ -3,11 +3,15 @@
 use Admin\Classes\BasePaymentGateway;
 use ApplicationException;
 use Exception;
-use Illuminate\Support\Facades\Log;
+use Igniter\Flame\Traits\EventEmitter;
+use Igniter\PayRegister\Traits\PaymentHelpers;
 use Omnipay\Omnipay;
 
 class AuthorizeNetAim extends BasePaymentGateway
 {
+    use EventEmitter;
+    use PaymentHelpers;
+
     public function getHiddenFields()
     {
         return [
@@ -52,11 +56,17 @@ class AuthorizeNetAim extends BasePaymentGateway
         ];
     }
 
+    public function isApplicable($total, $host)
+    {
+        return $host->order_total <= $total;
+    }
+
+    /**
+     * @param self $host
+     * @param \Main\Classes\MainController $controller
+     */
     public function beforeRenderPaymentForm($host, $controller)
     {
-        $endpoint = $this->getEndPoint();
-        $controller->addJs($endpoint.'/v1/Accept.js', 'authorize-accept-js');
-        $controller->addJs($endpoint.'/v3/AcceptUI.js', 'authorize-accept-ui-js');
         $controller->addJs('$/igniter/payregister/assets/authorizenetaim.js', 'authorizenetaim-js');
     }
 
@@ -69,58 +79,50 @@ class AuthorizeNetAim extends BasePaymentGateway
      */
     public function processPaymentForm($data, $host, $order)
     {
-        $paymentMethod = $order->payment_method;
-        if (!$paymentMethod OR $paymentMethod->code != $host->code)
-            throw new ApplicationException('Payment method not found');
+        $this->validatePaymentMethod($order, $host);
 
-        if (!$this->isApplicable($order->order_total, $host))
-            throw new ApplicationException(sprintf(
-                lang('igniter.payregister::default.alert_min_order_total'),
-                currency_format($host->order_total),
-                $host->name
-            ));
+        $fields = $this->getPaymentFormFields($order, $data);
+        $fields['opaqueDataDescriptor'] = array_get($data, 'authorizenetaim_DataDescriptor');
+        $fields['opaqueDataValue'] = array_get($data, 'authorizenetaim_DataValue');
 
         try {
-            $gateway = $this->createGateway($host);
-            $fields = $this->getPaymentFormFields($order, $data);
+            $gateway = $this->createGateway();
             $response = $gateway->purchase($fields)->send();
 
-            if (!$response->isSuccessful()) {
-                $order->logPaymentAttempt('Payment error -> '.$response->getMessage(), 1, $fields, $response->getData());
-                throw new Exception($response->getMessage());
-            }
-
-            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
-            $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
-            $order->markAsPaymentProcessed();
+            $this->handlePaymentResponse($response, $order, $host, $fields);
         }
         catch (Exception $ex) {
-            Log::error($ex->getMessage());
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
 
-    protected function createGateway($host)
+    //
+    //
+    //
+
+    protected function createGateway()
     {
         $gateway = Omnipay::create('AuthorizeNet_AIM');
 
-        $gateway->setApiLoginId($host->api_login_id);
-        $gateway->setTransactionKey($host->transaction_key);
-        $gateway->setHashSecret($host->hash_secret);
-        $gateway->setTestMode($host->transaction_mode != 'live');
-        $gateway->setDeveloperMode($host->transaction_mode != 'live');
+        $gateway->setApiLoginId($this->getApiLoginID());
+        $gateway->setTransactionKey($this->getTransactionKey());
+        $gateway->setTestMode($this->isTestMode());
+        $gateway->setDeveloperMode($this->isTestMode());
 
         return $gateway;
     }
 
     protected function getPaymentFormFields($order, $data = [])
     {
-        return [
+        $fields = [
             'amount' => number_format($order->order_total, 2, '.', ''),
-            'opaqueDataDescriptor' => array_get($data, 'authorizenetaim_DataDescriptor'),
-            'opaqueDataValue' => array_get($data, 'authorizenetaim_DataValue'),
             'transactionId' => $order->order_id,
             'currency' => currency()->getUserCurrency(),
         ];
+
+        $this->fireSystemEvent('payregister.authorizenetaim.extendFields', [&$fields, $order, $data]);
+
+        return $fields;
     }
 }

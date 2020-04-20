@@ -8,15 +8,15 @@
         this.stripe = null
         this.card = null
 
-        if (this.options.publishableKey === undefined)
-            throw new Error('Missing stripe publishable key')
-
         $('[name=payment][value=stripe]', this.$checkoutForm).on('change', $.proxy(this.init, this))
     }
 
     ProcessStripe.prototype.init = function () {
-        if (this.stripe !== null)
+        if (this.stripe !== null || !$(this.options.cardSelector).length)
             return
+
+        if (this.options.publishableKey === undefined)
+            throw new Error('Missing stripe publishable key')
 
         // Create a Stripe client.
         this.stripe = Stripe(this.options.publishableKey)

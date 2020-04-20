@@ -10,15 +10,36 @@
         this.$el = $(element)
         this.options = options || {}
         this.$checkoutForm = this.$el.closest('#checkout-form')
-        this.$acceptButton = this.$checkoutForm.find(this.options.btnSelector)
 
-        if (this.$acceptButton.attr('data-clientKey').length < 1 || this.$acceptButton.attr('data-apiLoginID').length < 1)
-            throw new Error('Missing Authorize.Net client key or API Login ID')
-
-        this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.init, this))
+        $('[name=payment][value=authorizenetaim]', this.$checkoutForm).on('change', $.proxy(this.init, this))
     }
 
-    AuthorizeNetAim.prototype.init = function (event) {
+    AuthorizeNetAim.prototype.init = function () {
+        this.$acceptButton = this.$checkoutForm.find(this.options.btnSelector)
+
+        if (this.$acceptButton.length < 1) return
+
+        if (this.$acceptButton.attr('data-clientKey').length < 1
+            || this.$acceptButton.attr('data-apiLoginID').length < 1
+        ) throw new Error('Missing Authorize.Net client key or API Login ID')
+
+        var self = this
+        this.loadScripts().done(function () {
+            self.$checkoutForm.on('submitCheckoutForm', $.proxy(self.showForm, self))
+            $(window).on('handleAuthorizeNetAimResponse', $.proxy(self.responseHandler, self))
+
+            self.acceptJsLoaded = true;
+        })
+    }
+
+    AuthorizeNetAim.prototype.loadScripts = function () {
+        return $.when(
+            $.getScript(this.options.acceptJsEndpoint + '/v1/Accept.js'),
+            $.getScript(this.options.acceptJsEndpoint + '/v3/AcceptUI.js')
+        );
+    }
+
+    AuthorizeNetAim.prototype.showForm = function (event) {
         var $paymentInput = this.$checkoutForm.find('input[name="payment"]:checked')
 
         if ($paymentInput.val() !== 'authorizenetaim') return
@@ -26,12 +47,6 @@
         // Prevent the form from submitting with the default action
         event.preventDefault()
 
-        this.showForm()
-
-        $(window).on('handleAuthorizeNetAimResponse', $.proxy(this.responseHandler, this))
-    }
-
-    AuthorizeNetAim.prototype.showForm = function () {
         $("#AcceptUIContainer").addClass('show');
         $("#AcceptUIBackground").addClass('show');
     }
@@ -67,6 +82,7 @@
     }
 
     AuthorizeNetAim.DEFAULTS = {
+        acceptJsEndpoint: undefined,
         btnSelector: '.AcceptUI',
         errorSelector: '#authorizenetaim-errors',
     }

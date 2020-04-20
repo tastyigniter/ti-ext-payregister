@@ -6,30 +6,44 @@
     data-order-total="<?= Cart::total() ?>"
     data-currency-code="<?= currency()->getUserCurrency() ?>"
     data-error-selector="#square-card-errors"
-    data-trigger="[type=radio][name=payment]"
-    data-trigger-action="show"
-    data-trigger-condition="value[square]"
-    data-trigger-closest-parent="form"
 >
-    <div class="square-ccbox mt-3">
-        <?php foreach ($paymentMethod->getHiddenFields() as $name => $value) { ?>
-            <input type="hidden" name="<?= $name; ?>" value="<?= $value; ?>"/>
-        <?php } ?>
+    <?php foreach ($paymentMethod->getHiddenFields() as $name => $value) { ?>
+        <input type="hidden" name="<?= $name; ?>" value="<?= $value; ?>"/>
+    <?php } ?>
 
-        <div class="form-group">
-            <div id="sq-card-number"></div>
-            <div class="row no-gutters mt-1">
-                <div class="col-sm-4 pr-1">
-                    <div id="sq-expiration-date"></div>
-                </div>
-                <div class="col-sm-4 pr-1">
-                    <div id="sq-cvv"></div>
-                </div>
-                <div class="col-sm-4">
-                    <div id="sq-postal-code"></div>
-                </div>
+    <div class="form-group">
+        <?php if ($paymentProfile = $paymentMethod->findPaymentProfile($order->customer)) { ?>
+            <input type="hidden" name="pay_from_profile" value="1">
+            <div>
+                <i class="fab fa-fw fa-cc-<?= $paymentProfile->card_brand ?>"></i>&nbsp;&nbsp;
+                <b>&bull;&bull;&bull;&bull;&nbsp;&bull;&bull;&bull;&bull;&nbsp;&bull;&bull;&bull;&bull;&nbsp;<?= $paymentProfile->card_last4 ?></b>
+                &nbsp;&nbsp;-&nbsp;&nbsp;
+                <a
+                    class="text-danger"
+                    href="javascript:;"
+                    data-checkout-control="delete-payment-profile"
+                    data-payment-code="<?= $paymentMethod->code ?>"
+                ><?= lang('igniter.payregister::default.button_delete_card') ?></a>
             </div>
-            <div id="square-card-errors" class="text-danger"></div>
-        </div>
+        <?php } else { ?>
+            <div class="square-ccbox">
+                <div id="sq-card"></div>
+                <?php if ($paymentMethod->supportsPaymentProfiles() AND $order->customer) { ?>
+                    <div class="custom-control custom-checkbox mt-2">
+                        <input
+                            id="save-customer-profile"
+                            type="checkbox"
+                            class="custom-control-input"
+                            name="create_payment_profile"
+                            value="1"
+                        >
+                        <label
+                            class="custom-control-label"
+                            for="save-customer-profile"
+                        ><?= lang('igniter.payregister::default.text_save_card_profile'); ?></label>
+                    </div>
+                <?php } ?>
+            </div>
+        <?php } ?>
     </div>
 </div>
