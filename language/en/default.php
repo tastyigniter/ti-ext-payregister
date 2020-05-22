@@ -21,7 +21,6 @@ return [
     'help_order_status' => 'Default order status when this payment method is used.',
 
     'cod' => [
-        '_text_title' => 'Cash On Delivery',
         'text_tab_general' => 'General',
         'text_payment_title' => 'Cash On Delivery',
         'text_payment_desc' => 'Accept cash on delivery during checkout',
@@ -32,7 +31,6 @@ return [
     ],
 
     'paypal' => [
-        '_text_title' => 'PayPal Express',
         'text_tab_general' => 'General',
         'text_payment_title' => 'PayPal Express',
         'text_payment_desc' => 'Allows your customers to make payment using PayPal',
@@ -55,7 +53,6 @@ return [
     ],
 
     'authorize_net_aim' => [
-        '_text_title' => 'Authorize.Net',
         'text_payment_title' => 'Authorize.Net (AIM)',
         'text_payment_desc' => 'Accept credit card payments though Authorize.Net',
         'text_go_live' => 'Go Live',
@@ -84,7 +81,6 @@ return [
     ],
 
     'stripe' => [
-        '_text_title' => 'Stripe',
         'text_tab_general' => 'General',
         'text_payment_title' => 'Stripe Payment',
         'text_payment_desc' => 'Accept credit card payments using Stripe',
@@ -108,7 +104,6 @@ return [
     ],
 
     'mollie' => [
-        '_text_title' => 'Mollie',
         'text_payment_title' => 'Mollie Payment',
         'text_payment_desc' => 'Accept credit card payments using Mollie API',
 
@@ -123,7 +118,6 @@ return [
     ],
 
     'square' => [
-        '_text_title' => 'Square',
         'text_payment_title' => 'Square Payment',
         'text_payment_desc' => 'Accept credit card payments using Square',
 
