@@ -7,8 +7,9 @@
         this.$checkoutForm = this.$el.closest('#checkout-form')
         this.stripe = null
         this.card = null
-
-        $('[name=payment][value=stripe]', this.$checkoutForm).on('change', $.proxy(this.init, this))
+        this.code = this.$el.data('triggerCondition').replace('value[', '').replace(']', '')
+        
+        $('[name=payment][value=' + this.code + ']', this.$checkoutForm).on('change', $.proxy(this.init, this))
     }
 
     ProcessStripe.prototype.init = function () {
@@ -47,7 +48,7 @@
             $form = this.$checkoutForm,
             $paymentInput = $form.find('input[name="payment"]:checked')
 
-        if ($paymentInput.val() !== 'stripe') return
+        if ($paymentInput.val() !== this.code) return
 
         // Prevent the form from submitting with the default action
         event.preventDefault()
