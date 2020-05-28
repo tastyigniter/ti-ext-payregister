@@ -16,7 +16,7 @@ return [
         ],
         'api_mode' => [
             'label' => 'lang:igniter.payregister::default.paypal.label_api_mode',
-            'type' => 'radio',
+            'type' => 'radiotoggle',
             'default' => 'sandbox',
             'options' => [
                 'sandbox' => 'lang:igniter.payregister::default.paypal.text_sandbox',
@@ -25,7 +25,7 @@ return [
         ],
         'api_action' => [
             'label' => 'lang:igniter.payregister::default.paypal.label_api_action',
-            'type' => 'radio',
+            'type' => 'radiotoggle',
             'default' => 'sale',
             'options' => [
                 'sale' => 'lang:igniter.payregister::default.paypal.text_sale',
@@ -34,7 +34,7 @@ return [
         ],
         'order_fee_type' => [
             'label' => 'lang:igniter.payregister::default.label_order_fee_type',
-            'type' => 'radio',
+            'type' => 'radiotoggle',
             'span' => 'left',
             'default' => 1,
             'options' => [

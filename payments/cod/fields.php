@@ -4,7 +4,7 @@ return [
     'fields' => [
         'order_fee_type' => [
             'label' => 'lang:igniter.payregister::default.label_order_fee_type',
-            'type' => 'radio',
+            'type' => 'radiotoggle',
             'span' => 'left',
             'default' => 1,
             'options' => [

@@ -8,7 +8,7 @@ return [
         ],
         'transaction_mode' => [
             'label' => 'lang:igniter.payregister::default.square.label_transaction_mode',
-            'type' => 'radio',
+            'type' => 'radiotoggle',
             'default' => 'test',
             'options' => [
                 'test' => 'lang:igniter.payregister::default.square.text_test',
@@ -71,7 +71,7 @@ return [
         ],
         'order_fee_type' => [
             'label' => 'lang:igniter.payregister::default.label_order_fee_type',
-            'type' => 'radio',
+            'type' => 'radiotoggle',
             'span' => 'left',
             'default' => 1,
             'options' => [

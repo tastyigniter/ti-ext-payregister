@@ -16,7 +16,7 @@ return [
         ],
         'transaction_mode' => [
             'label' => 'lang:igniter.payregister::default.authorize_net_aim.label_transaction_mode',
-            'type' => 'radio',
+            'type' => 'radiotoggle',
             'default' => 'test',
             'options' => [
                 'test' => 'lang:igniter.payregister::default.authorize_net_aim.text_test',
@@ -26,7 +26,7 @@ return [
         ],
         'transaction_type' => [
             'label' => 'lang:igniter.payregister::default.authorize_net_aim.label_transaction_type',
-            'type' => 'radio',
+            'type' => 'radiotoggle',
             'default' => 'auth_capture',
             'options' => [
                 'auth_only' => 'lang:igniter.payregister::default.authorize_net_aim.text_auth_only',
@@ -42,7 +42,7 @@ return [
         ],
         'order_fee_type' => [
             'label' => 'lang:igniter.payregister::default.label_order_fee_type',
-            'type' => 'radio',
+            'type' => 'radiotoggle',
             'span' => 'left',
             'default' => 1,
             'options' => [
