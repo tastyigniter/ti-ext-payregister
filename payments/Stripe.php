@@ -320,6 +320,10 @@ class Stripe extends BasePaymentGateway
             'transactionId' => $order->order_id,
             'returnUrl' => $returnUrl,
             'confirm' => TRUE,
+            'metadata' => [
+				'order_id' => $order->order_id,
+				'customer_email' => $order->email
+			]
         ];
 
         $this->fireSystemEvent('payregister.stripe.extendFields', [&$fields, $order, $data]);
