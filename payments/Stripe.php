@@ -296,6 +296,43 @@ class Stripe extends BasePaymentGateway
     //
     //
     //
+    
+    public function processRefund($amount, $order)
+    {
+	    
+	    foreach ($order->payment_logs as $log){
+		    
+		    if (isset($log->response['id'])) {
+			    
+			    foreach ($log->response['charges']['data'] as $charge){
+				    
+				    $fields = [
+		            	'transactionReference' => $charge['id'],
+		            	'amount' => $amount
+	            	];
+			    
+	            	$gateway = $this->createGateway();
+	            	$refund = $gateway->refund($fields);
+	            	
+	            	$response = $refund->send()->getData();
+	            	
+	            	if (isset($response['error'])) {
+						$order->logPaymentAttempt('Refund failed', 1, $fields, $response);
+		            	return $response['error']['message'];
+	            	}
+	            	
+	            	$order->logPaymentAttempt('Refund successful', 1, $fields, $response);
+	            	return true;	            	
+            	
+            	}
+			    
+		    }
+		    
+	    }
+	    
+	    return false;
+	    
+    }
 
     /**
      * @return \Omnipay\Common\GatewayInterface|\Omnipay\Stripe\PaymentIntentsGateway
