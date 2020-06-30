@@ -26,6 +26,7 @@ class Stripe extends BasePaymentGateway
     {
         return [
             'stripe_payment_method' => '',
+            'idempotency_key' => uniqid()
         ];
     }
 
@@ -84,7 +85,10 @@ class Stripe extends BasePaymentGateway
 
         try {
             $gateway = $this->createGateway();
-            $response = $gateway->purchase($fields)->send();
+            $request = $gateway->purchase($fields);
+            $idempotencyKey = array_get($data, 'idempotency_key');
+            $request->setIdempotencyKeyHeader($idempotencyKey);
+            $response = $request->send();
 
             if ($response->isRedirect()) {
                 Session::put('ti_payregister_stripe_intent', $response->getPaymentIntentReference());
@@ -126,7 +130,8 @@ class Stripe extends BasePaymentGateway
             $fields['paymentIntentReference'] = Session::get('ti_payregister_stripe_intent');
 
             $gateway = $this->createGateway();
-            $response = $gateway->completePurchase($fields)->send();
+            $request = $gateway->completePurchase($fields);
+            $response = $request->send();
 
             if (!$response->isSuccessful())
                 throw new ApplicationException($response->getMessage());
@@ -193,7 +198,10 @@ class Stripe extends BasePaymentGateway
 
         try {
             $gateway = $this->createGateway();
-            $response = $gateway->purchase($fields)->send();
+            $request = $gateway->purchase($fields);
+            $idempotencyKey = array_get($data, 'idempotency_key');
+            $request->setIdempotencyKeyHeader($idempotencyKey);
+            $response = $request->send();
 
             if ($response->isRedirect()) {
                 Session::put('ti_payregister_stripe_intent', $response->getPaymentIntentReference());
