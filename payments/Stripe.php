@@ -26,6 +26,7 @@ class Stripe extends BasePaymentGateway
     {
         return [
             'stripe_payment_method' => '',
+            'idempotency_key' => uniqid(),
         ];
     }
 
@@ -76,6 +77,7 @@ class Stripe extends BasePaymentGateway
 
         $fields = $this->getPaymentFormFields($order, $data);
         $fields['paymentMethod'] = array_get($data, 'stripe_payment_method');
+        $fields['idempotencyKey'] = array_get($data, 'idempotency_key');
 
         if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
             $profile = $this->updatePaymentProfile($order->customer, $data);
@@ -126,7 +128,8 @@ class Stripe extends BasePaymentGateway
             $fields['paymentIntentReference'] = Session::get('ti_payregister_stripe_intent');
 
             $gateway = $this->createGateway();
-            $response = $gateway->completePurchase($fields)->send();
+            $request = $gateway->completePurchase($fields);
+            $response = $request->send();
 
             if (!$response->isSuccessful())
                 throw new ApplicationException($response->getMessage());
@@ -190,6 +193,7 @@ class Stripe extends BasePaymentGateway
         $fields = $this->getPaymentFormFields($order, $data);
         $fields['cardReference'] = array_get($profile->profile_data, 'card_id');
         $fields['customerReference'] = array_get($profile->profile_data, 'customer_id');
+        $fields['idempotencyKey'] = array_get($data, 'idempotency_key');
 
         try {
             $gateway = $this->createGateway();
