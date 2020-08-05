@@ -323,6 +323,7 @@ class Stripe extends BasePaymentGateway
             'currency' => currency()->getUserCurrency(),
             'transactionId' => $order->order_id,
             'returnUrl' => $returnUrl,
+            'receipt_email' => $order->email,
             'confirm' => TRUE,
             'metadata' => [
                 'order_id' => $order->order_id,
