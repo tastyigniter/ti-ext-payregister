@@ -23,12 +23,37 @@
 
         // Create an instance of the card Element.
         this.card = this.stripe.elements().create('card')
-
+        
         // Add an instance of the card Element into the `card-element` <div>.
         this.card.mount(this.options.cardSelector);
 
         // Handle real-time validation errors from the card Element.
         this.card.addEventListener('change', $.proxy(this.validationErrorHandler, this))
+        
+        // Create a payment request button
+        var paymentRequest = this.stripe.paymentRequest({
+	        country: this.options.country,
+			currency: this.options.currency,
+			total: {
+		    	label: 'Total',
+				amount: this.options.total,
+		  	},
+		  	requestPayerName: false,
+		  	requestPayerEmail: false,
+		});
+		
+		var paymentRequestButton = this.stripe.elements().create('paymentRequestButton', {
+			paymentRequest: paymentRequest,
+		});
+
+		// Check the availability of the Payment Request API first.
+		paymentRequest.canMakePayment().then(function(result) {
+			if (result) {
+				paymentRequestButton.mount(this.options.paymentRequestSelector);
+			} else {
+				document.getElementById(this.options.paymentRequestSelector).style.display = 'none';
+			}
+		}.bind(this));
 
         this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
     }
