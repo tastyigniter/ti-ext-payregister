@@ -25,8 +25,9 @@ class Stripe extends BasePaymentGateway
     public function getHiddenFields()
     {
         return [
-            'stripe_payment_method' => '',
-            'stripe_idempotency_key' => uniqid(),
+            'stripe_payment_method' => '',  // no longer needed?
+            'stripe_idempotency_key' => uniqid(),  // no longer needed?
+            'stripe_client_secret' => $this->getPaymentIntent()->client_secret,
         ];
     }
 
@@ -43,6 +44,13 @@ class Stripe extends BasePaymentGateway
     public function getSecretKey()
     {
         return $this->isTestMode() ? $this->model->test_secret_key : $this->model->live_secret_key;
+    }
+
+    public function getPaymentIntent()
+    {
+        // ... Create or retrieve the PaymentIntent
+
+        // ... Could use session to store the paymentIntent
     }
 
     public function isApplicable($total, $host)
