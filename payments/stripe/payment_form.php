@@ -6,6 +6,7 @@
     data-country="<?= strtoupper($location->getModel()->country->iso_code_2) ?>"
     data-currency="<?= strtolower(currency()->getUserCurrency()) ?>"
     data-error-selector="#stripe-card-errors"
+	data-payment-request-intent="<?= $paymentMethod->createIntent($order)->secret ?>"
     data-payment-request-selector="#stripe-payment-request-button"
     data-total="<?= number_format($order->order_total, 2, '', '') ?>"
 >

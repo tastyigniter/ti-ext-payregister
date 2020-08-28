@@ -25,9 +25,8 @@ class Stripe extends BasePaymentGateway
     public function getHiddenFields()
     {
         return [
-            'stripe_payment_method' => '',  // no longer needed?
-            'stripe_idempotency_key' => uniqid(),  // no longer needed?
-            'stripe_client_secret' => $this->getPaymentIntent()->client_secret,
+            'stripe_payment_method' => '',
+            'stripe_idempotency_key' => uniqid(),
         ];
     }
 
@@ -44,13 +43,6 @@ class Stripe extends BasePaymentGateway
     public function getSecretKey()
     {
         return $this->isTestMode() ? $this->model->test_secret_key : $this->model->live_secret_key;
-    }
-
-    public function getPaymentIntent()
-    {
-        // ... Create or retrieve the PaymentIntent
-
-        // ... Could use session to store the paymentIntent
     }
 
     public function isApplicable($total, $host)
@@ -82,6 +74,27 @@ class Stripe extends BasePaymentGateway
     public function processPaymentForm($data, $host, $order)
     {
         $this->validatePaymentMethod($order, $host);
+        
+        // if payment button
+        if (array_get($data, 'stripe_payment_method') == 'paymentbutton') {
+ 
+	        $fields = [
+		        'paymentIntentReference' => Session::get('ti_payregister_stripe_intent')->id
+	        ];
+
+	        $gateway = $this->createGateway();
+	        $response = $gateway->fetchPaymentIntent($fields)->send();
+
+			if ($response->isSuccessful()) {
+            	$this->handlePaymentResponse($response, $order, $host, $fields);
+			} else {
+            	$order->logPaymentAttempt('Payment intent not successful', 0, $fields, []);
+				throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+			}
+
+			return;
+
+        }
 
         $fields = $this->getPaymentFormFields($order, $data);
         $fields['paymentMethod'] = array_get($data, 'stripe_payment_method');
@@ -317,8 +330,25 @@ class Stripe extends BasePaymentGateway
         $gateway = Omnipay::create('Stripe\PaymentIntents');
 
         $gateway->setApiKey($this->getSecretKey());
-
+        
         return $gateway;
+    }
+    
+    public function createIntent($order)
+    {
+        $intent = $this->createGateway()->create([
+            'amount' => $order->order_total,
+            'currency' => currency()->getUserCurrency()
+        ])->send();
+        
+        $data = (object)[
+            'id' => $intent->getPaymentIntentReference(),
+            'secret' => $intent->getPaymentIntentClientSecret(),
+        ];
+
+        Session::put('ti_payregister_stripe_intent', $data);
+
+        return $data;
     }
 
     protected function getPaymentFormFields($order, $data = [])
