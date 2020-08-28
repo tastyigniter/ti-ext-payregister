@@ -29,8 +29,14 @@
 
         // Handle real-time validation errors from the card Element.
         this.card.addEventListener('change', $.proxy(this.validationErrorHandler, this))
-        
-        // Create a payment request button
+ 
+        // set up one click payments
+        this.setupPaymentButton();
+
+        this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
+    }
+    
+    ProcessStripe.prototype.setupPaymentButton = function () {
         var paymentRequest = this.stripe.paymentRequest({
 	        country: this.options.country,
 			currency: this.options.currency,
@@ -51,11 +57,40 @@
 			if (result) {
 				paymentRequestButton.mount(this.options.paymentRequestSelector);
 			} else {
-				document.getElementById(this.options.paymentRequestSelector).style.display = 'none';
+				document.querySelector(this.options.paymentRequestSelector).style.display = 'none';
 			}
 		}.bind(this));
-
-        this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
+		
+		var self = this;
+		paymentRequest.on('paymentmethod', function(ev) {
+			
+			// Confirm the PaymentIntent without handling potential next actions (yet).
+			self.stripe.confirmCardPayment(
+				self.options.paymentRequestIntent,
+				{payment_method: ev.paymentMethod.id},
+				{handleActions: false}
+			).then(function(confirmResult) {
+				if (confirmResult.error) {
+					ev.complete('fail');
+				} else {
+					ev.complete('success');
+					// Let Stripe.js handle the rest of the payment flow.
+					self.stripe.confirmCardPayment(self.options.paymentRequestIntent)
+					.then(function(result) {
+						console.log(result);
+						if (result.error) {
+							alert(confirmResult.error);
+							location.reload();
+						} else {
+							console.log(self.$checkoutForm);
+							// set a fixed value that we check server side
+							self.$checkoutForm.find('input[name="stripe_payment_method"]').val('paymentbutton');
+                			self.$checkoutForm.unbind('submitCheckoutForm').submit()
+						}
+					});
+				}
+			});
+		});
     }
 
     ProcessStripe.prototype.validationErrorHandler = function (event) {
