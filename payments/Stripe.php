@@ -130,8 +130,8 @@ class Stripe extends BasePaymentGateway
             $order->logPaymentAttempt('Payment intent not successful', 0, $fields, []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
-    }    
- 
+    }
+
     public function processReturnUrl($params)
     {
         $hash = $params[0] ?? null;
