@@ -84,7 +84,7 @@
 						} else {
 							console.log(self.$checkoutForm);
 							// set a fixed value that we check server side
-							self.$checkoutForm.find('input[name="stripe_payment_method"]').val('paymentbutton');
+							self.$checkoutForm.find('input[name="payment_button"]').val(1);
                 			self.$checkoutForm.unbind('submitCheckoutForm').submit()
 						}
 					});

@@ -35,7 +35,9 @@
             <div id="stripe-card-element">
                 <!-- A Stripe Element will be inserted here. -->
             </div>
-
+            <div id="stripe-payment-request-button">
+                <!-- A Stripe Payment Request Button will be inserted here. -->
+            </div>
             <!-- Used to display form errors. -->
             <div id="stripe-card-errors" class="text-danger" role="alert"></div>
 

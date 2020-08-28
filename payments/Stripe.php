@@ -25,6 +25,7 @@ class Stripe extends BasePaymentGateway
     public function getHiddenFields()
     {
         return [
+            'payment_button' => 0,
             'stripe_payment_method' => '',
             'stripe_idempotency_key' => uniqid(),
         ];
@@ -74,27 +75,6 @@ class Stripe extends BasePaymentGateway
     public function processPaymentForm($data, $host, $order)
     {
         $this->validatePaymentMethod($order, $host);
-        
-        // if payment button
-        if (array_get($data, 'stripe_payment_method') == 'paymentbutton') {
- 
-	        $fields = [
-		        'paymentIntentReference' => Session::get('ti_payregister_stripe_intent')->id
-	        ];
-
-	        $gateway = $this->createGateway();
-	        $response = $gateway->fetchPaymentIntent($fields)->send();
-
-			if ($response->isSuccessful()) {
-            	$this->handlePaymentResponse($response, $order, $host, $fields);
-			} else {
-            	$order->logPaymentAttempt('Payment intent not successful', 0, $fields, []);
-				throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
-			}
-
-			return;
-
-        }
 
         $fields = $this->getPaymentFormFields($order, $data);
         $fields['paymentMethod'] = array_get($data, 'stripe_payment_method');
@@ -123,6 +103,33 @@ class Stripe extends BasePaymentGateway
         }
     }
 
+    /**
+     * Processes payment from a payment button
+     *
+     * @param array $data
+     * @param \Admin\Models\Payments_model $host
+     * @param \Admin\Models\Orders_model $order
+     *
+     * @return bool|\Illuminate\Http\RedirectResponse
+     * @throws \ApplicationException
+     */
+    public function processPaymentButton($data, $host, $order)
+    {
+        $fields = [
+	        'paymentIntentReference' => Session::get('ti_payregister_stripe_intent')->id
+        ];
+
+        $gateway = $this->createGateway();
+        $response = $gateway->fetchPaymentIntent($fields)->send();
+
+        if ($response->isSuccessful()) {
+        	$this->handlePaymentResponse($response, $order, $host, $fields);
+        } else {
+        	$order->logPaymentAttempt('Payment intent not successful', 0, $fields, []);
+			throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+        }
+    }    
+ 
     public function processReturnUrl($params)
     {
         $hash = $params[0] ?? null;
