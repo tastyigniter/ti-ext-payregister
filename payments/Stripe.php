@@ -118,7 +118,7 @@ class Stripe extends BasePaymentGateway
     public function processPaymentButton($data, $host, $order)
     {
         $fields = [
-            'paymentIntentReference' => Session::get('ti_payregister_stripe_intent')->id
+            'paymentIntentReference' => Session::get('ti_payregister_stripe_intent')->id,
         ];
 
         $gateway = $this->createGateway();
@@ -186,7 +186,7 @@ class Stripe extends BasePaymentGateway
     //
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function supportsPaymentProfiles()
     {
@@ -194,7 +194,7 @@ class Stripe extends BasePaymentGateway
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function updatePaymentProfile($customer, $data)
     {
@@ -202,7 +202,7 @@ class Stripe extends BasePaymentGateway
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function deletePaymentProfile($customer, $profile)
     {
@@ -210,7 +210,7 @@ class Stripe extends BasePaymentGateway
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function payFromPaymentProfile($order, $data = [])
     {
@@ -339,17 +339,17 @@ class Stripe extends BasePaymentGateway
         $gateway = Omnipay::create('Stripe\PaymentIntents');
 
         $gateway->setApiKey($this->getSecretKey());
-        
+
         return $gateway;
     }
-    
+
     public function createIntent($order)
     {
         $intent = $this->createGateway()->create([
             'amount' => $order->order_total,
             'currency' => currency()->getUserCurrency(),
         ])->send();
-        
+
         $data = (object)[
             'id' => $intent->getPaymentIntentReference(),
             'secret' => $intent->getPaymentIntentClientSecret(),
