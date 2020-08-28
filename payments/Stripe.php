@@ -1,4 +1,6 @@
-<?php namespace Igniter\PayRegister\Payments;
+<?php
+
+namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 use Admin\Models\Orders_model;
@@ -116,17 +118,17 @@ class Stripe extends BasePaymentGateway
     public function processPaymentButton($data, $host, $order)
     {
         $fields = [
-	        'paymentIntentReference' => Session::get('ti_payregister_stripe_intent')->id
+            'paymentIntentReference' => Session::get('ti_payregister_stripe_intent')->id
         ];
 
         $gateway = $this->createGateway();
         $response = $gateway->fetchPaymentIntent($fields)->send();
 
         if ($response->isSuccessful()) {
-        	$this->handlePaymentResponse($response, $order, $host, $fields);
+            $this->handlePaymentResponse($response, $order, $host, $fields);
         } else {
-        	$order->logPaymentAttempt('Payment intent not successful', 0, $fields, []);
-			throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+            $order->logPaymentAttempt('Payment intent not successful', 0, $fields, []);
+            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }    
  
@@ -345,7 +347,7 @@ class Stripe extends BasePaymentGateway
     {
         $intent = $this->createGateway()->create([
             'amount' => $order->order_total,
-            'currency' => currency()->getUserCurrency()
+            'currency' => currency()->getUserCurrency(),
         ])->send();
         
         $data = (object)[
