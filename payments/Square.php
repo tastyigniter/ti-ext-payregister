@@ -1,4 +1,6 @@
-<?php namespace Igniter\PayRegister\Payments;
+<?php
+
+namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 use ApplicationException;
@@ -99,7 +101,7 @@ class Square extends BasePaymentGateway
     //
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function supportsPaymentProfiles()
     {
@@ -107,7 +109,7 @@ class Square extends BasePaymentGateway
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function updatePaymentProfile($customer, $data)
     {
@@ -115,7 +117,7 @@ class Square extends BasePaymentGateway
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function deletePaymentProfile($customer, $profile)
     {
@@ -123,7 +125,7 @@ class Square extends BasePaymentGateway
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function payFromPaymentProfile($order, $data = [])
     {
