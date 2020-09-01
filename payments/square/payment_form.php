@@ -5,6 +5,7 @@
     data-location-id="<?= $paymentMethod->getLocationId() ?>"
     data-order-total="<?= Cart::total() ?>"
     data-currency-code="<?= currency()->getUserCurrency() ?>"
+    data-country-code="<?= strtoupper($location->getModel()->country->iso_code_2) ?>"
     data-error-selector="#square-card-errors"
 >
     <?php foreach ($paymentMethod->getHiddenFields() as $name => $value) { ?>
@@ -45,5 +46,7 @@
                 <?php } ?>
             </div>
         <?php } ?>
+        <div id="sq-apple-pay"></div>
+        <div id="sq-google-pay"></div>
     </div>
 </div>

@@ -20,14 +20,22 @@
             autoBuild: false,
             inputClass: 'form-control',
             callbacks: {
-                cardNonceResponseReceived: $.proxy(this.onResponseReceived, this)
-            }
+                cardNonceResponseReceived: $.proxy(this.onResponseReceived, this),
+                methodsSupported: $.proxy(this.onMethodsSupported, this),
+                createPaymentRequest: $.proxy(this.onCreatePaymentRequest, this),
+            },
+            applePay: {
+                elementId: 'sq-apple-pay',
+            },
+            googlePay: {
+                elementId: 'sq-google-pay',
+            },
         }
 
         if (this.options.applicationId === undefined)
             throw new Error('Missing square application id')
 
-        this.square = new SqPaymentForm($.extend(spOptions, this.options.cardFields))
+        this.square = new SqPaymentForm(spOptions);//$.extend(spOptions, this.options.cardFields))
 
         this.square.build()
 
@@ -79,6 +87,32 @@
         });
     }
 
+    ProcessSquare.prototype.onMethodsSupported = function (methods, unsupportedReason) { console.log(methods, unsupportedReason);
+		var applePayBtn = document.getElementById('sq-apple-pay');
+		if (methods.applePay === true) {
+			applePayBtn.classList.remove('d-none')
+		}
+
+		var googlePayBtn = document.getElementById('sq-google-pay');
+		if (methods.googlePay === true) {
+			googlePayBtn.classList.remove('d-none')
+		}
+	}
+	
+    ProcessSquare.prototype.onCreatePaymentRequest = function () { 
+		return {
+			requestShippingAddress: false,
+			requestBillingInfo: false,
+			currencyCode: this.options.currencyCode,
+			countryCode: this.options.countryCode,
+			total: {
+                label: "Total",
+                amount: this.options.orderTotal.toString(),
+                pending: false
+			}
+		};
+	}
+
     ProcessSquare.DEFAULTS = {
         applicationId: undefined,
         locationId: undefined,
@@ -98,7 +132,7 @@
                     cardIconColor: '#A5A5A5', //Card Icon color
                 },
             },
-        }
+        },
     }
 
     // PLUGIN DEFINITION
