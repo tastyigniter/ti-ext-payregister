@@ -88,29 +88,29 @@
     }
 
     ProcessSquare.prototype.onMethodsSupported = function (methods, unsupportedReason) { console.log(methods, unsupportedReason);
-		var applePayBtn = document.getElementById('sq-apple-pay');
-		if (methods.applePay === true) {
-			applePayBtn.classList.remove('d-none')
-		}
+        var applePayBtn = document.getElementById('sq-apple-pay');
+        if (methods.applePay === true) {
+            applePayBtn.classList.remove('d-none')
+        }
 
-		var googlePayBtn = document.getElementById('sq-google-pay');
-		if (methods.googlePay === true) {
-			googlePayBtn.classList.remove('d-none')
-		}
+        var googlePayBtn = document.getElementById('sq-google-pay');
+        if (methods.googlePay === true) {
+            googlePayBtn.classList.remove('d-none')
+        }
 	}
 	
     ProcessSquare.prototype.onCreatePaymentRequest = function () { 
-		return {
-			requestShippingAddress: false,
-			requestBillingInfo: false,
-			currencyCode: this.options.currencyCode,
-			countryCode: this.options.countryCode,
-			total: {
+        return {
+            requestShippingAddress: false,
+            requestBillingInfo: false,
+            currencyCode: this.options.currencyCode,
+            countryCode: this.options.countryCode,
+            total: {
                 label: "Total",
                 amount: this.options.orderTotal.toString(),
                 pending: false
-			}
-		};
+            }
+        };
 	}
 
     ProcessSquare.DEFAULTS = {
