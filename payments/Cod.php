@@ -1,4 +1,6 @@
-<?php namespace Igniter\PayRegister\Payments;
+<?php
+
+namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 use ApplicationException;
