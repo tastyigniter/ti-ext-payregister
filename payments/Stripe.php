@@ -123,13 +123,12 @@ class Stripe extends BasePaymentGateway
 
         $gateway = $this->createGateway();
         $response = $gateway->fetchPaymentIntent($fields)->send();
-
-        if ($response->isSuccessful()) {
+        
+        try {
             $this->handlePaymentResponse($response, $order, $host, $fields);
-            $order->updateOrderStatus($order->payment_method->order_status, ['notify' => FALSE]);
-            $order->markAsPaymentProcessed();
-        } else {
-            $order->logPaymentAttempt('Payment intent not successful', 0, $fields, []);
+        }
+        catch (Exception $ex) {
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
