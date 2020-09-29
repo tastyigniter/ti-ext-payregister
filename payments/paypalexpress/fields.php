@@ -60,4 +60,15 @@ return [
             'comment' => 'lang:igniter.payregister::default.help_order_status',
         ],
     ],
+    'rules' => [
+        ['api_user', 'lang:igniter.payregister::default.paypal.label_api_user', 'string'],
+        ['api_pass', 'lang:igniter.payregister::default.paypal.label_api_pass', 'string'],
+        ['api_signature', 'lang:igniter.payregister::default.paypal.label_api_signature', 'string'],
+        ['api_mode', 'lang:igniter.payregister::default.paypal.label_api_mode', 'string'],
+        ['api_action', 'lang:igniter.payregister::default.paypal.label_api_action', 'string'],
+        ['order_fee_type', 'lang:igniter.payregister::default.label_order_fee_type', 'integer'],
+        ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'numeric'],
+        ['order_total', 'lang:igniter.payregister::default.label_order_total', 'numeric'],
+        ['order_status', 'lang:igniter.payregister::default.label_order_status', 'integer'],
+    ],
 ];

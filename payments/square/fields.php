@@ -99,4 +99,16 @@ return [
             'comment' => 'lang:igniter.payregister::default.help_order_status',
         ],
     ],
+    'rules' => [
+        ['transaction_mode', 'lang:igniter.payregister::default.square.label_transaction_mode', 'string'],
+        ['live_app_id', 'lang:igniter.payregister::default.square.label_live_app_id', 'string'],
+        ['live_access_token', 'lang:igniter.payregister::default.square.label_live_access_token', 'string'],
+        ['live_location_id', 'lang:igniter.payregister::default.square.label_live_location_id', 'string'],
+        ['test_app_id', 'lang:igniter.payregister::default.square.label_test_app_id', 'string'],
+        ['test_access_token', 'lang:igniter.payregister::default.square.label_test_access_token', 'string'],
+        ['order_fee_type', 'lang:igniter.payregister::default.label_order_fee_type', 'integer'],
+        ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'numeric'],
+        ['order_total', 'lang:igniter.payregister::default.label_order_total', 'numeric'],
+        ['order_status', 'lang:igniter.payregister::default.label_order_status', 'integer'],
+    ],
 ];
