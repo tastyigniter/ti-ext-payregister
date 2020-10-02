@@ -1,16 +1,13 @@
-<?php namespace Igniter\PayRegister;
-	
-use Event;
+<?php
+
+namespace Igniter\PayRegister;
+
 use Admin\Widgets\Form;
+use Event;
 use System\Classes\BaseExtension;
 
 class Extension extends BaseExtension
 {
-    public function boot()
-    {
-        $this->extendActionFormFields();
-	}
-
     public function registerPaymentGateways()
     {
         return [
@@ -47,31 +44,23 @@ class Extension extends BaseExtension
         ];
     }
     
-    protected function extendActionFormFields()
+    public function registerFormWidgets()
     {
-        Event::listen('admin.form.extendFieldsBefore', function (Form $form) {       
-	        
-	        // if its an orders form	        
-            if ($form->model instanceof \Admin\Models\Orders_model) {
-	            
-	            if (isset($form->tabs['fields']['payment_method[name]'])) {
-		            
-		            // add a refund button beside 
-		            $form->tabs['fields']['payment_method[name]']['type'] = 'addon';
-					$form->tabs['fields']['payment_method[name]']['addonRight'] = [
-				         'tag' => 'a',
-				         'label' => 'Refund',
-				         'attributes' => [
-					         'href' => admin_url('igniter/payregister/refund/edit/'.$form->model->order_id),
-					         'class' => 'btn btn-outline-default',
-					         'id' => 'igniter_payregister_refund'
-				         ]
-					];
-				
-				}
+        return [
+            'Igniter\PayRegister\FormWidgets\PaymentAttempts' => [
+                'label' => 'Payment Attempts',
+                'code' => 'paymentattempts',
+            ]
+        ];
+    }
 
+    public function boot()
+    {
+        Event::listen('admin.form.extendFieldsBefore', function (Form $form) {           
+            if ($form->model instanceof \Admin\Models\Orders_model)
+            {
+                $form->tabs['fields']['payment_logs']['type'] = 'paymentattempts';
             }
-            
-        }); 
+        });
     }
 }
