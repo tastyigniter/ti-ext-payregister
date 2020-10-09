@@ -79,7 +79,6 @@ class Stripe extends BasePaymentGateway
 
         $fields = $this->getPaymentFormFields($order, $data);
         $fields['paymentMethod'] = array_get($data, 'stripe_payment_method');
-        $fields['idempotencyKey'] = array_get($data, 'stripe_idempotency_key');
 
         if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
             $profile = $this->updatePaymentProfile($order->customer, $data);
@@ -87,8 +86,7 @@ class Stripe extends BasePaymentGateway
         }
 
         try {
-            $gateway = $this->createGateway();
-            $response = $gateway->purchase($fields)->send();
+            $response = $this->createPurchaseRequest($fields, $data)->send();
 
             if ($response->isRedirect()) {
                 Session::put('ti_payregister_stripe_intent', $response->getPaymentIntentReference());
@@ -198,8 +196,7 @@ class Stripe extends BasePaymentGateway
         $fields['idempotencyKey'] = array_get($data, 'stripe_idempotency_key');
 
         try {
-            $gateway = $this->createGateway();
-            $response = $gateway->purchase($fields)->send();
+            $response = $this->createPurchaseRequest($fields, $data)->send();
 
             if ($response->isRedirect()) {
                 Session::put('ti_payregister_stripe_intent', $response->getPaymentIntentReference());
@@ -336,5 +333,13 @@ class Stripe extends BasePaymentGateway
         $this->fireSystemEvent('payregister.stripe.extendFields', [&$fields, $order, $data]);
 
         return $fields;
+    }
+
+    protected function createPurchaseRequest(array $fields, array $data)
+    {
+        $request = $this->createGateway()->purchase($fields);
+        $request->setIdempotencyKeyHeader(array_get($data, 'stripe_idempotency_key'));
+
+        return $request;
     }
 }
