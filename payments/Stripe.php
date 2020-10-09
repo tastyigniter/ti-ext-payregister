@@ -1,4 +1,6 @@
-<?php namespace Igniter\PayRegister\Payments;
+<?php 
+
+namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 use Admin\Models\Orders_model;
@@ -158,7 +160,7 @@ class Stripe extends BasePaymentGateway
     //
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function supportsPaymentProfiles()
     {
@@ -166,7 +168,7 @@ class Stripe extends BasePaymentGateway
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function updatePaymentProfile($customer, $data)
     {
@@ -174,7 +176,7 @@ class Stripe extends BasePaymentGateway
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function deletePaymentProfile($customer, $profile)
     {
@@ -182,7 +184,7 @@ class Stripe extends BasePaymentGateway
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
     public function payFromPaymentProfile($order, $data = [])
     {
