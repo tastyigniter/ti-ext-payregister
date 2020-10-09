@@ -30,4 +30,10 @@ return [
             'comment' => 'lang:igniter.payregister::default.help_order_status',
         ],
     ],
+    'rules' => [
+        ['order_fee_type', 'lang:igniter.payregister::default.label_order_fee_type', 'integer'],
+        ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'numeric'],
+        ['order_total', 'lang:igniter.payregister::default.label_order_total', 'numeric'],
+        ['order_status', 'lang:igniter.payregister::default.label_order_status', 'integer'],
+    ],
 ];

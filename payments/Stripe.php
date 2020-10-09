@@ -28,7 +28,7 @@ class Stripe extends BasePaymentGateway
     {
         return [
             'stripe_payment_method' => '',
-            'idempotency_key' => uniqid(),
+            'stripe_idempotency_key' => uniqid(),
         ];
     }
 
@@ -128,7 +128,8 @@ class Stripe extends BasePaymentGateway
             $fields['paymentIntentReference'] = Session::get('ti_payregister_stripe_intent');
 
             $gateway = $this->createGateway();
-            $response = $gateway->completePurchase($fields)->send();
+            $request = $gateway->completePurchase($fields);
+            $response = $request->send();
 
             if (!$response->isSuccessful())
                 throw new ApplicationException($response->getMessage());
@@ -192,6 +193,7 @@ class Stripe extends BasePaymentGateway
         $fields = $this->getPaymentFormFields($order, $data);
         $fields['cardReference'] = array_get($profile->profile_data, 'card_id');
         $fields['customerReference'] = array_get($profile->profile_data, 'customer_id');
+        $fields['idempotencyKey'] = array_get($data, 'stripe_idempotency_key');
 
         try {
             $response = $this->createPurchaseRequest($fields, $data)->send();
@@ -320,6 +322,7 @@ class Stripe extends BasePaymentGateway
             'currency' => currency()->getUserCurrency(),
             'transactionId' => $order->order_id,
             'returnUrl' => $returnUrl,
+            'receipt_email' => $order->email,
             'confirm' => TRUE,
             'metadata' => [
                 'order_id' => $order->order_id,
@@ -335,7 +338,7 @@ class Stripe extends BasePaymentGateway
     protected function createPurchaseRequest(array $fields, array $data)
     {
         $request = $this->createGateway()->purchase($fields);
-        $request->setIdempotencyKeyHeader(array_get($data, 'idempotency_key'));
+        $request->setIdempotencyKeyHeader(array_get($data, 'stripe_idempotency_key'));
 
         return $request;
     }

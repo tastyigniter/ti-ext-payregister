@@ -1,4 +1,6 @@
-<?php namespace Igniter\PayRegister;
+<?php
+
+namespace Igniter\PayRegister;
 
 use System\Classes\BaseExtension;
 

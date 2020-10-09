@@ -81,4 +81,15 @@ return [
             'comment' => 'lang:igniter.payregister::default.help_order_status',
         ],
     ],
+    'rules' => [
+        ['transaction_mode', 'lang:igniter.payregister::default.stripe.label_transaction_mode', 'string'],
+        ['live_secret_key', 'lang:igniter.payregister::default.stripe.label_live_secret_key', 'string'],
+        ['live_publishable_key', 'lang:igniter.payregister::default.stripe.label_live_publishable_key', 'string'],
+        ['test_secret_key', 'lang:igniter.payregister::default.stripe.label_test_secret_key', 'string'],
+        ['test_publishable_key', 'lang:igniter.payregister::default.stripe.label_test_publishable_key', 'string'],
+        ['order_fee_type', 'lang:igniter.payregister::default.label_order_fee_type', 'integer'],
+        ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'numeric'],
+        ['order_total', 'lang:igniter.payregister::default.label_order_total', 'numeric'],
+        ['order_status', 'lang:igniter.payregister::default.label_order_status', 'integer'],
+    ],
 ];
