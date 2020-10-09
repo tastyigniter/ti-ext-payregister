@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Igniter\PayRegister\Payments;
 
