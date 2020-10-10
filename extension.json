@@ -2,7 +2,7 @@
   "code": "igniter.payregister",
   "name": "Pay Register",
   "description": "Allows you to accept credit card payments using PayPal, Stripe, Authorize.Net and/or Mollie.",
-  "version": "v1.3.2",
+  "version": "v1.3.4",
   "author": "SamPoyigi",
   "icon": {
     "class": "fa fa-money",

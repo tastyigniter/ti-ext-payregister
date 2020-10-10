@@ -57,4 +57,13 @@ return [
             'comment' => 'lang:igniter.payregister::default.help_order_status',
         ],
     ],
+    'rules' => [
+        ['transaction_mode', 'lang:igniter.payregister::default.mollie.label_transaction_mode', 'string'],
+        ['live_api_key', 'lang:igniter.payregister::default.mollie.label_live_api_key', 'string'],
+        ['test_api_key', 'lang:igniter.payregister::default.mollie.label_test_api_key', 'string'],
+        ['order_fee_type', 'lang:igniter.payregister::default.label_order_fee_type', 'integer'],
+        ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'numeric'],
+        ['order_total', 'lang:igniter.payregister::default.label_order_total', 'numeric'],
+        ['order_status', 'lang:igniter.payregister::default.label_order_status', 'integer'],
+    ],
 ];

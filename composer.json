@@ -10,6 +10,5 @@
     "sampoyigi/omnipay-stripe": "~3.2",
     "omnipay/mollie": "~5.1",
     "sampoyigi/omnipay-square": "~2.0"
-  },
-  "minimum-stability": "dev"
+  }
 }
