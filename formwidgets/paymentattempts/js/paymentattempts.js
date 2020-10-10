@@ -17,15 +17,15 @@
     }
 
     PaymentAttempts.prototype.init = function () {
-        this.$el.on('click', $.proxy(this.onControlClick, this))
+        this.$el.on('click', '[data-control="refund"]', $.proxy(this.loadRecordForm, this))
     }
 
     PaymentAttempts.prototype.loadRecordForm = function (event) {
         var $button = $(event.currentTarget)
 
-        this.editorModal = new $.ti.recordEditor.modal({
+        new $.ti.recordEditor.modal({
             alias: this.options.alias,
-            recordId: $button.data('paymentid'),
+            recordId: $button.data('logId'),
             onSave: function () {
                 this.hide()
             },
@@ -42,7 +42,6 @@
     }
 
     PaymentAttempts.DEFAULTS = {
-        data: {},
         alias: undefined
     }
 
@@ -78,6 +77,6 @@
     // PaymentAttempts DATA-API
     // ===============
     $(document).render(function () {
-        $('[data-control="refundmodal"]').paymentAttempts()
+        $('[data-control="payment-attempts"]').paymentAttempts()
     })
 }(window.jQuery);

@@ -1,10 +1,10 @@
-@if ($record['is_refundable'])
-    <a 
-        class="btn btn-outline-default" 
-        data-control="refundmodal" 
-        data-paymentid="{{ $record['payment_log_id'] }}"
-        data-alias="{{ $this->alias }}"
-    >Refund</a>
+@if ($record['is_refundable'] AND is_null($record['refunded_at']))
+    <a
+        role="button"
+        class="text-primary font-weight-bold"
+        data-control="refund"
+        data-log-id="{{ $record['payment_log_id'] }}"
+    >@lang('igniter.payregister::default.button_refund')</a>
 @else
     -
 @endif

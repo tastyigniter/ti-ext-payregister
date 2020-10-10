@@ -8,7 +8,6 @@ use Admin\Traits\FormModelWidget;
 use Admin\Traits\ValidatesForm;
 use Admin\Widgets\Form;
 use Igniter\Flame\Exception\ApplicationException;
-use Igniter\Flame\Location\Models\AbstractLocation;
 
 class PaymentAttempts extends BaseFormWidget
 {
@@ -22,12 +21,15 @@ class PaymentAttempts extends BaseFormWidget
 
     public $form;
 
-    public $formTitle = 'admin::lang.locations.text_title_schedule';
+    public $columns;
+
+    public $formTitle = 'igniter.payregister::default.text_refund_title';
 
     public function initialize()
     {
         $this->fillFromConfig([
             'form',
+            'columns',
         ]);
     }
 
@@ -35,29 +37,7 @@ class PaymentAttempts extends BaseFormWidget
     {
         $this->prepareVars();
 
-        $widget = $this->makeFormWidget('Admin\FormWidgets\DataTable', $this->formField, [
-            'columns' => [
-                'date_added_since' => [
-                    'title' => 'lang:admin::lang.orders.column_time_date',
-                ],
-                'payment_name' => [
-                    'title' => 'lang:admin::lang.orders.label_payment_method',
-                ],
-                'message' => [
-                    'title' => 'lang:admin::lang.orders.column_comment',
-                ],
-                'is_refundable' => [
-                    'title' => 'Refund',
-                    'partial' => 'extensions/igniter/payregister/views/partials/refund_button',
-                ]
-            ]
-        ]);
-        
-        //var_dump($this->controller); exit();
-        
-        $widget->bindToController($this->controller);
-        
-        return $widget->render();
+        return $this->makePartial('paymentattempts/paymentattempts');
     }
 
     public function onLoadRecord()
@@ -67,15 +47,33 @@ class PaymentAttempts extends BaseFormWidget
         $model = Payment_logs_model::find($paymentLogId);
 
         if (!$model)
-           throw new ApplicationException('Record not found');
+            throw new ApplicationException('Record not found');
 
-        $formTitle = sprintf(lang($this->formTitle), $paymentLogId);
+        $formTitle = sprintf(lang($this->formTitle), currency_format($model->order->order_total));
 
-        return $this->makePartial('recordeditor/form', [
+        return $this->makePartial('~/app/admin/formwidgets/recordeditor/form', [
             'formRecordId' => $paymentLogId,
             'formTitle' => $formTitle,
             'formWidget' => $this->makeRefundFormWidget($model),
         ]);
+    }
+
+    public function onSaveRecord()
+    {
+        $paymentLogId = post('recordId');
+
+        $paymentLog = Payment_logs_model::find($paymentLogId);
+
+        $paymentMethod = $this->model->payment_method;
+
+        $widget = $this->makeRefundFormWidget($this->model);
+        $data = $widget->getSaveData();
+
+        // Merge rules from payment refund_fields config ???
+
+        // Validate all rules
+
+        $paymentMethod->processRefundForm($data, $this->model, $paymentLog);
     }
 
     public function loadAssets()
@@ -87,20 +85,54 @@ class PaymentAttempts extends BaseFormWidget
     public function prepareVars()
     {
         $this->vars['field'] = $this->formField;
+        $this->vars['dataTableWidget'] = $this->makeDataTableWidget();
+    }
+
+    protected function makeDataTableWidget()
+    {
+        $field = clone $this->formField;
+
+        $fieldConfig = $field->config;
+        $fieldConfig['type'] = $fieldConfig['widget'] = 'datatable';
+        $widgetConfig = $this->makeConfig($fieldConfig);
+
+        $widgetConfig['model'] = $this->model;
+        $widgetConfig['data'] = $this->data;
+        $widgetConfig['alias'] = $this->alias.'Form'.'payment-attempt';
+        $widgetConfig['arrayName'] = $this->formField->arrayName.'[paymentAttempt]';
+
+        $widget = $this->makeFormWidget('Admin\FormWidgets\DataTable', $field, $widgetConfig);
+        $widget->bindToController();
+        $widget->previewMode = $this->previewMode;
+
+        return $widget;
     }
 
     protected function makeRefundFormWidget($model)
     {
         $widgetConfig = is_string($this->form) ? $this->loadConfig($this->form, ['form'], 'form') : $this->form;
         $widgetConfig['model'] = $model;
+        $widgetConfig['data'] = ['refund_amount' => $model->order->order_total];
         $widgetConfig['alias'] = $this->alias.'Form'.'payment-attempt';
         $widgetConfig['arrayName'] = $this->formField->arrayName.'[paymentAttempt]';
         $widgetConfig['context'] = 'edit';
         $widget = $this->makeWidget(Form::class, $widgetConfig);
 
+        $widget->bindEvent('form.extendFieldsBefore', function () use ($widget) {
+            $this->formExtendFieldsBefore($widget);
+        });
+
         $widget->bindToController();
         $widget->previewMode = $this->previewMode;
 
         return $widget;
+    }
+
+    protected function formExtendFieldsBefore($form)
+    {
+        $paymentMethod = $this->model->payment_method;
+
+//        $paymentMethod->defineRefundFieldsConfig();
+        // Merge fields from payment refund_fields config
     }
 }

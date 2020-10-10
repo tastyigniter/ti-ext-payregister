@@ -296,42 +296,36 @@ class Stripe extends BasePaymentGateway
     //
     //
     //
-    
-    public function processRefund($amount, $order)
+
+    public function processRefundForm($data, $order, $log)
     {
-        
-        foreach ($order->payment_logs as $log){
-            
+        foreach ($order->payment_logs as $log) {
             if (isset($log->response['id'])) {
-                
-                foreach ($log->response['charges']['data'] as $charge){
-                    
+                foreach ($log->response['charges']['data'] as $charge) {
                     $fields = [
                         'transactionReference' => $charge['id'],
-                        'amount' => $amount
+                        'amount' => $amount,
                     ];
-                
+
                     $gateway = $this->createGateway();
                     $refund = $gateway->refund($fields);
-                    
+
                     $response = $refund->send()->getData();
-                    
+
                     if (isset($response['error'])) {
                         $order->logPaymentAttempt('Refund failed', 1, $fields, $response);
+
                         return $response['error']['message'];
                     }
-                    
+
                     $order->logPaymentAttempt('Refund successful', 1, $fields, $response);
-                    return true;                    
-                
+
+                    return TRUE;
                 }
-                
             }
-            
         }
-        
-        return false;
-        
+
+        return FALSE;
     }
 
     /**

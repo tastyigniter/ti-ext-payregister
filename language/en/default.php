@@ -3,13 +3,19 @@
 return [
     'text_this_payment' => 'this payment method',
     'text_save_card_profile' => 'Save card details for later.',
+    'text_refund_title' => 'Refund: %s',
+    'text_refund_full' => 'Full Refund',
+    'text_refund_partial' => 'Partial Refund',
 
     'label_order_fee_type' => 'Additional Fee Type',
     'label_order_fee' => 'Additional Fee',
     'label_order_total' => 'Minimum Total',
     'label_order_status' => 'Order Status',
+    'label_refund_type' => 'Refund Type',
+    'label_refund_amount' => 'Refund Partial Amount',
 
     'button_delete_card' => 'Delete or use a different card.',
+    'button_refund' => 'Refund',
 
     'alert_min_total' => 'Order total is below the minimum order total for %s.',
     'alert_min_order_total' => 'You need to spend %s or more to pay with %s.',
