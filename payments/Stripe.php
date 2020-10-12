@@ -300,32 +300,29 @@ class Stripe extends BasePaymentGateway
     //
     //
 
-    public function processRefundForm($data, $order, $log)
+    public function processRefundForm($data, $order, $paymentLog)
     {
-        foreach ($order->payment_logs as $log) {
-            if (isset($log->response['id'])) {
-                foreach ($log->response['charges']['data'] as $charge) {
-                    $fields = [
-                        'transactionReference' => $charge['id'],
-                        'amount' => $amount,
-                    ];
+        foreach ($paymentLog->response['charges']['data'] as $charge) 
+        {
+            $fields = [
+                'transactionReference' => $charge['id'],
+                'amount' => array_get($data, 'refund_type') == 'full' ? $order->order_total : array_get($data, 'refund_amount'),
+            ];
 
-                    $gateway = $this->createGateway();
-                    $refund = $gateway->refund($fields);
+            $gateway = $this->createGateway();
+            $refund = $gateway->refund($fields);
 
-                    $response = $refund->send()->getData();
+            $response = $refund->send()->getData();
 
-                    if (isset($response['error'])) {
-                        $order->logPaymentAttempt('Refund failed', 1, $fields, $response);
+            if (isset($response['error'])) {
+                $order->logPaymentAttempt('Refund failed', 1, $fields, $response);
 
-                        return $response['error']['message'];
-                    }
-
-                    $order->logPaymentAttempt('Refund successful', 1, $fields, $response);
-
-                    return TRUE;
-                }
+                return $response['error']['message'];
             }
+
+            $order->logPaymentAttempt('Refund successful', 1, $fields, $response);
+
+            return TRUE;
         }
 
         return FALSE;
