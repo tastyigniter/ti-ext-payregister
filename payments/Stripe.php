@@ -302,7 +302,7 @@ class Stripe extends BasePaymentGateway
 
     public function processRefundForm($data, $order, $paymentLog)
     {
-        foreach ($paymentLog->response['charges']['data'] as $charge) 
+        foreach ($paymentLog->response['charges']['data'] as $charge)
         {
             $fields = [
                 'transactionReference' => $charge['id'],
