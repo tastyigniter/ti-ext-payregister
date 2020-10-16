@@ -130,7 +130,7 @@ class Mollie extends BasePaymentGateway
         $response = $gateway->completePurchase($fields)->send();
 
         if ($order->status_id == setting('default_order_status', 1))
-        {        
+        {
             if ($response->isPaid()) {
                 $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
                 $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
