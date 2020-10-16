@@ -66,20 +66,18 @@ class PaymentAttempts extends BaseFormWidget
 
         $paymentMethod = $this->model->payment_method;
 
-        $widget = $this->makeRefundFormWidget($this->model);
+        $widget = $this->makeRefundFormWidget($paymentLog);
         $data = $widget->getSaveData();
 
-        // Merge rules from payment refund_fields config ???
-
-        // Validate all rules
+        $this->validate($data, $widget->config['rules']);
 
         $paymentMethod->processRefundForm($data, $this->model, $paymentLog);
     }
 
     public function loadAssets()
     {
-        $this->addJs('app/admin/formwidgets/recordeditor/assets/js/recordeditor.modal.js', 'recordeditor-modal-js');
-        $this->addJs('extensions/igniter/payregister/formwidgets/paymentattempts/js/paymentattempts.js', 'paymentattempts-js');
+        $this->addJs('~/app/admin/formwidgets/recordeditor/assets/js/recordeditor.modal.js', 'recordeditor-modal-js');
+        $this->addJs('$/igniter/payregister/formwidgets/paymentattempts/js/paymentattempts.js', 'paymentattempts-js');
     }
 
     public function prepareVars()
@@ -112,27 +110,15 @@ class PaymentAttempts extends BaseFormWidget
     {
         $widgetConfig = is_string($this->form) ? $this->loadConfig($this->form, ['form'], 'form') : $this->form;
         $widgetConfig['model'] = $model;
-        $widgetConfig['data'] = ['refund_amount' => $model->order->order_total];
+        $widgetConfig['data'] = array_merge($model->toArray(), ['refund_amount' => $model->order->order_total]);
         $widgetConfig['alias'] = $this->alias.'Form'.'payment-attempt';
         $widgetConfig['arrayName'] = $this->formField->arrayName.'[paymentAttempt]';
         $widgetConfig['context'] = 'edit';
         $widget = $this->makeWidget(Form::class, $widgetConfig);
 
-        $widget->bindEvent('form.extendFieldsBefore', function () use ($widget) {
-            $this->formExtendFieldsBefore($widget);
-        });
-
         $widget->bindToController();
         $widget->previewMode = $this->previewMode;
 
         return $widget;
-    }
-
-    protected function formExtendFieldsBefore($form)
-    {
-        $paymentMethod = $this->model->payment_method;
-
-//        $paymentMethod->defineRefundFieldsConfig();
-        // Merge fields from payment refund_fields config
     }
 }

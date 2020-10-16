@@ -302,30 +302,39 @@ class Stripe extends BasePaymentGateway
 
     public function processRefundForm($data, $order, $paymentLog)
     {
-        foreach ($paymentLog->response['charges']['data'] as $charge)
-        {
-            $fields = [
-                'transactionReference' => $charge['id'],
-                'amount' => array_get($data, 'refund_type') == 'full' ? $order->order_total : array_get($data, 'refund_amount'),
-            ];
+        if (!is_null($paymentLog->refunded_at) OR !is_array($paymentLog->response))
+            throw new ApplicationException('Nothing to refund');
 
-            $gateway = $this->createGateway();
-            $refund = $gateway->refund($fields);
+        if (!array_get($paymentLog->response, 'status') === 'succeeded'
+            OR !array_get($paymentLog->response, 'object') === 'payment_intent'
+        ) throw new ApplicationException('No charge to refund');
 
-            $response = $refund->send()->getData();
+        $paymentChargeId = array_get($paymentLog->response, 'charges.data.0.id');
+        $refundAmount = array_get($data, 'refund_type') == 'full'
+            ? $order->order_total : array_get($data, 'refund_amount');
 
-            if (isset($response['error'])) {
-                $order->logPaymentAttempt('Refund failed', 1, $fields, $response);
+        $fields = [
+            'transactionReference' => $paymentChargeId,
+            'amount' => number_format($refundAmount, 2, '.', ''),
+        ];
 
-                return $response['error']['message'];
-            }
+        $gateway = $this->createGateway();
+        $response = $gateway->refund($fields)->send();
 
-            $order->logPaymentAttempt('Refund successful', 1, $fields, $response);
+        if ($response->isSuccessful()) {
+            $message = sprintf('Charge %s refunded successfully -> (%s: %s)',
+                $paymentChargeId,
+                currency_format($refundAmount),
+                array_get($response->getData(), 'refunds.data.0.id')
+            );
 
-            return TRUE;
+            $order->logPaymentAttempt($message, 1, $fields, $response->getData());
+            $paymentLog->markAsRefundProcessed();
+
+            return;
         }
 
-        return FALSE;
+        $order->logPaymentAttempt('Refund failed -> '.$response->getMessage(), 0, $fields, $response->getData());
     }
 
     /**
