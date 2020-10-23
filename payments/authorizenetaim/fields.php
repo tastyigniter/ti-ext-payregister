@@ -46,8 +46,8 @@ return [
             'span' => 'left',
             'default' => 1,
             'options' => [
-                1 => 'lang:admin::lang.coupons.text_fixed_amount',
-                2 => 'lang:admin::lang.coupons.text_percentage',
+                1 => 'lang:admin::lang.menus.text_fixed_amount',
+                2 => 'lang:admin::lang.menus.text_percentage',
             ],
         ],
         'order_fee' => [
