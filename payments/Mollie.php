@@ -129,14 +129,17 @@ class Mollie extends BasePaymentGateway
         $fields = $this->getPaymentFormFields($order);
         $response = $gateway->completePurchase($fields)->send();
 
-        if ($response->isPaid()) {
-            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
-            $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
-            $order->markAsPaymentProcessed();
-        }
-        else {
-            $order->logPaymentAttempt('Payment unsuccessful', 0, $fields, $response->getData());
-            $order->updateOrderStatus(setting('canceled_order_status'), ['notify' => FALSE]);
+        if (!$order->isPaymentProcessed())
+        {
+            if ($response->isPaid()) {
+                $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
+                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
+                $order->markAsPaymentProcessed();
+            }
+            else {
+                $order->logPaymentAttempt('Payment unsuccessful', 0, $fields, $response->getData());
+                $order->updateOrderStatus(setting('canceled_order_status'), ['notify' => FALSE]);
+            }
         }
 
         return Response::json(['success' => TRUE]);
