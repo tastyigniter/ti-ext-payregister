@@ -40,7 +40,7 @@
                         <label
                             class="custom-control-label"
                             for="save-customer-profile"
-                        >@lang('igniter.payregister::default.text_save_card_profile');</label>
+                        >@lang('igniter.payregister::default.text_save_card_profile')</label>
                     </div>
                 @endif
             </div>
