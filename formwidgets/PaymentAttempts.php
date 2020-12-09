@@ -39,7 +39,7 @@ class PaymentAttempts extends BaseFormWidget
 
         return $this->makePartial('paymentattempts/paymentattempts');
     }
-    
+
     public function getSaveValue($value)
     {
         return FormField::NO_SAVE_DATA;
