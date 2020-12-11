@@ -86,6 +86,8 @@ return [
         'text_payment_desc' => 'Accept credit card payments using Stripe',
         'text_credit_or_debit' => 'Credit or debit card',
 
+        'text_auth_only' => 'Authorization Only',
+        'text_auth_capture' => 'Authorization & Capture',
         'text_description' => 'Pay by Credit Card using Stripe',
         'text_live' => 'Live',
         'text_test' => 'Test',
@@ -95,6 +97,7 @@ return [
         'label_title' => 'Title',
         'label_description' => 'Description',
         'label_transaction_mode' => 'Transaction Mode',
+        'label_transaction_type' => 'Transaction Type',
         'label_test_secret_key' => 'Test Secret Key',
         'label_test_publishable_key' => 'Test Publishable Key',
         'label_live_secret_key' => 'Live Secret Key',
