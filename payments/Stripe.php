@@ -47,9 +47,9 @@ class Stripe extends BasePaymentGateway
         return $this->isTestMode() ? $this->model->test_secret_key : $this->model->live_secret_key;
     }
 
-    public function shouldCapturePayment()
+    public function shouldAuthorizePayment()
     {
-        return !($this->model->transaction_type && $this->model->transaction_type == 'auth_only');
+        return $this->model->transaction_type == 'auth_only';
     }
 
     public function isApplicable($total, $host)
@@ -342,7 +342,7 @@ class Stripe extends BasePaymentGateway
 
     protected function createPurchaseRequest(array $fields, array $data)
     {
-        $method = $this->shouldCapturePayment() ? 'purchase' : 'authorize';
+        $method = $this->shouldAuthorizePayment() ? 'authorize' : 'purchase';
         $request = $this->createGateway()->$method($fields);
         $request->setIdempotencyKeyHeader(array_get($data, 'stripe_idempotency_key'));
 
