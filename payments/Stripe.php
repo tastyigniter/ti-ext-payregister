@@ -49,7 +49,7 @@ class Stripe extends BasePaymentGateway
 
     public function shouldCapturePayment()
     {
-        return $this->model->transaction_type && $this->model->transaction_type != 'auth_only';
+        return !($this->model->transaction_type && $this->model->transaction_type == 'auth_only');
     }
 
     public function isApplicable($total, $host)
