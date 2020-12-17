@@ -3,6 +3,7 @@
 namespace Igniter\PayRegister\FormWidgets;
 
 use Admin\Classes\BaseFormWidget;
+use Admin\Classes\FormField;
 use Admin\Models\Payment_logs_model;
 use Admin\Traits\FormModelWidget;
 use Admin\Traits\ValidatesForm;
