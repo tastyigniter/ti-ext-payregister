@@ -8,6 +8,7 @@ use ApplicationException;
 use Exception;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
+use Illuminate\Support\Str;
 use Omnipay\Omnipay;
 use Redirect;
 use Session;
@@ -28,7 +29,7 @@ class Stripe extends BasePaymentGateway
     {
         return [
             'stripe_payment_method' => '',
-            'stripe_idempotency_key' => uniqid(),
+            'stripe_idempotency_key' => $this->getIdempotencyKey(),
         ];
     }
 
@@ -45,6 +46,17 @@ class Stripe extends BasePaymentGateway
     public function getSecretKey()
     {
         return $this->isTestMode() ? $this->model->test_secret_key : $this->model->live_secret_key;
+    }
+
+    public function getIdempotencyKey()
+    {
+        $idempotencyKey = Session::get('idempotency_key');
+        if (!strlen($idempotencyKey)) {
+            $idempotencyKey = Str::uuid();
+            Session::put('idempotency_key', $idempotencyKey);
+        }
+
+        return $idempotencyKey;
     }
 
     public function shouldAuthorizePayment()
