@@ -50,10 +50,10 @@ class Stripe extends BasePaymentGateway
 
     public function getIdempotencyKey()
     {
-        $idempotencyKey = Session::get('idempotency_key');
+        $idempotencyKey = Session::get('ti_payregister_stripe_idempotency_key');
         if (!strlen($idempotencyKey)) {
             $idempotencyKey = Str::uuid();
-            Session::put('idempotency_key', $idempotencyKey);
+            Session::put('ti_payregister_stripe_idempotency_key', $idempotencyKey);
         }
 
         return $idempotencyKey;
