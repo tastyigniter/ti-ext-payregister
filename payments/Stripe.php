@@ -111,6 +111,9 @@ class Stripe extends BasePaymentGateway
                 return Redirect::to($response->getRedirectUrl());
             }
 
+            if ($response->isSuccessful())
+                Session::forget('ti_payregister_stripe_idempotency_key');
+
             $this->handlePaymentResponse($response, $order, $host, $fields);
         }
         catch (Exception $ex) {
@@ -150,6 +153,8 @@ class Stripe extends BasePaymentGateway
 
             if (!$response->isSuccessful())
                 throw new ApplicationException($response->getMessage());
+
+            Session::forget('ti_payregister_stripe_idempotency_key');
 
             $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
             $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
@@ -220,6 +225,9 @@ class Stripe extends BasePaymentGateway
 
                 return Redirect::to($response->getRedirectUrl());
             }
+
+            if ($response->isSuccessful())
+                Session::forget('ti_payregister_stripe_idempotency_key');
 
             $this->handlePaymentResponse($response, $order, $host, $fields);
         }
