@@ -8,6 +8,7 @@ use ApplicationException;
 use Exception;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
+use Illuminate\Support\Str;
 use Omnipay\Omnipay;
 use Redirect;
 use Session;
@@ -28,7 +29,7 @@ class Stripe extends BasePaymentGateway
     {
         return [
             'stripe_payment_method' => '',
-            'stripe_idempotency_key' => uniqid(),
+            'stripe_idempotency_key' => $this->getIdempotencyKey(),
         ];
     }
 
@@ -45,6 +46,17 @@ class Stripe extends BasePaymentGateway
     public function getSecretKey()
     {
         return $this->isTestMode() ? $this->model->test_secret_key : $this->model->live_secret_key;
+    }
+
+    public function getIdempotencyKey()
+    {
+        $idempotencyKey = Session::get('ti_payregister_stripe_idempotency_key');
+        if (!strlen($idempotencyKey)) {
+            $idempotencyKey = Str::uuid();
+            Session::put('ti_payregister_stripe_idempotency_key', $idempotencyKey);
+        }
+
+        return $idempotencyKey;
     }
 
     public function shouldAuthorizePayment()
@@ -99,6 +111,9 @@ class Stripe extends BasePaymentGateway
                 return Redirect::to($response->getRedirectUrl());
             }
 
+            if ($response->isSuccessful())
+                Session::forget('ti_payregister_stripe_idempotency_key');
+
             $this->handlePaymentResponse($response, $order, $host, $fields);
         }
         catch (Exception $ex) {
@@ -138,6 +153,8 @@ class Stripe extends BasePaymentGateway
 
             if (!$response->isSuccessful())
                 throw new ApplicationException($response->getMessage());
+
+            Session::forget('ti_payregister_stripe_idempotency_key');
 
             $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
             $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
@@ -208,6 +225,9 @@ class Stripe extends BasePaymentGateway
 
                 return Redirect::to($response->getRedirectUrl());
             }
+
+            if ($response->isSuccessful())
+                Session::forget('ti_payregister_stripe_idempotency_key');
 
             $this->handlePaymentResponse($response, $order, $host, $fields);
         }
