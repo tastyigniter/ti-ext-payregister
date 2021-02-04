@@ -76,6 +76,7 @@ return [
             'label' => 'lang:igniter.payregister::default.label_order_fee',
             'type' => 'number',
             'span' => 'right',
+            'default' => 0,
             'comment' => 'lang:igniter.payregister::default.help_order_fee',
         ],
         'order_total' => [
