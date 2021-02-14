@@ -6,9 +6,20 @@ return [
             'label' => 'lang:igniter.payregister::default.stripe.label_transaction_mode',
             'type' => 'radiotoggle',
             'default' => 'test',
+            'span' => 'left',
             'options' => [
                 'test' => 'lang:igniter.payregister::default.stripe.text_test',
                 'live' => 'lang:igniter.payregister::default.stripe.text_live',
+            ],
+        ],
+        'transaction_type' => [
+            'label' => 'lang:igniter.payregister::default.stripe.label_transaction_type',
+            'type' => 'radiotoggle',
+            'default' => 'auth_capture',
+            'span' => 'right',
+            'options' => [
+                'auth_only' => 'lang:igniter.payregister::default.stripe.text_auth_only',
+                'auth_capture' => 'lang:igniter.payregister::default.stripe.text_auth_capture',
             ],
         ],
         'live_secret_key' => [
@@ -57,14 +68,15 @@ return [
             'span' => 'left',
             'default' => 1,
             'options' => [
-                1 => 'lang:admin::lang.coupons.text_fixed_amount',
-                2 => 'lang:admin::lang.coupons.text_percentage',
+                1 => 'lang:admin::lang.menus.text_fixed_amount',
+                2 => 'lang:admin::lang.menus.text_percentage',
             ],
         ],
         'order_fee' => [
             'label' => 'lang:igniter.payregister::default.label_order_fee',
             'type' => 'number',
             'span' => 'right',
+            'default' => 0,
             'comment' => 'lang:igniter.payregister::default.help_order_fee',
         ],
         'order_total' => [
