@@ -1,6 +1,6 @@
 {
   "name": "igniter/payregister",
-  "type": "igniter-extension",
+  "type": "tastyigniter-extension",
   "keywords": ["tastyigniter", "paypal", "stripe", "payment", "gateway", "authorizenet", "mollie"],
   "require": {
     "php-http/guzzle6-adapter": "~2.0",
