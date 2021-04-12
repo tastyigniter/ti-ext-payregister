@@ -26,12 +26,19 @@ class PaymentAttempts extends BaseFormWidget
 
     public $formTitle = 'igniter.payregister::default.text_refund_title';
 
+    /**
+     * @var \Admin\Classes\BaseFormWidget|string
+     */
+    protected $dataTableWidget;
+
     public function initialize()
     {
         $this->fillFromConfig([
             'form',
             'columns',
         ]);
+
+        $this->makeDataTableWidget();
     }
 
     public function render()
@@ -94,6 +101,9 @@ class PaymentAttempts extends BaseFormWidget
 
     protected function makeDataTableWidget()
     {
+        if (!is_null($this->dataTableWidget))
+            return $this->dataTableWidget;
+
         $field = clone $this->formField;
 
         $fieldConfig = $field->config;
@@ -102,14 +112,14 @@ class PaymentAttempts extends BaseFormWidget
 
         $widgetConfig['model'] = $this->model;
         $widgetConfig['data'] = $this->data;
-        $widgetConfig['alias'] = $this->alias.'Form'.'payment-attempt';
+        $widgetConfig['alias'] = $this->alias.'Form'.'paymentAttempt';
         $widgetConfig['arrayName'] = $this->formField->arrayName.'[paymentAttempt]';
 
         $widget = $this->makeFormWidget('Admin\FormWidgets\DataTable', $field, $widgetConfig);
         $widget->bindToController();
         $widget->previewMode = $this->previewMode;
 
-        return $widget;
+        return $this->dataTableWidget = $widget;
     }
 
     protected function makeRefundFormWidget($model)
