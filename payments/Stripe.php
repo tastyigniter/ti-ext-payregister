@@ -305,6 +305,43 @@ class Stripe extends BasePaymentGateway
     //
     //
 
+    public function processRefundForm($data, $order, $paymentLog)
+    {
+        if (!is_null($paymentLog->refunded_at) OR !is_array($paymentLog->response))
+            throw new ApplicationException('Nothing to refund');
+
+        if (!array_get($paymentLog->response, 'status') === 'succeeded'
+            OR !array_get($paymentLog->response, 'object') === 'payment_intent'
+        ) throw new ApplicationException('No charge to refund');
+
+        $paymentChargeId = array_get($paymentLog->response, 'charges.data.0.id');
+        $refundAmount = array_get($data, 'refund_type') == 'full'
+            ? $order->order_total : array_get($data, 'refund_amount');
+
+        $fields = [
+            'transactionReference' => $paymentChargeId,
+            'amount' => number_format($refundAmount, 2, '.', ''),
+        ];
+
+        $gateway = $this->createGateway();
+        $response = $gateway->refund($fields)->send();
+
+        if ($response->isSuccessful()) {
+            $message = sprintf('Charge %s refunded successfully -> (%s: %s)',
+                $paymentChargeId,
+                currency_format($refundAmount),
+                array_get($response->getData(), 'refunds.data.0.id')
+            );
+
+            $order->logPaymentAttempt($message, 1, $fields, $response->getData());
+            $paymentLog->markAsRefundProcessed();
+
+            return;
+        }
+
+        $order->logPaymentAttempt('Refund failed -> '.$response->getMessage(), 0, $fields, $response->getData());
+    }
+
     /**
      * @return \Omnipay\Common\GatewayInterface|\Omnipay\Stripe\PaymentIntentsGateway
      */
