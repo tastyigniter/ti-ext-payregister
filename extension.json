@@ -5,7 +5,7 @@
   "version": "v1.4.2",
   "author": "SamPoyigi",
   "icon": {
-    "class": "fa fa-money",
+    "class": "fa fa-cash-register",
     "backgroundColor": "#88C425",
     "color": "#1B2707"
   },
