@@ -2,6 +2,7 @@
 
 namespace Igniter\PayRegister;
 
+use Admin\Models\Payments_model;
 use Admin\Widgets\Form;
 use Event;
 use System\Classes\BaseExtension;
@@ -65,6 +66,10 @@ class Extension extends BaseExtension
                     'partial' => '$/igniter/payregister/views/partials/refund_button',
                 ];
             }
+        });
+
+        Event::listen('main.theme.activated', function () {
+            Payments_model::syncAll();
         });
     }
 }
