@@ -139,7 +139,7 @@ class Stripe extends BasePaymentGateway
             if (!$response->isSuccessful())
                 throw new ApplicationException($response->getMessage());
 
-            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
+            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData(), true);
             $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
             $order->markAsPaymentProcessed();
 
@@ -333,7 +333,7 @@ class Stripe extends BasePaymentGateway
                 array_get($response->getData(), 'refunds.data.0.id')
             );
 
-            $order->logPaymentAttempt($message, 1, $fields, $response->getData());
+            $order->logPaymentAttempt($message, 1, $fields, $response->getData(), true);
             $paymentLog->markAsRefundProcessed();
 
             return;
