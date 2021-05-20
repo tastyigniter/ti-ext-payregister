@@ -333,7 +333,7 @@ class Stripe extends BasePaymentGateway
                 array_get($response->getData(), 'refunds.data.0.id')
             );
 
-            $order->logPaymentAttempt($message, 1, $fields, $response->getData(), true);
+            $order->logPaymentAttempt($message, 1, $fields, $response->getData());
             $paymentLog->markAsRefundProcessed();
 
             return;
