@@ -99,7 +99,7 @@ class Stripe extends BasePaymentGateway
                 return Redirect::to($response->getRedirectUrl());
             }
 
-            $this->handlePaymentResponse($response, $order, $host, $fields);
+            $this->handlePaymentResponse($response, $order, $host, $fields, TRUE);
         }
         catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
@@ -139,7 +139,7 @@ class Stripe extends BasePaymentGateway
             if (!$response->isSuccessful())
                 throw new ApplicationException($response->getMessage());
 
-            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
+            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData(), true);
             $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
             $order->markAsPaymentProcessed();
 
@@ -209,7 +209,7 @@ class Stripe extends BasePaymentGateway
                 return Redirect::to($response->getRedirectUrl());
             }
 
-            $this->handlePaymentResponse($response, $order, $host, $fields);
+            $this->handlePaymentResponse($response, $order, $host, $fields, TRUE);
         }
         catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
