@@ -21,6 +21,13 @@
         // Create a Stripe client.
         this.stripe = Stripe(this.options.publishableKey)
 
+        // Used by Stripe to identify this integration
+        this.stripe.registerAppInfo({
+            name: "TastyIgniter Stripe",
+            partner_id: 'pp_partner_JZyJnoEwlH92Fq',
+            url: 'https://tastyigniter.com/marketplace/item/igniter-payregister'
+        });
+
         // Create an instance of the card Element.
         this.card = this.stripe.elements().create('card')
 
@@ -68,6 +75,7 @@
 
     ProcessStripe.DEFAULTS = {
         publishableKey: undefined,
+        partnerId: 'pp_partner_JZyJnoEwlH92Fq',
         cardSelector: '#stripe-card-element',
         errorSelector: '#stripe-card-errors',
     }

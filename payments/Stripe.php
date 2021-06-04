@@ -8,6 +8,7 @@ use ApplicationException;
 use Exception;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
+use Omnipay\Common\Http\Client;
 use Omnipay\Omnipay;
 use Redirect;
 use Session;
@@ -28,7 +29,7 @@ class Stripe extends BasePaymentGateway
     {
         return [
             'stripe_payment_method' => '',
-            'stripe_idempotency_key' => uniqid(),
+            'stripe_idempotency_key' => uniqid('', TRUE),
         ];
     }
 
@@ -350,11 +351,36 @@ class Stripe extends BasePaymentGateway
      */
     protected function createGateway()
     {
-        $gateway = Omnipay::create('Stripe\PaymentIntents');
+        $gateway = Omnipay::create('Stripe\PaymentIntents', $this->createHttpClient());
 
         $gateway->setApiKey($this->getSecretKey());
+        $gateway->setStripeVersion('2020-08-27');
 
         return $gateway;
+    }
+
+    protected function createHttpClient()
+    {
+        $userAgent = [
+            'lang' => 'php',
+            'lang_version' => PHP_VERSION,
+            'publisher' => 'TastyIgniter',
+            'uname' => php_uname(),
+            'application' => [
+                'name' => 'TastyIgniter Stripe',
+                'partner_id' => 'pp_partner_JZyJnoEwlH92Fq', // Used by Stripe to identify this integration
+                'url' => 'https://tastyigniter.com/marketplace/item/igniter-payregister',
+            ],
+        ];
+
+        $appInfo = $userAgent['application'];
+
+        return new Client(\Http\Adapter\Guzzle6\Client::createWithConfig([
+            'headers' => [
+                'User-Agent' => sprintf('%s (%s)', $appInfo['name'], $appInfo['url']),
+                'X-Stripe-Client-User-Agent' => json_encode($userAgent),
+            ],
+        ]));
     }
 
     protected function getPaymentFormFields($order, $data = [])
