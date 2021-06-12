@@ -318,6 +318,9 @@ class Stripe extends BasePaymentGateway
         $refundAmount = array_get($data, 'refund_type') == 'full'
             ? $order->order_total : array_get($data, 'refund_amount');
 
+        if ($refundAmount > $order->order_total)
+            throw new ApplicationException('Refund amount should be be less than total');
+
         $fields = [
             'transactionReference' => $paymentChargeId,
             'amount' => number_format($refundAmount, 2, '.', ''),
