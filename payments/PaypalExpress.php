@@ -4,12 +4,12 @@ namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 use Admin\Models\Orders_model;
-use ApplicationException;
 use Exception;
+use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
+use Illuminate\Support\Facades\Redirect;
 use Omnipay\Omnipay;
-use Redirect;
 
 class PaypalExpress extends BasePaymentGateway
 {

@@ -4,7 +4,7 @@ namespace Igniter\PayRegister;
 
 use Admin\Models\Payments_model;
 use Admin\Widgets\Form;
-use Event;
+use Illuminate\Support\Facades\Event;
 use System\Classes\BaseExtension;
 
 class Extension extends BaseExtension

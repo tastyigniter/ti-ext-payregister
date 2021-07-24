@@ -4,13 +4,13 @@ namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
 use Admin\Models\Orders_model;
-use ApplicationException;
 use Exception;
+use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Response;
 use Omnipay\Omnipay;
-use Redirect;
-use Response;
 
 class Mollie extends BasePaymentGateway
 {
@@ -48,7 +48,7 @@ class Mollie extends BasePaymentGateway
      * @param \Admin\Models\Orders_model $order
      *
      * @return bool|\Illuminate\Http\RedirectResponse
-     * @throws \ApplicationException
+     * @throws \Igniter\Flame\Exception\ApplicationException
      */
     public function processPaymentForm($data, $host, $order)
     {

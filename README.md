@@ -54,7 +54,7 @@ class Cod extends BasePaymentGateway
      * @param \Admin\Models\Payments_model $host
      * @param \Admin\Models\Orders_model $order
      *
-     * @throws \ApplicationException
+     * @throws \Igniter\Flame\Exception\ApplicationException
      */
     public function processPaymentForm($data, $host, $order)
     {

@@ -3,8 +3,8 @@
 namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
-use ApplicationException;
 use Exception;
+use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
 use Omnipay\Omnipay;
