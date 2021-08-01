@@ -140,7 +140,7 @@ class Stripe extends BasePaymentGateway
             if (!$response->isSuccessful())
                 throw new ApplicationException($response->getMessage());
 
-            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData(), true);
+            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData(), TRUE);
             $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
             $order->markAsPaymentProcessed();
 
