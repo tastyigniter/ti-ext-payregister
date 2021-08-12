@@ -368,7 +368,7 @@ class Stripe extends BasePaymentGateway
             'uname' => php_uname(),
             'application' => [
                 'name' => 'TastyIgniter Stripe',
-                'partner_id' => 'pp_partner_JZyJnoEwlH92Fq', // Used by Stripe to identify this integration
+                'partner_id' => 'pp_partner_JZyCCGR3cOwj9S', // Used by Stripe to identify this integration
                 'url' => 'https://tastyigniter.com/marketplace/item/igniter-payregister',
             ],
         ];

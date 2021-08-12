@@ -24,7 +24,7 @@
         // Used by Stripe to identify this integration
         this.stripe.registerAppInfo({
             name: "TastyIgniter Stripe",
-            partner_id: 'pp_partner_JZyJnoEwlH92Fq',
+            partner_id: this.options.partnerId,  // Used by Stripe to identify this integration
             url: 'https://tastyigniter.com/marketplace/item/igniter-payregister'
         });
 
@@ -75,7 +75,7 @@
 
     ProcessStripe.DEFAULTS = {
         publishableKey: undefined,
-        partnerId: 'pp_partner_JZyJnoEwlH92Fq',
+        partnerId: 'pp_partner_JZyCCGR3cOwj9S',
         cardSelector: '#stripe-card-element',
         errorSelector: '#stripe-card-errors',
     }
