@@ -19,7 +19,9 @@
             throw new Error('Missing stripe publishable key')
 
         // Create a Stripe client.
-        this.stripe = Stripe(this.options.publishableKey)
+        this.stripe = Stripe(this.options.publishableKey, {
+            locale: $('html').attr('lang')
+        })
 
         // Used by Stripe to identify this integration
         this.stripe.registerAppInfo({
