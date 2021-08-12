@@ -8,8 +8,10 @@ use Exception;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 use Omnipay\Common\Http\Client;
 use Omnipay\Omnipay;
 
@@ -22,6 +24,7 @@ class Stripe extends BasePaymentGateway
     {
         return [
             'stripe_return_url' => 'processReturnUrl',
+            'stripe_webhook' => 'processWebhookUrl',
         ];
     }
 
@@ -413,5 +416,25 @@ class Stripe extends BasePaymentGateway
         $request->setIdempotencyKeyHeader(array_get($data, 'stripe_idempotency_key'));
 
         return $request;
+    }
+
+    //
+    // Webhook
+    //
+
+    public function processWebhookUrl()
+    {
+        if (strtolower(request()->method()) !== 'post')
+            return response('Request method must be POST', 400);
+
+        $payload = json_decode(request()->getContent(), TRUE);
+        if (!isset($payload['type']) OR !strlen($eventType = $payload['type']))
+            return response('Missing webhook event name', 400);
+
+        $eventName = 'handle'.Str::studly(str_replace('.', '_', $eventType));
+
+        Event::fire('payregister.stripe.'.$eventName, [$payload]);
+
+        return response('Webhook Handled');
     }
 }

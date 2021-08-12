@@ -2,6 +2,10 @@
 
 return [
     'fields' => [
+        'setup' => [
+            'type' => 'partial',
+            'path' => '$/igniter/payregister/payments/stripe/info',
+        ],
         'transaction_mode' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_transaction_mode',
             'type' => 'radiotoggle',
