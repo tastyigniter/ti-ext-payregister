@@ -193,12 +193,8 @@ class Stripe extends BasePaymentGateway
             }
 
             if ($createIntent) {
-
-                $intent = $stripe->paymentIntents->create([
-                    'amount' => number_format($order->order_total, 2, '', ''),
-                    'currency' => currency()->getUserCurrency(),
-                    'capture_method' => $this->shouldAuthorizePayment() ? 'automatic' : 'manual',
-                ]);
+                $fields = $this->getPaymentFormFields($order);
+                $intent = $stripe->paymentIntents->create($fields);
 
                 Session::put($this->session_key, $intent->id);
             }
@@ -254,22 +250,17 @@ class Stripe extends BasePaymentGateway
         $stripe = $this->initialiseStripe();
 
         try {
-            $intent = $stripe->paymentIntents->create([
-                'customer' => array_get($profile->profile_data, 'customer_id'),
-                'payment_method' => array_get($profile->profile_data, 'card_id'),
-                'off_session' => true,
-                'confirm' => true,
-                'capture_method' => $this->shouldAuthorizePayment() ? 'automatic' : 'manual',
-                'metadata' => [
-                    'order_id' => $order->order_id,
-                    'customer_email' => $order->email,
-                ],
-            ]);
+            $fields = $this->getPaymentFormFields($order, $data);
+            $fields['customer'] = array_get($profile->profile_data, 'customer_id');
+            $fields['payment_method'] = array_get($profile->profile_data, 'card_id');
+            $fields['off_session'] = true;
+
+            $intent = $stripe->paymentIntents->create($fields);
 
             if (!$intent->status !== 'succeeded')
                 throw new Exception('Status '.$intent->status);
 
-            $order->logPaymentAttempt('Payment successful', 1, $data, $intent, TRUE);
+            $order->logPaymentAttempt('Payment successful', 1, $fields, $intent, TRUE);
             $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
             $order->markAsPaymentProcessed();
         }
@@ -393,10 +384,11 @@ class Stripe extends BasePaymentGateway
         try {
 
             $stripe = $this->initialiseStripe();
-            $response = $stripe->refund([
+            $fields = [
                 'payment_intent' => $paymentChargeId,
                 'amount' => number_format($refundAmount, 2, '.', ''),
-            ]);
+            ];
+            $response = $stripe->refund($fields);
 
             if ($response->status === 'failed')
                 throw new Exception('Refund failed');
@@ -460,10 +452,10 @@ class Stripe extends BasePaymentGateway
         $fields = [
             'amount' => number_format($order->order_total, 2, '.', ''),
             'currency' => currency()->getUserCurrency(),
-            'transactionId' => $order->order_id,
-            'returnUrl' => $returnUrl,
+            'return_url' => $returnUrl,
             'receipt_email' => $order->email,
             'confirm' => TRUE,
+            'capture_method' => $this->shouldAuthorizePayment() ? 'automatic' : 'manual',
             'metadata' => [
                 'order_id' => $order->order_id,
                 'customer_email' => $order->email,
