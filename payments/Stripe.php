@@ -77,15 +77,15 @@ class Stripe extends BasePaymentGateway
     }
 
     /**
-      * Processes payment from a payment button
-      *
-      * @param array $data
-      * @param \Admin\Models\Payments_model $host
-      * @param \Admin\Models\Orders_model $order
-      *
-      * @return bool|\Illuminate\Http\RedirectResponse
-      * @throws \ApplicationException
-      */
+     * Processes payment from a payment button
+     *
+     * @param array $data
+     * @param \Admin\Models\Payments_model $host
+     * @param \Admin\Models\Orders_model $order
+     *
+     * @return bool|\Illuminate\Http\RedirectResponse
+     * @throws \ApplicationException
+     */
     public function processPaymentButton($data, $host, $order)
     {
 
