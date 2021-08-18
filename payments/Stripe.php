@@ -96,6 +96,10 @@ class Stripe extends BasePaymentGateway
                 throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
 
             $intent = $stripe->paymentIntents->retrieve($intent);
+
+            $fields = $this->getPostPaymentFields($order);
+            $stripe->paymentIntents->update($intent->id, $fields);
+
             if ($intent->status !== 'succeeded')
                 throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
 
@@ -130,15 +134,16 @@ class Stripe extends BasePaymentGateway
                 throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
 
             $intent = $stripe->paymentIntents->retrieve($intent);
-            if ($intent->status !== 'succeeded')
-                throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
 
-            $intent_data = [];
+            $intent_data = $this->getPostPaymentFields($order, $data);
             if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
                 $profile = $this->updatePaymentProfile($order->customer, $data);
                 $intent_data['customer'] = array_get($profile->profile_data, 'customer_id');
-                $stripe->paymentIntents->update($intent->id, $intent_data);
             }
+            $stripe->paymentIntents->update($intent->id, $intent_data);
+
+            if ($intent->status !== 'succeeded')
+                throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
 
             $order->logPaymentAttempt('Payment successful', 1, $data, $intent, TRUE);
             $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
@@ -177,6 +182,10 @@ class Stripe extends BasePaymentGateway
 
             $stripe = $this->initialiseStripe();
             $intent = $stripe->paymentIntents->retrieve($intent);
+
+            $fields = $this->getPostPaymentFields($order);
+            $stripe->paymentIntents->update($intent->id, $fields);
+
             if (!$intent->status !== 'succeeded')
                 throw new Exception('Status '.$intent->status);
 
@@ -209,6 +218,7 @@ class Stripe extends BasePaymentGateway
                     $intent = $stripe->paymentIntents->update($intent, [
                         'amount' => number_format($order->order_total, 2, '', ''),
                     ]);
+                    $createIntent = false;
                 } catch (Exception $e) {
                     $createIntent = true;
                 }
@@ -274,6 +284,7 @@ class Stripe extends BasePaymentGateway
 
         try {
             $fields = $this->getPaymentFormFields($order, $data);
+            $fields = array_merge_recursive($fields, $this->getPostPaymentFields($order, $data));
             $fields['customer'] = array_get($profile->profile_data, 'customer_id');
             $fields['payment_method'] = array_get($profile->profile_data, 'card_id');
             $fields['off_session'] = true;
@@ -409,7 +420,7 @@ class Stripe extends BasePaymentGateway
             $stripe = $this->initialiseStripe();
             $fields = [
                 'payment_intent' => $paymentChargeId,
-                'amount' => number_format($refundAmount, 2, '.', ''),
+                'amount' => number_format($refundAmount, 2, '', ''),
             ];
             $response = $stripe->refund($fields);
 
@@ -473,12 +484,20 @@ class Stripe extends BasePaymentGateway
         $returnUrl .= '?redirect='.array_get($data, 'successPage').'&cancel='.array_get($data, 'cancelPage');
 
         $fields = [
-            'amount' => number_format($order->order_total, 2, '.', ''),
+            'amount' => number_format($order->order_total, 2, '', ''),
             'currency' => currency()->getUserCurrency(),
             'return_url' => $returnUrl,
-            'receipt_email' => $order->email,
-            'confirm' => TRUE,
             'capture_method' => $this->shouldAuthorizePayment() ? 'automatic' : 'manual',
+        ];
+
+        return $fields;
+    }
+
+    protected function getPostPaymentFields($order, $data = [])
+    {
+        $fields = [
+            'confirm' => TRUE,
+            'receipt_email' => $order->email,
             'metadata' => [
                 'order_id' => $order->order_id,
                 'customer_email' => $order->email,
