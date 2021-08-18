@@ -86,8 +86,8 @@ class Stripe extends BasePaymentGateway
       * @return bool|\Illuminate\Http\RedirectResponse
       * @throws \ApplicationException
       */
-     public function processPaymentButton($data, $host, $order)
-     {
+    public function processPaymentButton($data, $host, $order)
+    {
 
         $stripe = $this->initialiseStripe();
 
@@ -111,7 +111,7 @@ class Stripe extends BasePaymentGateway
             $order->logPaymentAttempt('Payment error -> '.$e->getMessage(), 0, $data, $intent ?? []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
-     }
+    }
 
     /**
      * Processes payment using passed data.
