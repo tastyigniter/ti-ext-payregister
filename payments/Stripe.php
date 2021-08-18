@@ -288,7 +288,7 @@ class Stripe extends BasePaymentGateway
 
                 $response = $stripe->customers->retrieve($customerId);
 
-                if (isset($response->deleted])) {
+                if (isset($response->deleted)) {
                     $newCustomerRequired = TRUE;
                 }
             }
