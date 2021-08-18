@@ -117,8 +117,8 @@ class Stripe extends BasePaymentGateway
             $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
             $order->markAsPaymentProcessed();
         }
-        catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $data, $intent ?? []);
+        catch (Exception $e) {
+            $order->logPaymentAttempt('Payment error -> '.$e->getMessage(), 0, $data, $intent ?? []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
@@ -279,33 +279,36 @@ class Stripe extends BasePaymentGateway
         $customerId = array_get($profileData, 'customer_id');
 
         $response = FALSE;
-        $gateway = $this->createGateway();
+        $stripe = $this->initialiseStripe();
         $newCustomerRequired = !$customerId;
 
         if (!$newCustomerRequired) {
-            $response = $gateway->fetchCustomer([
-                'customerReference' => $customerId,
-            ])->send();
 
-            if ($response->isSuccessful()) {
-                if (isset($responseData['deleted'])) {
+            try {
+
+                $response = $stripe->customers->retrieve($customerId);
+
+                if (isset($response->deleted])) {
                     $newCustomerRequired = TRUE;
                 }
             }
-            else {
+            catch (Exception $e) {
                 $newCustomerRequired = TRUE;
             }
         }
 
-        if ($newCustomerRequired) {
-            $response = $gateway->createCustomer([
-                'name' => $customer->first_name.' '.$customer->last_name,
-                'email' => $customer->email,
-            ])->send();
+        try {
 
-            if (!$response->isSuccessful()) {
-                throw new ApplicationException($response->getMessage());
+            if ($newCustomerRequired) {
+                $response = $stripe->create([
+                    'name' => $customer->first_name.' '.$customer->last_name,
+                    'email' => $customer->email,
+                ]);
             }
+
+        }
+        catch (Exception $e) {
+            throw new ApplicationException($e->getMessage());
         }
 
         return $response;
@@ -317,27 +320,32 @@ class Stripe extends BasePaymentGateway
         $token = array_get($data, 'stripe_payment_method');
 
         $response = FALSE;
-        $gateway = $this->createGateway();
+        $stripe = $this->initialiseStripe();
         $newCardRequired = !$cardId;
 
         if (!$newCardRequired) {
-            $response = $gateway->fetchCard([
-                'cardReference' => $cardId,
-                'customerReference' => $customerId,
-            ])->send();
 
-            if (!$response->isSuccessful())
+            try {
+                $response = $stripe->paymentMethods->retrieve($cardId);
+
+                if ($response->customer != $customerId)
+                    $newCardRequired = TRUE;
+            }
+            catch (Exception $e) {
                 $newCardRequired = TRUE;
+            }
         }
 
         if ($newCardRequired) {
-            $response = $gateway->attachCard([
-                'customerReference' => $customerId,
-                'paymentMethod' => $token,
-            ])->send();
 
-            if (!$response->isSuccessful())
+            try {
+                $response = $stripe->paymentMethods->attach($token, [
+                    'customer' => $customerId,
+                ])->send();
+            }
+            catch (Exception $e) {
                 throw new ApplicationException($response->getMessage());
+            }
         }
 
         return $response;
