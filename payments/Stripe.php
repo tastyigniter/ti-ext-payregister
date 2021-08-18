@@ -145,17 +145,15 @@ class Stripe extends BasePaymentGateway
             if (!$paymentMethod OR $paymentMethod->getGatewayClass() != static::class)
                 throw new ApplicationException('No valid payment method found');
 
-            $fields = $this->getPaymentFormFields($order);
-            $fields['paymentIntentReference'] = Session::get('ti_payregister_stripe_intent');
+            if (!$intent = Session::get($this->session_key))
+                throw new ApplicationException('No valid payment method found');
 
-            $gateway = $this->createGateway();
-            $request = $gateway->completePurchase($fields);
-            $response = $request->send();
+            $stripe = $this->initialiseStripe();
+            $intent = $stripe->paymentIntents->retrieve($intent);
+            if (!$intent->status !== 'succeeded')
+                throw new Exception('Status '.$intent->status);
 
-            if (!$response->isSuccessful())
-                throw new ApplicationException($response->getMessage());
-
-            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData(), TRUE);
+            $order->logPaymentAttempt('Payment successful', 1, $fields, $intent, TRUE);
             $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
             $order->markAsPaymentProcessed();
 
@@ -175,11 +173,9 @@ class Stripe extends BasePaymentGateway
     public function createOrFetchIntent($order)
     {
         try {
-
             $stripe = $this->initialiseStripe();
 
             $createIntent = true;
-
             if ($intent = Session::get($this->session_key)) {
 
                 try {
