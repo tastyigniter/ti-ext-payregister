@@ -88,7 +88,6 @@ class Stripe extends BasePaymentGateway
      */
     public function processPaymentButton($data, $host, $order)
     {
-
         $stripe = $this->initialiseStripe();
 
         try {
