@@ -61,14 +61,15 @@
         // Prevent the form from submitting with the default action
         event.preventDefault()
 
-        this.stripe.createPaymentMethod('card', this.card).then(function (result) {
+        this.stripe.confirmCardPayment(this.options.clientSecret, {
+            payment_method: {
+                card: this.card,
+            },
+        }).then(function (result) {
             if (result.error) {
                 // Inform the user if there was an error.
                 self.validationErrorHandler(result)
             } else {
-                // Insert the token into the form so it gets submitted to the server
-                $form.find('input[name="stripe_payment_method"]').val(result.paymentMethod.id);
-
                 // Switch back to default to submit form
                 $form.unbind('submitCheckoutForm').submit()
             }
@@ -77,6 +78,7 @@
 
     ProcessStripe.DEFAULTS = {
         publishableKey: undefined,
+        clientSecret: undefined,
         partnerId: 'pp_partner_JZyCCGR3cOwj9S',
         cardSelector: '#stripe-card-element',
         errorSelector: '#stripe-card-errors',
