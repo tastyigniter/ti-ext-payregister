@@ -2,6 +2,7 @@
     id="stripePaymentForm"
     class="payment-form w-100"
     data-publishable-key="{{ $paymentMethod->getPublishableKey() }}"
+    data-client-secret="{{ $paymentMethod->createOrFetchIntent($order) }}"
     data-card-selector="#stripe-card-element"
     data-error-selector="#stripe-card-errors"
 >

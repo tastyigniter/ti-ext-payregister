@@ -14,11 +14,14 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Omnipay\Common\Http\Client;
 use Omnipay\Omnipay;
+use Stripe\StripeClient;
 
 class Stripe extends BasePaymentGateway
 {
     use EventEmitter;
     use PaymentHelpers;
+
+    protected $session_key = 'ti_payregister_stripe_intent';
 
     public function registerEntryPoints()
     {
@@ -86,27 +89,36 @@ class Stripe extends BasePaymentGateway
     {
         $this->validatePaymentMethod($order, $host);
 
-        $fields = $this->getPaymentFormFields($order, $data);
-        $fields['paymentMethod'] = array_get($data, 'stripe_payment_method');
-
-        if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
-            $profile = $this->updatePaymentProfile($order->customer, $data);
-            $fields['customerReference'] = array_get($profile->profile_data, 'customer_id');
-        }
+        $stripe = $this->initialiseStripe();
 
         try {
-            $response = $this->createPurchaseRequest($fields, $data)->send();
+            if (!$intent = Session::get($this->session_key))
+                throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
 
-            if ($response->isRedirect()) {
-                Session::put('ti_payregister_stripe_intent', $response->getPaymentIntentReference());
+            $intent = $stripe->paymentIntents->retrieve($intent);
+            if ($intent->status !== 'succeeded')
+                throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
 
-                return Redirect::to($response->getRedirectUrl());
+            $intent_data = [
+                'metadata' => [
+                    'order_id' => $order->order_id,
+                    'customer_email' => $order->email,
+                ],
+            ];
+
+            if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
+                $profile = $this->updatePaymentProfile($order->customer, $data);
+                $intent_data['customer'] = array_get($profile->profile_data, 'customer_id');
             }
 
-            $this->handlePaymentResponse($response, $order, $host, $fields, TRUE);
+            $stripe->paymentIntents->update($intent->id, $intent_data);
+
+            $order->logPaymentAttempt('Payment successful', 1, $data, $intent, TRUE);
+            $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
+            $order->markAsPaymentProcessed();
         }
         catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $data, $intent ?? []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
@@ -158,6 +170,46 @@ class Stripe extends BasePaymentGateway
         }
 
         return Redirect::to(page_url($cancelPage));
+    }
+
+    public function createOrFetchIntent($order)
+    {
+        try {
+
+            $stripe = $this->initialiseStripe();
+
+            $createIntent = true;
+
+            if ($intent = Session::get($this->session_key)) {
+
+                try {
+
+                    $intent = $stripe->paymentIntents->update($intent, [
+                        'amount' => number_format($order->order_total, 2, '', ''),
+                    ]);
+
+                } catch (Exception $e) {
+                    $createIntent = true;
+                }
+
+            }
+
+            if ($createIntent) {
+
+                $intent = $stripe->paymentIntents->create([
+                    'amount' => number_format($order->order_total, 2, '', ''),
+                    'currency' => currency()->getUserCurrency(),
+                ]);
+
+                Session::put($this->session_key, $intent->id);
+            }
+
+            return $intent->client_secret;
+
+        } catch (Exception $e) {
+            flash()->warning($e->getMessage())->important();
+            return '';
+        }
     }
 
     //
@@ -416,6 +468,18 @@ class Stripe extends BasePaymentGateway
         $request->setIdempotencyKeyHeader(array_get($data, 'stripe_idempotency_key'));
 
         return $request;
+    }
+
+    protected function initialiseStripe()
+    {
+        try {
+            $stripe = new \Stripe\StripeClient([
+                'api_key' => $this->getSecretKey(),
+            ]);
+            return $stripe;
+        } catch (Exception $e) {
+            throw new ApplicationException($e->getMessage());
+        }
     }
 
     //
