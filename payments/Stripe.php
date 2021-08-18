@@ -383,23 +383,25 @@ class Stripe extends BasePaymentGateway
             OR !array_get($paymentLog->response, 'object') === 'payment_intent'
         ) throw new ApplicationException('No charge to refund');
 
-        $paymentChargeId = array_get($paymentLog->response, 'charges.data.0.id');
+        $paymentChargeId = array_get($paymentLog->response, 'id');
         $refundAmount = array_get($data, 'refund_type') == 'full'
             ? $order->order_total : array_get($data, 'refund_amount');
 
         if ($refundAmount > $order->order_total)
             throw new ApplicationException('Refund amount should be be less than total');
 
-        $fields = [
-            'transactionReference' => $paymentChargeId,
-            'amount' => number_format($refundAmount, 2, '.', ''),
-        ];
+        try {
 
-        $gateway = $this->createGateway();
-        $response = $gateway->refund($fields)->send();
+            $stripe = $this->initialiseStripe();
+            $response = $stripe->refund([
+                'payment_intent' => $paymentChargeId,
+                'amount' => number_format($refundAmount, 2, '.', ''),
+            ]);
 
-        if ($response->isSuccessful()) {
-            $message = sprintf('Charge %s refunded successfully -> (%s: %s)',
+            if ($response->status === 'failed')
+                throw new Exception('Refund failed');
+
+            $message = sprintf('Payment intent %s refunded successfully -> (%s: %s)',
                 $paymentChargeId,
                 currency_format($refundAmount),
                 array_get($response->getData(), 'refunds.data.0.id')
@@ -407,11 +409,10 @@ class Stripe extends BasePaymentGateway
 
             $order->logPaymentAttempt($message, 1, $fields, $response->getData());
             $paymentLog->markAsRefundProcessed();
-
-            return;
         }
-
-        $order->logPaymentAttempt('Refund failed -> '.$response->getMessage(), 0, $fields, $response->getData());
+        catch (Exception $e) {
+            $order->logPaymentAttempt('Refund failed -> '.$response->getMessage(), 0, $fields, $response->getData());
+        }
     }
 
     /**
@@ -472,15 +473,6 @@ class Stripe extends BasePaymentGateway
         $this->fireSystemEvent('payregister.stripe.extendFields', [&$fields, $order, $data]);
 
         return $fields;
-    }
-
-    protected function createPurchaseRequest(array $fields, array $data)
-    {
-        $method = $this->shouldAuthorizePayment() ? 'authorize' : 'purchase';
-        $request = $this->createGateway()->$method($fields);
-        $request->setIdempotencyKeyHeader(array_get($data, 'stripe_idempotency_key'));
-
-        return $request;
     }
 
     protected function initialiseStripe()
