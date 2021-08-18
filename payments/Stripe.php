@@ -183,11 +183,9 @@ class Stripe extends BasePaymentGateway
             if ($intent = Session::get($this->session_key)) {
 
                 try {
-
                     $intent = $stripe->paymentIntents->update($intent, [
                         'amount' => number_format($order->order_total, 2, '', ''),
                     ]);
-
                 } catch (Exception $e) {
                     $createIntent = true;
                 }
@@ -199,6 +197,7 @@ class Stripe extends BasePaymentGateway
                 $intent = $stripe->paymentIntents->create([
                     'amount' => number_format($order->order_total, 2, '', ''),
                     'currency' => currency()->getUserCurrency(),
+                    'capture_method' => $this->shouldAuthorizePayment() ? 'automatic' : 'manual',
                 ]);
 
                 Session::put($this->session_key, $intent->id);
@@ -252,24 +251,30 @@ class Stripe extends BasePaymentGateway
         if (!$profile OR !$profile->hasProfileData())
             throw new ApplicationException('Payment profile not found');
 
-        $fields = $this->getPaymentFormFields($order, $data);
-        $fields['cardReference'] = array_get($profile->profile_data, 'card_id');
-        $fields['customerReference'] = array_get($profile->profile_data, 'customer_id');
-        $fields['idempotencyKey'] = array_get($data, 'stripe_idempotency_key');
+        $stripe = $this->initialiseStripe();
 
         try {
-            $response = $this->createPurchaseRequest($fields, $data)->send();
+            $intent = $stripe->paymentIntents->create([
+                'customer' => array_get($profile->profile_data, 'customer_id'),
+                'payment_method' => array_get($profile->profile_data, 'card_id'),
+                'off_session' => true,
+                'confirm' => true,
+                'capture_method' => $this->shouldAuthorizePayment() ? 'automatic' : 'manual',
+                'metadata' => [
+                    'order_id' => $order->order_id,
+                    'customer_email' => $order->email,
+                ],
+            ]);
 
-            if ($response->isRedirect()) {
-                Session::put('ti_payregister_stripe_intent', $response->getPaymentIntentReference());
+            if (!$intent->status !== 'succeeded')
+                throw new Exception('Status '.$intent->status);
 
-                return Redirect::to($response->getRedirectUrl());
-            }
-
-            $this->handlePaymentResponse($response, $order, $host, $fields, TRUE);
+            $order->logPaymentAttempt('Payment successful', 1, $data, $intent, TRUE);
+            $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
+            $order->markAsPaymentProcessed();
         }
-        catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
+        catch (Exception $e) {
+            $order->logPaymentAttempt('Payment error -> '.$e->getMessage(), 0, $data, $intent ?? []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
@@ -285,7 +290,6 @@ class Stripe extends BasePaymentGateway
         if (!$newCustomerRequired) {
 
             try {
-
                 $response = $stripe->customers->retrieve($customerId);
 
                 if (isset($response->deleted)) {
