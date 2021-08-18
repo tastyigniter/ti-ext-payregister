@@ -208,6 +208,7 @@ class Stripe extends BasePaymentGateway
 
         } catch (Exception $e) {
             flash()->warning($e->getMessage())->important();
+
             return '';
         }
     }
@@ -473,9 +474,10 @@ class Stripe extends BasePaymentGateway
     protected function initialiseStripe()
     {
         try {
-            $stripe = new \Stripe\StripeClient([
+            $stripe = new StripeClient([
                 'api_key' => $this->getSecretKey(),
             ]);
+
             return $stripe;
         } catch (Exception $e) {
             throw new ApplicationException($e->getMessage());
