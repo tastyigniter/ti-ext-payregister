@@ -62,7 +62,7 @@
         });
 
         // Check the availability of the Payment Request API first.
-        paymentRequest.canMakePayment().then(function(result) {
+        paymentRequest.canMakePayment().then(function (result) {
             if (result) {
                 paymentRequestButton.mount(this.options.paymentRequestSelector);
             } else {
@@ -71,39 +71,36 @@
         }.bind(this));
 
         var self = this;
-        paymentRequest.on('paymentmethod', function(ev) {
-            // Confirm the PaymentIntent without handling potential next actions (yet).
-            this.stripe.confirmCardPayment(
-                clientSecret,
-                {payment_method: ev.paymentMethod.id},
-                {handleActions: false}
-            ).then(function(confirmResult) {
-                if (confirmResult.error) {
-                    // Report to the browser that the payment failed, prompting it to
-                    // re-show the payment interface, or show an error message and close
-                    // the payment interface.
-                    ev.complete('fail');
-                } else {
-                    // Report to the browser that the confirmation was successful, prompting
-                    // it to close the browser payment method collection interface.
-                    ev.complete('success');
-                    // Check if the PaymentIntent requires any actions and if so let Stripe.js
-                    // handle the flow. If using an API version older than "2019-02-11"
-                    // instead check for: `paymentIntent.status === "requires_source_action"`.
-                    if (confirmResult.paymentIntent.status === "requires_action") {
-                        // Let Stripe.js handle the rest of the payment flow.
-                        this.stripe.confirmCardPayment(clientSecret).then(function(result) {
-                            if (result.error) {
-                            // The payment failed -- ask your customer for a new payment method.
-                            } else {
-                            // The payment has succeeded.
-                            }
-                        });
-                  } else {
-                    // The payment has succeeded.
-                  }
-                }
-            });
+        paymentRequest.on('paymentmethod', function (ev) {
+            // run precheckout validation, and on response do stripe things
+            this.$checkoutForm.data('ti.checkout').onValidateCheckoutForm(this.$checkoutForm, (validateResponse) => {
+                this.stripe.confirmCardPayment(
+                    clientSecret,
+                    {payment_method: ev.paymentMethod.id},
+                    {handleActions: false}
+                ).then(function (confirmResult) {
+                    console.log(confirmResult);
+                    if (confirmResult.error) {
+                        ev.complete('fail');
+                        this.validationErrorHandler(confirmResult);
+                    } else {
+                        ev.complete('success');
+                        if (confirmResult.paymentIntent.status === 'requires_action') {
+                            this.stripe.confirmCardPayment(clientSecret).then(function (result) {
+                                console.log(result);
+                                if (result.error) {
+                                    this.validationErrorHandler(result);
+                                } else {
+                                    this.$checkoutForm.unbind('submitCheckoutForm').submit()
+                                }
+                            });
+                        } else {
+                            this.$checkoutForm.unbind('submitCheckoutForm').submit()
+                        }
+                    }
+                });
+
+
         });
     }
 
