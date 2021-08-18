@@ -34,6 +34,7 @@ class Stripe extends BasePaymentGateway
     public function getHiddenFields()
     {
         return [
+            'pay_from_payment_button' => 0,
             'stripe_payment_method' => '',
             'stripe_idempotency_key' => uniqid('', TRUE),
         ];
@@ -76,6 +77,39 @@ class Stripe extends BasePaymentGateway
     }
 
     /**
+      * Processes payment from a payment button
+      *
+      * @param array $data
+      * @param \Admin\Models\Payments_model $host
+      * @param \Admin\Models\Orders_model $order
+      *
+      * @return bool|\Illuminate\Http\RedirectResponse
+      * @throws \ApplicationException
+      */
+     public function processPaymentButton($data, $host, $order)
+     {
+
+        $stripe = $this->initialiseStripe();
+
+        try {
+            if (!$intent = Session::get($this->session_key))
+                throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
+
+            $intent = $stripe->paymentIntents->retrieve($intent);
+            if ($intent->status !== 'succeeded')
+                throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
+
+            $order->logPaymentAttempt('Payment successful', 1, $data, $intent, TRUE);
+            $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
+            $order->markAsPaymentProcessed();
+        }
+        catch (Exception $e) {
+            $order->logPaymentAttempt('Payment error -> '.$e->getMessage(), 0, $data, $intent ?? []);
+            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+        }
+     }
+
+    /**
      * Processes payment using passed data.
      *
      * @param array $data
@@ -99,19 +133,12 @@ class Stripe extends BasePaymentGateway
             if ($intent->status !== 'succeeded')
                 throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
 
-            $intent_data = [
-                'metadata' => [
-                    'order_id' => $order->order_id,
-                    'customer_email' => $order->email,
-                ],
-            ];
-
+            $intent_data = [];
             if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
                 $profile = $this->updatePaymentProfile($order->customer, $data);
                 $intent_data['customer'] = array_get($profile->profile_data, 'customer_id');
+                $stripe->paymentIntents->update($intent->id, $intent_data);
             }
-
-            $stripe->paymentIntents->update($intent->id, $intent_data);
 
             $order->logPaymentAttempt('Payment successful', 1, $data, $intent, TRUE);
             $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);

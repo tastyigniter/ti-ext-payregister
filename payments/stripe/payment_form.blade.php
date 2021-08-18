@@ -5,6 +5,9 @@
     data-client-secret="{{ $paymentMethod->createOrFetchIntent($order) }}"
     data-card-selector="#stripe-card-element"
     data-error-selector="#stripe-card-errors"
+    data-country="{{ strtoupper($location->getModel()->country->iso_code_2) }}"
+    data-currency="{{ strtolower(currency()->getUserCurrency()) }}"
+    data-payment-request-selector="#stripe-payment-request-button"
 >
     @foreach ($paymentMethod->getHiddenFields() as $name => $value)
         <input type="hidden" name="{{ $name }}" value="{{ $value }}"/>
@@ -30,6 +33,10 @@
             >@lang('igniter.payregister::default.stripe.text_credit_or_debit')</label>
             <div id="stripe-card-element">
                 <!-- A Stripe Element will be inserted here. -->
+            </div>
+
+            <div id="stripe-payment-request-button">
+                 <!-- A Stripe Payment Request Button will be inserted here. -->
             </div>
 
             <!-- Used to display form errors. -->

@@ -39,7 +39,72 @@
         // Handle real-time validation errors from the card Element.
         this.card.addEventListener('change', $.proxy(this.validationErrorHandler, this))
 
+        // set up one click payments
+        this.setupPaymentButton();
+
         this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
+    }
+
+    ProcessStripe.prototype.setupPaymentButton = function () {
+        var paymentRequest = this.stripe.paymentRequest({
+            country: this.options.country,
+            currency: this.options.currency,
+            total: {
+                label: 'Total',
+                amount: this.options.total,
+            },
+            requestPayerName: false,
+            requestPayerEmail: false,
+        });
+
+        var paymentRequestButton = this.stripe.elements().create('paymentRequestButton', {
+            paymentRequest: paymentRequest,
+        });
+
+        // Check the availability of the Payment Request API first.
+        paymentRequest.canMakePayment().then(function(result) {
+            if (result) {
+                paymentRequestButton.mount(this.options.paymentRequestSelector);
+            } else {
+                document.querySelector(this.options.paymentRequestSelector).style.display = 'none';
+            }
+        }.bind(this));
+
+        var self = this;
+        paymentRequest.on('paymentmethod', function(ev) {
+            // Confirm the PaymentIntent without handling potential next actions (yet).
+            this.stripe.confirmCardPayment(
+                clientSecret,
+                {payment_method: ev.paymentMethod.id},
+                {handleActions: false}
+            ).then(function(confirmResult) {
+                if (confirmResult.error) {
+                    // Report to the browser that the payment failed, prompting it to
+                    // re-show the payment interface, or show an error message and close
+                    // the payment interface.
+                    ev.complete('fail');
+                } else {
+                    // Report to the browser that the confirmation was successful, prompting
+                    // it to close the browser payment method collection interface.
+                    ev.complete('success');
+                    // Check if the PaymentIntent requires any actions and if so let Stripe.js
+                    // handle the flow. If using an API version older than "2019-02-11"
+                    // instead check for: `paymentIntent.status === "requires_source_action"`.
+                    if (confirmResult.paymentIntent.status === "requires_action") {
+                        // Let Stripe.js handle the rest of the payment flow.
+                        this.stripe.confirmCardPayment(clientSecret).then(function(result) {
+                            if (result.error) {
+                            // The payment failed -- ask your customer for a new payment method.
+                            } else {
+                            // The payment has succeeded.
+                            }
+                        });
+                  } else {
+                    // The payment has succeeded.
+                  }
+                }
+            });
+        });
     }
 
     ProcessStripe.prototype.validationErrorHandler = function (event) {
