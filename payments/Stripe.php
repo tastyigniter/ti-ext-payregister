@@ -32,7 +32,6 @@ class Stripe extends BasePaymentGateway
     public function getHiddenFields()
     {
         return [
-            'pay_from_payment_button' => 0,
             'stripe_payment_method' => '',
             'stripe_idempotency_key' => uniqid('', TRUE),
         ];
@@ -72,34 +71,6 @@ class Stripe extends BasePaymentGateway
         $controller->addCss('$/igniter/payregister/assets/stripe.css', 'stripe-css');
         $controller->addJs('https://js.stripe.com/v3/', 'stripe-js');
         $controller->addJs('$/igniter/payregister/assets/process.stripe.js', 'process-stripe-js');
-    }
-
-    /**
-     * Processes payment from a payment button
-     *
-     * @param array $data
-     * @param \Admin\Models\Payments_model $host
-     * @param \Admin\Models\Orders_model $order
-     *
-     * @return bool|\Illuminate\Http\RedirectResponse
-     * @throws \Igniter\Flame\Exception\ApplicationException
-     */
-    public function processPaymentButton($data, $host, $order)
-    {
-        $this->validatePaymentMethod($order, $host);
-
-        try {
-            if (!$intentId = Session::get($this->sessionKey))
-                throw new Exception('Missing payment intent identifier in session.');
-
-            $fields = $this->getPaymentFormFields($order, $data);
-
-            $paymentIntent = $this->handlePaymentIntent($intentId, $fields, $data, $host, $order);
-        }
-        catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $data, $paymentIntent ?? []);
-            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
-        }
     }
 
     /**

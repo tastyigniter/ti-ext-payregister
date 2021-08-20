@@ -39,68 +39,7 @@
         // Handle real-time validation errors from the card Element.
         this.card.addEventListener('change', $.proxy(this.validationErrorHandler, this))
 
-        // set up one click payments
-        this.setupPaymentButton();
-
         this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
-    }
-
-    ProcessStripe.prototype.setupPaymentButton = function () {
-        var paymentRequest = this.stripe.paymentRequest({
-            country: this.options.country,
-            currency: this.options.currency,
-            total: {
-                label: 'Total',
-                amount: this.options.total,
-            },
-            requestPayerName: false,
-            requestPayerEmail: false,
-        });
-
-        var paymentRequestButton = this.stripe.elements().create('paymentRequestButton', {
-            paymentRequest: paymentRequest,
-        });
-
-        // Check the availability of the Payment Request API first.
-        paymentRequest.canMakePayment().then(function (result) {
-            if (result) {
-                paymentRequestButton.mount(this.options.paymentRequestSelector);
-            } else {
-                document.querySelector(this.options.paymentRequestSelector).style.display = 'none';
-            }
-        }.bind(this));
-
-        var self = this;
-        paymentRequest.on('paymentmethod', function (ev) {
-            // run precheckout validation, and on response do stripe things
-            this.$checkoutForm.data('ti.checkout').onValidateCheckoutForm(this.$checkoutForm, (validateResponse) => {
-                this.stripe.confirmCardPayment(
-                    clientSecret,
-                    {payment_method: ev.paymentMethod.id},
-                    {handleActions: false}
-                ).then(function (confirmResult) {
-                    console.log(confirmResult);
-                    if (confirmResult.error) {
-                        ev.complete('fail');
-                        this.validationErrorHandler(confirmResult);
-                    } else {
-                        ev.complete('success');
-                        if (confirmResult.paymentIntent.status === 'requires_action') {
-                            this.stripe.confirmCardPayment(clientSecret).then(function (result) {
-                                console.log(result);
-                                if (result.error) {
-                                    this.validationErrorHandler(result);
-                                } else {
-                                    this.$checkoutForm.unbind('submitCheckoutForm').submit()
-                                }
-                            });
-                        } else {
-                            this.$checkoutForm.unbind('submitCheckoutForm').submit()
-                        }
-                    }
-                });
-            });
-        });
     }
 
     ProcessStripe.prototype.validationErrorHandler = function (event) {

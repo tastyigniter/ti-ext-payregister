@@ -5,10 +5,6 @@
     data-payment-intent-secret="{{ $paymentMethod->fetchOrCreateIntent($order) }}"
     data-card-selector="#stripe-card-element"
     data-error-selector="#stripe-card-errors"
-    data-country="{{ strtoupper($location->getModel()->country->iso_code_2) }}"
-    data-currency="{{ strtolower(currency()->getUserCurrency()) }}"
-    data-payment-request-selector="#stripe-payment-request-button"
-    data-total="{{ number_format($order->order_total, 2, '', '') }}"
 >
     @foreach ($paymentMethod->getHiddenFields() as $name => $value)
         <input type="hidden" name="{{ $name }}" value="{{ $value }}"/>
