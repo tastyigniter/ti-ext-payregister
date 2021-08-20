@@ -20,8 +20,6 @@ class Stripe extends BasePaymentGateway
     use EventEmitter;
     use PaymentHelpers;
 
-    protected $requirePrecheckoutValidation = true;
-
     public function registerEntryPoints()
     {
         return [
