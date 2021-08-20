@@ -2,7 +2,7 @@
     id="stripePaymentForm"
     class="payment-form w-100"
     data-publishable-key="{{ $paymentMethod->getPublishableKey() }}"
-    data-client-secret="{{ $paymentMethod->createOrFetchIntent($order) }}"
+    data-payment-intent-secret="{{ $paymentMethod->fetchOrCreateIntent($order) }}"
     data-card-selector="#stripe-card-element"
     data-error-selector="#stripe-card-errors"
     data-country="{{ strtoupper($location->getModel()->country->iso_code_2) }}"
@@ -37,7 +37,7 @@
             </div>
 
             <div id="stripe-payment-request-button">
-                 <!-- A Stripe Payment Request Button will be inserted here. -->
+                <!-- A Stripe Payment Request Button will be inserted here. -->
             </div>
 
             <!-- Used to display form errors. -->

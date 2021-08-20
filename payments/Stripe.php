@@ -19,7 +19,7 @@ class Stripe extends BasePaymentGateway
     use EventEmitter;
     use PaymentHelpers;
 
-    protected $session_key = 'ti_payregister_stripe_intent';
+    protected $sessionKey = 'ti_payregister_stripe_intent';
 
     public function registerEntryPoints()
     {
@@ -82,30 +82,22 @@ class Stripe extends BasePaymentGateway
      * @param \Admin\Models\Orders_model $order
      *
      * @return bool|\Illuminate\Http\RedirectResponse
-     * @throws \ApplicationException
+     * @throws \Igniter\Flame\Exception\ApplicationException
      */
     public function processPaymentButton($data, $host, $order)
     {
-        $stripe = $this->initialiseStripe();
+        $this->validatePaymentMethod($order, $host);
 
         try {
-            if (!$intent = Session::get($this->session_key))
-                throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
+            if (!$intentId = Session::get($this->sessionKey))
+                throw new Exception('Missing payment intent identifier in session.');
 
-            $intent = $stripe->paymentIntents->retrieve($intent);
+            $fields = $this->getPaymentFormFields($order, $data);
 
-            $fields = $this->getPostPaymentFields($order);
-            $stripe->paymentIntents->update($intent->id, $fields);
-
-            if ($intent->status !== 'succeeded')
-                throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
-
-            $order->logPaymentAttempt('Payment successful', 1, $data, $intent, TRUE);
-            $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
-            $order->markAsPaymentProcessed();
+            $paymentIntent = $this->handlePaymentIntent($intentId, $fields, $data, $host, $order);
         }
-        catch (Exception $e) {
-            $order->logPaymentAttempt('Payment error -> '.$e->getMessage(), 0, $data, $intent ?? []);
+        catch (Exception $ex) {
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $data, $paymentIntent ?? []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
@@ -124,30 +116,20 @@ class Stripe extends BasePaymentGateway
     {
         $this->validatePaymentMethod($order, $host);
 
-        $stripe = $this->initialiseStripe();
-
         try {
-            if (!$intent = Session::get($this->session_key))
-                throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
+            if (!$intentId = Session::get($this->sessionKey))
+                throw new Exception('Missing payment intent identifier in session.');
 
-            $intent = $stripe->paymentIntents->retrieve($intent);
-
-            $intent_data = $this->getPostPaymentFields($order, $data);
+            $fields = $this->getPaymentFormFields($order, $data);
             if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
                 $profile = $this->updatePaymentProfile($order->customer, $data);
-                $intent_data['customer'] = array_get($profile->profile_data, 'customer_id');
+                $fields['customer'] = array_get($profile->profile_data, 'customer_id');
             }
-            $stripe->paymentIntents->update($intent->id, $intent_data);
 
-            if ($intent->status !== 'succeeded')
-                throw new Exception('Sorry, there was an error processing your payment. Please try again later.');
-
-            $order->logPaymentAttempt('Payment successful', 1, $data, $intent, TRUE);
-            $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
-            $order->markAsPaymentProcessed();
+            $paymentIntent = $this->handlePaymentIntent($intentId, $fields, $data, $host, $order);
         }
-        catch (Exception $e) {
-            $order->logPaymentAttempt('Payment error -> '.$e->getMessage(), 0, $data, $intent ?? []);
+        catch (Exception $ex) {
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $data, $paymentIntent ?? []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
@@ -174,21 +156,12 @@ class Stripe extends BasePaymentGateway
             if (!$paymentMethod OR $paymentMethod->getGatewayClass() != static::class)
                 throw new ApplicationException('No valid payment method found');
 
-            if (!$intent = Session::get($this->session_key))
+            if (!$intentId = Session::get($this->sessionKey))
                 throw new ApplicationException('No valid payment method found');
 
-            $stripe = $this->initialiseStripe();
-            $intent = $stripe->paymentIntents->retrieve($intent);
+            $fields = $this->getPaymentFormFields($order);
 
-            $fields = $this->getPostPaymentFields($order);
-            $stripe->paymentIntents->update($intent->id, $fields);
-
-            if (!$intent->status !== 'succeeded')
-                throw new Exception('Status '.$intent->status);
-
-            $order->logPaymentAttempt('Payment successful', 1, $fields, $intent, TRUE);
-            $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
-            $order->markAsPaymentProcessed();
+            $this->handlePaymentIntent($intentId, $fields, [], $paymentMethod, $order);
 
             return Redirect::to(page_url($redirectPage, [
                 'id' => $order->getKey(),
@@ -203,39 +176,53 @@ class Stripe extends BasePaymentGateway
         return Redirect::to(page_url($cancelPage));
     }
 
-    public function createOrFetchIntent($order)
+    public function fetchOrCreateIntent($order)
     {
-        try {
-            $stripe = $this->initialiseStripe();
+        $fields = $this->getPaymentFormFields($order, FALSE);
 
-            $createIntent = true;
-            if ($intent = Session::get($this->session_key)) {
+        $response = null;
+        $gateway = $this->createGateway();
 
-                try {
-                    $intent = $stripe->paymentIntents->update($intent, [
-                        'amount' => number_format($order->order_total, 2, '', ''),
-                    ]);
-                    $createIntent = false;
-                } catch (Exception $e) {
-                    $createIntent = true;
-                }
-
+        if ($intentId = Session::get($this->sessionKey)) {
+            try {
+                $response = $gateway->paymentIntents->update($intentId, $fields);
             }
-
-            if ($createIntent) {
-                $fields = $this->getPaymentFormFields($order);
-                $intent = $stripe->paymentIntents->create($fields);
-
-                Session::put($this->session_key, $intent->id);
+            catch (Exception $ex) {
             }
-
-            return $intent->client_secret;
-
-        } catch (Exception $e) {
-            flash()->warning($e->getMessage())->important();
-
-            return '';
         }
+
+        try {
+            $this->validatePaymentMethod($order);
+
+            if (!$response OR !$intentId) {
+                $response = $gateway->paymentIntents->create($fields);
+
+                Session::put($this->sessionKey, $response->id);
+            }
+        }
+        catch (Exception $ex) {
+            flash()->warning($ex->getMessage())->important()->now();
+        }
+
+        return optional($response)->client_secret;
+    }
+
+    protected function handlePaymentIntent($intentId, $fields, $data, $host, $order)
+    {
+        $gateway = $this->createGateway();
+
+        $paymentIntent = $gateway->paymentIntents->retrieve($intentId);
+
+        $gateway->paymentIntents->update($paymentIntent->id, $fields);
+
+        if ($paymentIntent->status !== 'succeeded')
+            throw new Exception('Payment returned a failed status: '.$paymentIntent->status);
+
+        $order->logPaymentAttempt('Payment successful', 1, $data, $paymentIntent, TRUE);
+        $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
+        $order->markAsPaymentProcessed();
+
+        return $paymentIntent;
     }
 
     //
@@ -277,16 +264,15 @@ class Stripe extends BasePaymentGateway
         if (!$profile OR !$profile->hasProfileData())
             throw new ApplicationException('Payment profile not found');
 
-        $stripe = $this->initialiseStripe();
+        $gateway = $this->createGateway();
 
         try {
             $fields = $this->getPaymentFormFields($order, $data);
-            $fields = array_merge_recursive($fields, $this->getPostPaymentFields($order, $data));
             $fields['customer'] = array_get($profile->profile_data, 'customer_id');
             $fields['payment_method'] = array_get($profile->profile_data, 'card_id');
-            $fields['off_session'] = true;
+            $fields['off_session'] = TRUE;
 
-            $intent = $stripe->paymentIntents->create($fields);
+            $intent = $gateway->paymentIntents->create($fields);
 
             if (!$intent->status !== 'succeeded')
                 throw new Exception('Status '.$intent->status);
@@ -306,13 +292,12 @@ class Stripe extends BasePaymentGateway
         $customerId = array_get($profileData, 'customer_id');
 
         $response = FALSE;
-        $stripe = $this->initialiseStripe();
+        $gateway = $this->createGateway();
         $newCustomerRequired = !$customerId;
 
         if (!$newCustomerRequired) {
-
             try {
-                $response = $stripe->customers->retrieve($customerId);
+                $response = $gateway->customers->retrieve($customerId);
 
                 if (isset($response->deleted)) {
                     $newCustomerRequired = TRUE;
@@ -324,14 +309,12 @@ class Stripe extends BasePaymentGateway
         }
 
         try {
-
             if ($newCustomerRequired) {
-                $response = $stripe->create([
-                    'name' => $customer->first_name.' '.$customer->last_name,
+                $response = $gateway->create([
+                    'name' => $customer->full_name,
                     'email' => $customer->email,
                 ]);
             }
-
         }
         catch (Exception $e) {
             throw new ApplicationException($e->getMessage());
@@ -346,13 +329,12 @@ class Stripe extends BasePaymentGateway
         $token = array_get($data, 'stripe_payment_method');
 
         $response = FALSE;
-        $stripe = $this->initialiseStripe();
+        $gateway = $this->createGateway();
         $newCardRequired = !$cardId;
 
         if (!$newCardRequired) {
-
             try {
-                $response = $stripe->paymentMethods->retrieve($cardId);
+                $response = $gateway->paymentMethods->retrieve($cardId);
 
                 if ($response->customer != $customerId)
                     $newCardRequired = TRUE;
@@ -363,9 +345,8 @@ class Stripe extends BasePaymentGateway
         }
 
         if ($newCardRequired) {
-
             try {
-                $response = $stripe->paymentMethods->attach($token, [
+                $response = $gateway->paymentMethods->attach($token, [
                     'customer' => $customerId,
                 ])->send();
             }
@@ -413,13 +394,12 @@ class Stripe extends BasePaymentGateway
             throw new ApplicationException('Refund amount should be be less than total');
 
         try {
-
-            $stripe = $this->initialiseStripe();
+            $gateway = $this->createGateway();
             $fields = [
                 'payment_intent' => $paymentChargeId,
                 'amount' => number_format($refundAmount, 2, '', ''),
             ];
-            $response = $stripe->refund($fields);
+            $response = $gateway->refund($fields);
 
             if ($response->status === 'failed')
                 throw new Exception('Refund failed');
@@ -438,7 +418,7 @@ class Stripe extends BasePaymentGateway
         }
     }
 
-    protected function getPaymentFormFields($order, $data = [])
+    protected function getPaymentFormFields($order, $data = [], $allFields = TRUE)
     {
         $returnUrl = $this->makeEntryPointUrl('stripe_return_url').'/'.$order->hash;
         $returnUrl .= '?redirect='.array_get($data, 'successPage').'&cancel='.array_get($data, 'cancelPage');
@@ -450,36 +430,34 @@ class Stripe extends BasePaymentGateway
             'capture_method' => $this->shouldAuthorizePayment() ? 'automatic' : 'manual',
         ];
 
-        return $fields;
-    }
-
-    protected function getPostPaymentFields($order, $data = [])
-    {
-        $fields = [
-            'confirm' => TRUE,
-            'receipt_email' => $order->email,
-            'metadata' => [
-                'order_id' => $order->order_id,
-                'customer_email' => $order->email,
-            ],
-        ];
-
-        $this->fireSystemEvent('payregister.stripe.extendFields', [&$fields, $order, $data]);
-
-        return $fields;
-    }
-
-    protected function initialiseStripe()
-    {
-        try {
-            $stripe = new StripeClient([
-                'api_key' => $this->getSecretKey(),
+        if ($allFields) {
+            $fields = array_merge_recursive($fields, [
+                'confirm' => TRUE,
+                'receipt_email' => $order->email,
+                'metadata' => [
+                    'order_id' => $order->order_id,
+                    'customer_email' => $order->email,
+                ],
             ]);
 
-            return $stripe;
-        } catch (Exception $e) {
-            throw new ApplicationException($e->getMessage());
+            $this->fireSystemEvent('payregister.stripe.extendFields', [&$fields, $order, $data]);
         }
+
+        return $fields;
+    }
+
+    protected function createGateway()
+    {
+        \Stripe\Stripe::setAppInfo(
+            'TastyIgniter Stripe',
+            '1.0.0',
+            'https://tastyigniter.com/marketplace/item/igniter-payregister',
+            'pp_partner_JZyCCGR3cOwj9S' // Used by Stripe to identify this integration
+        );
+
+        return new StripeClient([
+            'api_key' => $this->getSecretKey(),
+        ]);
     }
 
     //

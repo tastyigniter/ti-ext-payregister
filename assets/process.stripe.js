@@ -122,7 +122,7 @@
         // Prevent the form from submitting with the default action
         event.preventDefault()
 
-        this.stripe.confirmCardPayment(this.options.clientSecret, {
+        this.stripe.confirmCardPayment(this.options.paymentIntentSecret, {
             payment_method: {
                 card: this.card,
             },
@@ -139,7 +139,7 @@
 
     ProcessStripe.DEFAULTS = {
         publishableKey: undefined,
-        clientSecret: undefined,
+        paymentIntentSecret: undefined,
         partnerId: 'pp_partner_JZyCCGR3cOwj9S',
         cardSelector: '#stripe-card-element',
         errorSelector: '#stripe-card-errors',
