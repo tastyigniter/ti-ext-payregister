@@ -435,4 +435,21 @@ class Stripe extends BasePaymentGateway
 
         return response('Webhook Handled');
     }
+
+    protected function handlePaymentIntentSucceeded($payload)
+    {
+        if ($order = $this->getOrder($payload['data']['object']['metadata']['order_id'])) {
+            if (!$order->isPaymentProcessed()) {
+                if ($payload['data']['object']['status'] === 'requires_capture') {
+                    $order->logPaymentAttempt('Payment authorized', 1, [], $payload['data']['object']);
+                }
+                else {
+                    $order->logPaymentAttempt('Payment successful', 1, [], $payload['data']['object'], TRUE);
+                }
+
+                $order->updateOrderStatus($this->model->order_status, ['notify' => FALSE]);
+                $order->markAsPaymentProcessed();
+            }
+        }
+    }
 }

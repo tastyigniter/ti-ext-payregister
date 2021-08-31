@@ -74,7 +74,7 @@
             payment_method: {
                 card: this.card,
                 billing_details: {
-                    name: $form.find('input[name="first_name"]')+' '+$form.find('input[name="last_name"]')
+                    name: $form.find('input[name="first_name"]').val()+' '+$form.find('input[name="last_name"]').val()
                 }
             },
         }).then(function (result) {
