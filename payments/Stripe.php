@@ -3,13 +3,11 @@
 namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
-use Admin\Models\Orders_model;
 use Exception;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Stripe\StripeClient;
@@ -24,7 +22,6 @@ class Stripe extends BasePaymentGateway
     public function registerEntryPoints()
     {
         return [
-            'stripe_return_url' => 'processReturnUrl',
             'stripe_webhook' => 'processWebhookUrl',
         ];
     }
@@ -73,6 +70,45 @@ class Stripe extends BasePaymentGateway
         $controller->addJs('$/igniter/payregister/assets/process.stripe.js', 'process-stripe-js');
     }
 
+    public function completesPaymentOnClient()
+    {
+        return TRUE;
+    }
+
+    public function getStripeJsOptions()
+    {
+        $options = [
+            'locale' => app()->getLocale(),
+        ];
+
+        $this->fireSystemEvent('payregister.stripe.extendJsOptions', [&$options]);
+
+        return $options;
+    }
+
+    public function createOrFetchIntent($order)
+    {
+        try {
+            if ($order->isPaymentProcessed())
+                return;
+
+            $this->validatePaymentMethod($order, $this->model);
+
+            $fields = $this->getPaymentFormFields($order);
+
+            if (!$response = $this->updatePaymentIntentInSession($fields)) {
+                $response = $this->createGateway()->paymentIntents->create($fields);
+
+                Session::put($this->sessionKey, $response->id);
+            }
+
+            return optional($response)->client_secret;
+        }
+        catch (Exception $ex) {
+            flash()->warning($ex->getMessage())->important()->now();
+        }
+    }
+
     /**
      * Processes payment using passed data.
      *
@@ -91,13 +127,35 @@ class Stripe extends BasePaymentGateway
             if (!$intentId = Session::get($this->sessionKey))
                 throw new Exception('Missing payment intent identifier in session.');
 
-            $fields = $this->getPaymentFormFields($order, $data);
+            $gateway = $this->createGateway();
+            $paymentIntent = $gateway->paymentIntents->retrieve($intentId);
+
+            // At this stage the PaymentIntent status should either
+            // be succeeded or requires_capture, we will only attach
+            // the PaymentIntent to a customer since updating the amount
+            // of a PaymentIntent with a succeeded status is not allowed
+            if (!in_array($paymentIntent->status, ['requires_capture', 'succeeded']))
+                return TRUE;
+
             if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
+                $data['stripe_payment_method'] = $paymentIntent->payment_method;
                 $profile = $this->updatePaymentProfile($order->customer, $data);
-                $fields['customer'] = array_get($profile->profile_data, 'customer_id');
+                $gateway->paymentIntents->update($paymentIntent->id, [
+                    'customer' => array_get($profile->profile_data, 'customer_id'),
+                ]);
             }
 
-            $paymentIntent = $this->handlePaymentIntent($intentId, $fields, $data, $host, $order);
+            if ($paymentIntent->status === 'requires_capture') {
+                $order->logPaymentAttempt('Payment authorized', 1, $data, $paymentIntent->toArray());
+            }
+            else {
+                $order->logPaymentAttempt('Payment successful', 1, $data, $paymentIntent->toArray(), TRUE);
+            }
+
+            $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
+            $order->markAsPaymentProcessed();
+
+            Session::forget($this->sessionKey);
         }
         catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $data, $paymentIntent ?? []);
@@ -105,95 +163,25 @@ class Stripe extends BasePaymentGateway
         }
     }
 
-    public function processReturnUrl($params)
+    protected function updatePaymentIntentInSession($fields)
     {
-        $hash = $params[0] ?? null;
-        $redirectPage = input('redirect');
-        $cancelPage = input('cancel');
-
-        $order = $this->createOrderModel()->whereHash($hash)->first();
-
         try {
-            if (!$hash OR !$order instanceof Orders_model)
-                throw new ApplicationException('No order found');
+            if ($intentId = Session::get($this->sessionKey)) {
+                $gateway = $this->createGateway();
+                $paymentIntent = $gateway->paymentIntents->retrieve($intentId);
 
-            if (!strlen($redirectPage))
-                throw new ApplicationException('No redirect page found');
+                // We can not update the amount of a PaymentIntent with one of the following statuses
+                if (in_array($paymentIntent->status, ['requires_capture', 'succeeded']))
+                    return $paymentIntent;
 
-            if (!strlen($cancelPage))
-                throw new ApplicationException('No cancel page found');
+                $gateway->paymentIntents->update($paymentIntent->id, array_except($fields, ['capture_method']));
 
-            $paymentMethod = $order->payment_method;
-            if (!$paymentMethod OR $paymentMethod->getGatewayClass() != static::class)
-                throw new ApplicationException('No valid payment method found');
-
-            if (!$intentId = Session::get($this->sessionKey))
-                throw new ApplicationException('No valid payment method found');
-
-            $fields = $this->getPaymentFormFields($order);
-
-            $this->handlePaymentIntent($intentId, $fields, [], $paymentMethod, $order);
-
-            return Redirect::to(page_url($redirectPage, [
-                'id' => $order->getKey(),
-                'hash' => $order->hash,
-            ]));
-        }
-        catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], []);
-            flash()->warning($ex->getMessage())->important();
-        }
-
-        return Redirect::to(page_url($cancelPage));
-    }
-
-    public function fetchOrCreateIntent($order)
-    {
-        $fields = $this->getPaymentFormFields($order, FALSE);
-
-        $response = null;
-        $gateway = $this->createGateway();
-
-        if ($intentId = Session::get($this->sessionKey)) {
-            try {
-                $response = $gateway->paymentIntents->update($intentId, $fields);
-            }
-            catch (Exception $ex) {
-            }
-        }
-
-        try {
-            $this->validatePaymentMethod($order);
-
-            if (!$response OR !$intentId) {
-                $response = $gateway->paymentIntents->create($fields);
-
-                Session::put($this->sessionKey, $response->id);
+                return $paymentIntent;
             }
         }
         catch (Exception $ex) {
-            flash()->warning($ex->getMessage())->important()->now();
+            return FALSE;
         }
-
-        return optional($response)->client_secret;
-    }
-
-    protected function handlePaymentIntent($intentId, $fields, $data, $host, $order)
-    {
-        $gateway = $this->createGateway();
-
-        $paymentIntent = $gateway->paymentIntents->retrieve($intentId);
-
-        $gateway->paymentIntents->update($paymentIntent->id, $fields);
-
-        if ($paymentIntent->status !== 'succeeded')
-            throw new Exception('Payment returned a failed status: '.$paymentIntent->status);
-
-        $order->logPaymentAttempt('Payment successful', 1, $data, $paymentIntent, TRUE);
-        $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
-        $order->markAsPaymentProcessed();
-
-        return $paymentIntent;
     }
 
     //
@@ -238,7 +226,7 @@ class Stripe extends BasePaymentGateway
         $gateway = $this->createGateway();
 
         try {
-            $fields = $this->getPaymentFormFields($order, $data);
+            $fields = $this->getPaymentFormFields($order);
             $fields['customer'] = array_get($profile->profile_data, 'customer_id');
             $fields['payment_method'] = array_get($profile->profile_data, 'card_id');
             $fields['off_session'] = TRUE;
@@ -389,30 +377,27 @@ class Stripe extends BasePaymentGateway
         }
     }
 
-    protected function getPaymentFormFields($order, $data = [], $allFields = TRUE)
+    protected function getPaymentFormFields($order, $onCreate = TRUE)
     {
-        $returnUrl = $this->makeEntryPointUrl('stripe_return_url').'/'.$order->hash;
-        $returnUrl .= '?redirect='.array_get($data, 'successPage').'&cancel='.array_get($data, 'cancelPage');
-
         $fields = [
             'amount' => number_format($order->order_total, 2, '', ''),
             'currency' => currency()->getUserCurrency(),
-            'return_url' => $returnUrl,
-            'capture_method' => $this->shouldAuthorizePayment() ? 'automatic' : 'manual',
+            'capture_method' => $this->shouldAuthorizePayment() ? 'manual' : 'automatic',
         ];
 
-        if ($allFields) {
-            $fields = array_merge_recursive($fields, [
-                'confirm' => TRUE,
-                'receipt_email' => $order->email,
-                'metadata' => [
-                    'order_id' => $order->order_id,
-                    'customer_email' => $order->email,
-                ],
-            ]);
+        if ($this->supportsPaymentProfiles() AND $order->customer)
+            $fields['setup_future_usage'] = 'off_session';
 
-            $this->fireSystemEvent('payregister.stripe.extendFields', [&$fields, $order, $data]);
+        if (!$onCreate) {
+            array_forget($fields, ['capture_method', 'setup_future_usage']);
+            $fields['receipt_email'] = $order->email;
+            $fields['metadata'] = [
+                'order_id' => $order->order_id,
+                'customer_email' => $order->email,
+            ];
         }
+
+        $this->fireSystemEvent('payregister.stripe.extendFields', [&$fields, $order, [], $onCreate]);
 
         return $fields;
     }

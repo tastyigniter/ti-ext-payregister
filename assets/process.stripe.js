@@ -19,9 +19,7 @@
             throw new Error('Missing stripe publishable key')
 
         // Create a Stripe client.
-        this.stripe = Stripe(this.options.publishableKey, {
-            locale: $('html').attr('lang')
-        })
+        this.stripe = Stripe(this.options.publishableKey, this.options.stripeOptions)
 
         // Used by Stripe to identify this integration
         this.stripe.registerAppInfo({
@@ -40,6 +38,14 @@
         this.card.addEventListener('change', $.proxy(this.validationErrorHandler, this))
 
         this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
+
+        var self = this
+        this.$checkoutForm.on('submit', function() {
+            if (self.$checkoutForm.find('input[name="payment"]:checked').val() !== 'stripe')
+                return
+
+            self.card.update({ disabled: true });
+        })
     }
 
     ProcessStripe.prototype.validationErrorHandler = function (event) {
@@ -49,6 +55,9 @@
         } else {
             $el.empty();
         }
+
+        this.$checkoutForm.find('.checkout-btn').prop('disabled', false)
+        this.card.update({ disabled: false });
     }
 
     ProcessStripe.prototype.submitFormHandler = function (event) {
@@ -64,6 +73,9 @@
         this.stripe.confirmCardPayment(this.options.paymentIntentSecret, {
             payment_method: {
                 card: this.card,
+                billing_details: {
+                    name: $form.find('input[name="first_name"]')+' '+$form.find('input[name="last_name"]')
+                }
             },
         }).then(function (result) {
             if (result.error) {
@@ -79,6 +91,7 @@
     ProcessStripe.DEFAULTS = {
         publishableKey: undefined,
         paymentIntentSecret: undefined,
+        stripeOptions: undefined,
         partnerId: 'pp_partner_JZyCCGR3cOwj9S',
         cardSelector: '#stripe-card-element',
         errorSelector: '#stripe-card-errors',
@@ -99,7 +112,7 @@
     $.fn.processStripe.Constructor = ProcessStripe
 
     $.fn.processStripe.noConflict = function () {
-        $.fn.booking = old
+        $.fn.processStripe = old
         return this
     }
 
