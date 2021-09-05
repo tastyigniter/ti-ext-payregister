@@ -6,7 +6,7 @@
     "php-http/guzzle7-adapter": "~1.0",
     "omnipay/authorizenet": "~3.0",
     "omnipay/paypal": "~3.0",
-    "sampoyigi/omnipay-stripe": "~3.2",
+    "stripe/stripe-php": "~7.93.0",
     "omnipay/mollie": "~5.1",
     "sampoyigi/omnipay-square": "~2.0"
   }

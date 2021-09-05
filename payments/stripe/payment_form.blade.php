@@ -2,6 +2,8 @@
     id="stripePaymentForm"
     class="payment-form w-100"
     data-publishable-key="{{ $paymentMethod->getPublishableKey() }}"
+    data-payment-intent-secret="{{ $paymentMethod->createOrFetchIntent($order) }}"
+    data-stripe-options='@json($paymentMethod->getStripeJsOptions())'
     data-card-selector="#stripe-card-element"
     data-error-selector="#stripe-card-errors"
 >
@@ -29,6 +31,10 @@
             >@lang('igniter.payregister::default.stripe.text_credit_or_debit')</label>
             <div id="stripe-card-element">
                 <!-- A Stripe Element will be inserted here. -->
+            </div>
+
+            <div id="stripe-payment-request-button">
+                <!-- A Stripe Payment Request Button will be inserted here. -->
             </div>
 
             <!-- Used to display form errors. -->
