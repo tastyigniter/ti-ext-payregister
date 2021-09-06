@@ -6,6 +6,8 @@
     data-stripe-options='@json($paymentMethod->getStripeJsOptions())'
     data-card-selector="#stripe-card-element"
     data-error-selector="#stripe-card-errors"
+    data-payment-button-options='@json($paymentMethod->getPaymentButtonOptions($order, $location))'
+    data-payment-button-selector='#stripe-payment-request-button'
 >
     @foreach ($paymentMethod->getHiddenFields() as $name => $value)
         <input type="hidden" name="{{ $name }}" value="{{ $value }}"/>
