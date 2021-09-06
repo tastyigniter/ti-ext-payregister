@@ -75,6 +75,22 @@ class Stripe extends BasePaymentGateway
         return TRUE;
     }
 
+    public function getPaymentButtonOptions($order, $location)
+    {
+        $options = [
+            'country' => strtoupper($location->getModel()->country->iso_code_2),
+            'currency' => strtolower(currency()->getUserCurrency()),
+            'total' => [
+                'label' => 'Total',
+                'amount' => (int)number_format($order->order_total, 2, '', ''),
+            ],
+        ];
+
+        $this->fireSystemEvent('payregister.stripe.extendPaymentButtonOptions', [&$options]);
+
+        return $options;
+    }
+
     public function getStripeJsOptions()
     {
         $options = [
@@ -161,6 +177,21 @@ class Stripe extends BasePaymentGateway
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $data, $paymentIntent ?? []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
+    }
+
+    /**
+     * Processes payment from a payment button
+     *
+     * @param array $data
+     * @param \Admin\Models\Payments_model $host
+     * @param \Admin\Models\Orders_model $order
+     *
+     * @return bool|\Illuminate\Http\RedirectResponse
+     * @throws \Igniter\Flame\Exception\ApplicationException
+     */
+    public function processPaymentButton($data, $host, $order)
+    {
+        $this->processPaymentForm($data, $host, $order);
     }
 
     protected function updatePaymentIntentInSession($fields)
