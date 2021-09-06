@@ -73,13 +73,14 @@
         });
 
         // Check the availability of the Payment Request API first.
-        paymentRequest.canMakePayment().then(function (result) {
-            if (result) {
-                paymentRequestButton.mount(this.options.paymentButtonSelector);
-            } else {
-                document.querySelector(this.options.paymentButtonSelector).style.display = 'none';
+        paymentRequest.canMakePayment().then((result) => {
+            if (!result) {
+                $(this.options.paymentButtonSelector).css('display', 'none');
+                return;
             }
-        }.bind(this));
+
+            paymentRequestButton.mount(this.options.paymentButtonSelector);
+        });
 
         var self = this;
         paymentRequest.on('paymentmethod', function (ev) {
@@ -87,26 +88,30 @@
             this.$checkoutForm.data('ti.checkout').validateCheckout(this.$checkoutForm, (validateResponse) => {
                 this.stripe.confirmCardPayment(
                     clientSecret,
-                    {payment_method: ev.paymentMethod.id},
-                    {handleActions: false}
-                ).then(function (confirmResult) {
+                    { payment_method: ev.paymentMethod.id },
+                    { handleActions: false }
+                ).then((confirmResult) => {
                     if (confirmResult.error) {
                         ev.complete('fail');
                         this.validationErrorHandler(confirmResult);
-                    } else {
-                        ev.complete('success');
-                        if (confirmResult.paymentIntent.status === 'requires_action') {
-                            this.stripe.confirmCardPayment(clientSecret).then(function (result) {
-                                if (result.error) {
-                                    this.validationErrorHandler(result);
-                                } else {
-                                    this.$checkoutForm.unbind('submitCheckoutForm').submit()
-                                }
-                            });
-                        } else {
-                            this.$checkoutForm.unbind('submitCheckoutForm').submit()
-                        }
+                        return;
                     }
+
+                    ev.complete('success');
+
+                    if (confirmResult.paymentIntent.status !== 'requires_action') {
+                        this.$checkoutForm.unbind('submitCheckoutForm').submit();
+                        return;
+                    }
+
+                    this.stripe.confirmCardPayment(clientSecret).then((result) => {
+                        if (result.error) {
+                            this.validationErrorHandler(result);
+                            return;
+                        }
+
+                        this.$checkoutForm.unbind('submitCheckoutForm').submit()
+                    });
                 });
             });
         });
