@@ -429,14 +429,18 @@ class Stripe extends BasePaymentGateway
         if (!isset($payload['type']) OR !strlen($eventType = $payload['type']))
             return response('Missing webhook event name', 400);
 
-        $eventName = 'handle'.Str::studly(str_replace('.', '_', $eventType));
+        $eventName = Str::studly(str_replace('.', '_', $eventType));
+        $methodName = 'webhookHandle'.$eventName;
 
-        Event::fire('payregister.stripe.'.$eventName, [$payload]);
+        if (method_exists($this, $methodName))
+            $this->$methodName($payload);
+
+        Event::fire('payregister.stripe.webhook.handle'.$eventName, [$payload]);
 
         return response('Webhook Handled');
     }
 
-    protected function handlePaymentIntentSucceeded($payload)
+    protected function webhookHandlePaymentIntentSucceeded($payload)
     {
         if ($order = $this->getOrder($payload['data']['object']['metadata']['order_id'])) {
             if (!$order->isPaymentProcessed()) {
