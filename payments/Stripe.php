@@ -75,7 +75,7 @@ class Stripe extends BasePaymentGateway
         return TRUE;
     }
 
-    public function getStripeJsOptions()
+    public function getStripeJsOptions($order)
     {
         $options = [
             'locale' => app()->getLocale(),
@@ -96,7 +96,7 @@ class Stripe extends BasePaymentGateway
 
             $fields = $this->getPaymentFormFields($order);
 
-            if (!$response = $this->updatePaymentIntentInSession($fields)) {
+            if (!$response = $this->updatePaymentIntentInSession($fields, $order)) {
                 $response = $this->createGateway()->paymentIntents->create($fields);
 
                 Session::put($this->sessionKey, $response->id);
@@ -137,7 +137,7 @@ class Stripe extends BasePaymentGateway
             if (!in_array($paymentIntent->status, ['requires_capture', 'succeeded']))
                 return TRUE;
 
-            if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
+            if ($this->supportsPaymentProfiles() AND $order->customer) {
                 $data['stripe_payment_method'] = $paymentIntent->payment_method;
                 $profile = $this->updatePaymentProfile($order->customer, $data);
                 $gateway->paymentIntents->update($paymentIntent->id, [
@@ -163,7 +163,7 @@ class Stripe extends BasePaymentGateway
         }
     }
 
-    protected function updatePaymentIntentInSession($fields)
+    protected function updatePaymentIntentInSession($fields, $order)
     {
         try {
             if ($intentId = Session::get($this->sessionKey)) {
