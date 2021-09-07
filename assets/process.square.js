@@ -5,36 +5,51 @@
         this.$el = $(element)
         this.options = options || {}
         this.$checkoutForm = this.$el.closest('#checkout-form')
-        this.square = null
+        this.sq_el_id = 'sq-card'
+        this.card = null
+        this.payments = null
 
         $('[name=payment][value=square]', this.$checkoutForm).on('change', $.proxy(this.init, this))
     }
 
     ProcessSquare.prototype.init = function () {
-        if (!$('#'+this.options.cardFields.card.elementId).length)
+        if (!$('#'+this.sq_el_id).length)
             return
-
-        var spOptions = {
-            applicationId: this.options.applicationId,
-            locationId: this.options.locationId,
-            autoBuild: false,
-            inputClass: 'form-control',
-            callbacks: {
-                cardNonceResponseReceived: $.proxy(this.onResponseReceived, this)
-            }
-        }
 
         if (this.options.applicationId === undefined)
             throw new Error('Missing square application id')
 
-        this.square = new SqPaymentForm($.extend(spOptions, this.options.cardFields))
-
-        this.square.build()
-
+        this.payments = window.Square.payments(this.options.applicationId, this.options.locationId);
+        try {
+            this.initializeCard(this.payments);
+        } catch (e) {
+            throw new Error('Initializing Card failed', e)
+        }
         this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
     }
 
-    ProcessSquare.prototype.submitFormHandler = function (event) {
+    ProcessSquare.prototype.initializeCard = async function(payments) {
+
+        // Customize the CSS for WebPayments SDK elements
+        this.card = await payments.card({
+            style: {
+                input: {
+                    backgroundColor: '#FFF',
+                    color: '#000000',
+                    fontSize: '16px'
+                },
+                'input::placeholder': {
+                    color: '#A5A5A5',
+                },
+                '.message-icon': {
+                    color: '#A5A5A5',
+                }
+            }
+        });
+        await this.card.attach('#' + this.sq_el_id); 
+    }
+
+    ProcessSquare.prototype.submitFormHandler = async function (event) {
         var $form = this.$checkoutForm,
             $paymentInput = $form.find('input[name="payment"]:checked')
 
@@ -43,10 +58,11 @@
         // Prevent the form from submitting with the default action
         event.preventDefault()
 
-        this.square.requestCardNonce();
+        var tokenResult = await this.card.tokenize();
+        this.onResponseReceived(tokenResult);
     }
 
-    ProcessSquare.prototype.onResponseReceived = function (errors, nonce, cardData) {
+    ProcessSquare.prototype.onResponseReceived = async function (tokenResult) {
         var self = this,
             $form = this.$checkoutForm,
             verificationDetails = {
@@ -59,24 +75,32 @@
                 }
             }
 
-        if (errors) {
+        if (tokenResult.errors) {
             var $el = '<b>Encountered errors:</b>';
-            errors.forEach(function (error) {
+            tokenResult.errors.forEach(function (error) {
                 $el += '<div>' + error.message + '</div>'
             });
             $form.find(this.options.errorSelector).html($el);
             return;
         }
+        
+        var verificationToken = await this.verifyBuyerHelper(tokenResult, verificationDetails);
+        
+        $form.find('input[name="square_card_nonce"]').val(tokenResult.token);
+        $form.find('input[name="square_card_token"]').val(verificationToken.token);
 
-        this.square.verifyBuyer(nonce, verificationDetails, function (err, response) {
-            if (err == null) {
-                $form.find('input[name="square_card_nonce"]').val(nonce);
-                $form.find('input[name="square_card_token"]').val(response.token);
+        // Switch back to default to submit form
+        $form.unbind('submitCheckoutForm').submit()
+        
+    }
 
-                // Switch back to default to submit form
-                $form.unbind('submitCheckoutForm').submit()
-            }
-        });
+    ProcessSquare.prototype.verifyBuyerHelper = async function(paymentToken, verificationDetails) {
+
+        var verificationResults = await this.payments.verifyBuyer(
+          paymentToken.token,
+          verificationDetails
+        );
+        return verificationResults.token;
     }
 
     ProcessSquare.DEFAULTS = {
@@ -84,21 +108,7 @@
         locationId: undefined,
         orderTotal: undefined,
         currencyCode: undefined,
-        errorSelector: '#square-card-errors',
-        // Customize the CSS for SqPaymentForm iframe elements
-        cardFields: {
-            card: {
-                elementId: 'sq-card',
-                inputStyle: {
-                    fontSize: '16px',
-                    autoFillColor: '#000',    //Sets color of card nbr & exp. date
-                    color: '#000',            //Sets color of CVV & Zip
-                    placeholderColor: '#A5A5A5', //Sets placeholder text color
-                    backgroundColor: '#FFF',  //Card entry background color
-                    cardIconColor: '#A5A5A5', //Card Icon color
-                },
-            },
-        }
+        errorSelector: '#square-card-errors'
     }
 
     // PLUGIN DEFINITION
