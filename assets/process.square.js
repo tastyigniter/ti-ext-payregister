@@ -32,19 +32,7 @@
 
         // Customize the CSS for WebPayments SDK elements
         this.card = await payments.card({
-            style: {
-                input: {
-                    backgroundColor: '#FFF',
-                    color: '#000000',
-                    fontSize: '16px'
-                },
-                'input::placeholder': {
-                    color: '#A5A5A5',
-                },
-                '.message-icon': {
-                    color: '#A5A5A5',
-                }
-            }
+            style: this.options.cardFormStyle
         });
         await this.card.attach('#' + this.sqElementID); 
     }
@@ -108,7 +96,20 @@
         locationId: undefined,
         orderTotal: undefined,
         currencyCode: undefined,
-        errorSelector: '#square-card-errors'
+        errorSelector: '#square-card-errors',
+        cardFormStyle: {
+            input: {
+                backgroundColor: '#FFF',
+                color: '#000000',
+                fontSize: '16px'
+            },
+            'input::placeholder': {
+                color: '#A5A5A5',
+            },
+            '.message-icon': {
+                color: '#A5A5A5',
+            }
+        }
     }
 
     // PLUGIN DEFINITION
