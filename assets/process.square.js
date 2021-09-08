@@ -5,7 +5,7 @@
         this.$el = $(element)
         this.options = options || {}
         this.$checkoutForm = this.$el.closest('#checkout-form')
-        this.sq_el_id = 'sq-card'
+        this.sqElementID = 'sq-card'
         this.card = null
         this.payments = null
 
@@ -13,18 +13,18 @@
     }
 
     ProcessSquare.prototype.init = function () {
-        if (!$('#'+this.sq_el_id).length)
+        if (!$('#'+this.sqElementID).length)
             return
 
         if (this.options.applicationId === undefined)
             throw new Error('Missing square application id')
 
         this.payments = window.Square.payments(this.options.applicationId, this.options.locationId);
-        try {
-            this.initializeCard(this.payments);
-        } catch (e) {
+        
+        this.initializeCard(this.payments).catch(e => {
             throw new Error('Initializing Card failed', e)
-        }
+        });
+
         this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
     }
 
@@ -46,7 +46,7 @@
                 }
             }
         });
-        await this.card.attach('#' + this.sq_el_id); 
+        await this.card.attach('#' + this.sqElementID); 
     }
 
     ProcessSquare.prototype.submitFormHandler = async function (event) {
