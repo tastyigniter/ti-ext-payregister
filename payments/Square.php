@@ -49,7 +49,7 @@ class Square extends BasePaymentGateway
 
     /**
      * @param  self $host
-     * @param  \Main\Classes\MainController $controller
+     * @param  \Main\Classes\MainController  $controller
      */
     public function beforeRenderPaymentForm($host, $controller)
     {
@@ -62,8 +62,8 @@ class Square extends BasePaymentGateway
      * Processes payment using passed data.
      *
      * @param  array $data
-     * @param  \Admin\Models\Payments_model $host
-     * @param  \Admin\Models\Orders_model $order
+     * @param  \Admin\Models\Payments_model  $host
+     * @param  \Admin\Models\Orders_model  $order
      *
      * @throws \Igniter\Flame\Exception\ApplicationException
      */
@@ -214,9 +214,9 @@ class Square extends BasePaymentGateway
     }
 
     /**
-     * @param  \Admin\Models\Payment_profiles_model $profile
-     * @param  array $profileData
-     * @param  array $cardData
+     * @param  \Admin\Models\Payment_profiles_model  $profile
+     * @param  array  $profileData
+     * @param  array  $cardData
      * @return \Admin\Models\Payment_profiles_model
      */
     protected function updatePaymentProfileData($profile, $profileData = [], $cardData = [])
