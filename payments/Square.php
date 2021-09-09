@@ -48,7 +48,7 @@ class Square extends BasePaymentGateway
     }
 
     /**
-     * @param  self $host
+     * @param  self  $host
      * @param  \Main\Classes\MainController  $controller
      */
     public function beforeRenderPaymentForm($host, $controller)
@@ -61,7 +61,7 @@ class Square extends BasePaymentGateway
     /**
      * Processes payment using passed data.
      *
-     * @param  array $data
+     * @param  array  $data
      * @param  \Admin\Models\Payments_model  $host
      * @param  \Admin\Models\Orders_model  $order
      *
