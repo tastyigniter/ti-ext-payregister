@@ -81,6 +81,7 @@
                     name: $form.find('input[name="first_name"]').val()+' '+$form.find('input[name="last_name"]').val()
                 }
             },
+            receipt_email: $form.find('input[name="email"]').val(),
         }).then(function (result) {
             var paymentIntentStatus = (result.error && result.error.payment_intent)
                 ? result.error.payment_intent.status : null
