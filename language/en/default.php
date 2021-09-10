@@ -14,7 +14,7 @@ return [
     'label_refund_type' => 'Refund Type',
     'label_refund_amount' => 'Refund Partial Amount',
 
-    'button_delete_card' => 'Delete or use a different card.',
+    'button_delete_card' => 'Delete and use a different card.',
     'button_refund' => 'Refund',
 
     'alert_min_total' => 'Order total is below the minimum order total for %s.',

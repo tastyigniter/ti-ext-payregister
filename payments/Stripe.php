@@ -83,7 +83,7 @@ class Stripe extends BasePaymentGateway
 
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendJsOptions', [$options, $order], FALSE);
         if (is_array($eventResult))
-            $options = array_merge($options, ...$eventResult);
+            $options = array_merge($options, ...array_filter($eventResult));
 
         return $options;
     }
@@ -94,7 +94,7 @@ class Stripe extends BasePaymentGateway
 
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendOptions', [$options], FALSE);
         if (is_array($eventResult))
-            $options = array_merge($options, ...$eventResult);
+            $options = array_merge($options, ...array_filter($eventResult));
 
         return $options;
     }
@@ -153,7 +153,7 @@ class Stripe extends BasePaymentGateway
 
             $fields = $this->getPaymentFormFields($order, $data, TRUE);
 
-            if ($this->supportsPaymentProfiles() AND $order->customer) {
+            if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
                 $data['stripe_payment_method'] = $paymentIntent->payment_method;
                 $profile = $this->updatePaymentProfile($order->customer, $data);
                 $fields['customer'] = array_get($profile->profile_data, 'customer_id');
@@ -299,7 +299,7 @@ class Stripe extends BasePaymentGateway
 
         $gateway = $this->createGateway();
         $stripeOptions = $this->getStripeOptions();
-        $gateway->customers->delete($profile->profile_data['customer_id'], $stripeOptions);
+        $gateway->customers->delete($profile->profile_data['customer_id'], [], $stripeOptions);
 
         $this->updatePaymentProfileData($profile);
     }
