@@ -1,78 +1,28 @@
-Payment system for TastyIgniter. Allows you to accept credit card payments 
-using payment gateway supplied by this extension or others.
+### Introduction
 
-A standardized way to add online payments using [Omnipay](https://omnipay.thephpleague.com/)
+Payment system for TastyIgniter. Allows you to accept credit card payments using payment gateway supplied by this
+extension.
 
-#### Available Payment Gateways:
-- Authorize Net AIM
-- Cash On Delivery
-- PayPal Express
-- Stripe
-- Mollie
-- Square
+### Documentation
 
-### Getting Started
-Go to **Sales > Payments** to enable and manage payments.
+Documentation for TastyIgniter Pay Register extension can be found on
+the [TastyIgniter website](https://tastyigniter.com/docs/extensions/payregister).
 
-### Registering a new Payment Gateway
+### Contributing
 
-Here is an example of an extension registering a payment gateway.
+Thank you for considering contributing! The contribution guide can be found in
+the [TastyIgniter documentation](https://tastyigniter.com/docs/contribution-guide).
 
-```
-public function registerPaymentGateways()
-{
-    return [
-        \Igniter\Local\Payments\PayPalStandard::class => [
-            'code' => 'paypal_standard',
-            'name' => 'PayPal Standard',
-            'description' => 'Description of the payment gateway',
-        ]
-    ];
-}
-```
+### Code of Conduct
 
-**Example of a Payment Gateway Class**
+In order to ensure that the [TastyIgniter community](https://forum.tastyigniter.com) is welcoming to all, please review
+and abide by the [Code of Conduct](https://tastyigniter.com/docs/code-of-conduct).
 
-A payment gateway class is responsible for handing the payment method during checkout.
+### Security Vulnerabilities
 
-```
-class Cod extends BasePaymentGateway
-{
-    /**
-     * Returns true if the payment type is applicable for a specified invoice amount
-     *
-     */
-    public function isApplicable($total, $host)
-    {
-        return $host->order_total <= $total;
-    }
-
-    /**
-     * Processes payment using passed data.
-     *
-     * @param array $data
-     * @param \Admin\Models\Payments_model $host
-     * @param \Admin\Models\Orders_model $order
-     *
-     * @throws \Igniter\Flame\Exception\ApplicationException
-     */
-    public function processPaymentForm($data, $host, $order)
-    {
-        if (!$paymentMethod = $order->payment)
-            throw new ApplicationException('Payment method not found');
-
-        if (!$this->isApplicable($order->order_total, $host))
-            throw new ApplicationException(sprintf(
-                lang('igniter.payregister::default.alert_min_order_total'),
-                currency_format($host->order_total),
-                $host->name
-            ));
-
-        $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
-        $order->markAsPaymentProcessed();
-    }
-}
-```
+Please review [our security policy](https://github.com/tastyigniter/ti-ext-payregister/security/policy) on how to report
+security vulnerabilities.
 
 ### License
-[The MIT License (MIT)](https://tastyigniter.com/licence/)
+
+TastyIgniter Pay Register extension is open-sourced software licensed under the [MIT license](LICENSE).
