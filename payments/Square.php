@@ -58,6 +58,11 @@ class Square extends BasePaymentGateway
         $controller->addJs('$/igniter/payregister/assets/process.square.js', 'process-square-js');
     }
 
+    public function completesPaymentOnClient()
+    {
+        return TRUE;
+    }
+
     /**
      * Processes payment using passed data.
      *
