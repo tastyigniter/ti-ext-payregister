@@ -20,7 +20,7 @@
             throw new Error('Missing square application id')
 
         this.payments = window.Square.payments(this.options.applicationId, this.options.locationId);
-        
+
         this.initializeCard(this.payments).catch(e => {
             throw new Error('Initializing Card failed', e)
         });
@@ -34,7 +34,7 @@
         this.card = await payments.card({
             style: this.options.cardFormStyle
         });
-        await this.card.attach('#' + this.sqElementID); 
+        await this.card.attach('#' + this.sqElementID);
     }
 
     ProcessSquare.prototype.submitFormHandler = async function (event) {
@@ -71,15 +71,15 @@
             $form.find(this.options.errorSelector).html($el);
             return;
         }
-        
+
         var verificationToken = await this.verifyBuyerHelper(tokenResult, verificationDetails);
-        
+
         $form.find('input[name="square_card_nonce"]').val(tokenResult.token);
         $form.find('input[name="square_card_token"]').val(verificationToken);
 
         // Switch back to default to submit form
         $form.unbind('submitCheckoutForm').submit()
-        
+
     }
 
     ProcessSquare.prototype.verifyBuyerHelper = async function(paymentToken, verificationDetails) {
