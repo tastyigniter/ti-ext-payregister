@@ -3,7 +3,7 @@
     class="payment-form w-100"
     data-publishable-key="{{ $paymentMethod->getPublishableKey() }}"
     data-payment-intent-secret="{{ $paymentMethod->createOrFetchIntent($order) }}"
-    data-stripe-options='@json($paymentMethod->getStripeJsOptions())'
+    data-stripe-options='@json($paymentMethod->getStripeJsOptions($order))'
     data-card-selector="#stripe-card-element"
     data-error-selector="#stripe-card-errors"
 >

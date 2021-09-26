@@ -40,11 +40,15 @@
         this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
 
         var self = this
-        this.$checkoutForm.on('submit', function() {
+        this.$checkoutForm.on('submit', function () {
             if (self.$checkoutForm.find('input[name="payment"]:checked').val() !== 'stripe')
                 return
 
-            self.card.update({ disabled: true });
+            self.card.update({disabled: true});
+        })
+
+        this.$checkoutForm.on('ajaxFail', function () {
+            self.card.update({disabled: false});
         })
     }
 
@@ -56,8 +60,8 @@
             $el.empty();
         }
 
-        this.$checkoutForm.find('.checkout-btn').prop('disabled', false)
-        this.card.update({ disabled: false });
+        $('.checkout-btn').prop('disabled', false)
+        this.card.update({disabled: false});
     }
 
     ProcessStripe.prototype.submitFormHandler = function (event) {
@@ -77,8 +81,12 @@
                     name: $form.find('input[name="first_name"]').val()+' '+$form.find('input[name="last_name"]').val()
                 }
             },
+            receipt_email: $form.find('input[name="email"]').val(),
         }).then(function (result) {
-            if (result.error) {
+            var paymentIntentStatus = (result.error && result.error.payment_intent)
+                ? result.error.payment_intent.status : null
+
+            if (result.error && !(paymentIntentStatus === 'requires_capture' || paymentIntentStatus === 'succeeded')) {
                 // Inform the user if there was an error.
                 self.validationErrorHandler(result)
             } else {

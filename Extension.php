@@ -71,5 +71,15 @@ class Extension extends BaseExtension
         Event::listen('main.theme.activated', function () {
             Payments_model::syncAll();
         });
+
+        Event::listen('igniter.checkout.afterSaveOrder', function ($order) {
+            if (!$order->payment_method OR !$order->payment_method instanceof Payments_model)
+                return;
+
+            if (!$order->payment_method->methodExists('updatePaymentIntentSession'))
+                return;
+
+            $order->payment_method->updatePaymentIntentSession($order);
+        });
     }
 }
