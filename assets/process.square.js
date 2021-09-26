@@ -75,7 +75,7 @@
         var verificationToken = await this.verifyBuyerHelper(tokenResult, verificationDetails);
         
         $form.find('input[name="square_card_nonce"]').val(tokenResult.token);
-        $form.find('input[name="square_card_token"]').val(verificationToken.token);
+        $form.find('input[name="square_card_token"]').val(verificationToken);
 
         // Switch back to default to submit form
         $form.unbind('submitCheckoutForm').submit()
