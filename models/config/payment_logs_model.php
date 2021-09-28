@@ -16,7 +16,7 @@ return [
             ],
             'refund_amount' => [
                 'label' => 'igniter.payregister::default.label_refund_amount',
-                'type' => 'money',
+                'type' => 'currency',
                 'trigger' => [
                     'action' => 'show',
                     'field' => 'refund_type',

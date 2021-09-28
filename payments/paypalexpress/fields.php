@@ -44,7 +44,7 @@ return [
         ],
         'order_fee' => [
             'label' => 'lang:igniter.payregister::default.label_order_fee',
-            'type' => 'number',
+            'type' => 'currency',
             'span' => 'right',
             'default' => 0,
             'comment' => 'lang:igniter.payregister::default.help_order_fee',
