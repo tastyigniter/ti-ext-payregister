@@ -53,9 +53,14 @@ class Square extends BasePaymentGateway
      */
     public function beforeRenderPaymentForm($host, $controller)
     {
-        $endpoint = $this->isTestMode() ? 'squareupsandbox' : 'squareup';
-        $controller->addJs('https://js.'.$endpoint.'.com/v2/paymentform', 'square-js');
+        $endpoint = $this->isTestMode() ? 'sandbox.' : '';
+        $controller->addJs('https://'.$endpoint.'web.squarecdn.com/v1/square.js', 'square-js');
         $controller->addJs('$/igniter/payregister/assets/process.square.js', 'process-square-js');
+    }
+
+    public function completesPaymentOnClient()
+    {
+        return TRUE;
     }
 
     /**
