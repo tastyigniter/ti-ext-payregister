@@ -3,6 +3,7 @@
 namespace Igniter\PayRegister\Payments;
 
 use Admin\Classes\BasePaymentGateway;
+use Admin\Models\Orders_model;
 use Exception;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Flame\Traits\EventEmitter;
@@ -512,7 +513,7 @@ class Stripe extends BasePaymentGateway
 
     protected function webhookHandlePaymentIntentSucceeded($payload)
     {
-        if ($order = $this->getOrder($payload['data']['object']['metadata']['order_id'])) {
+        if ($order = Orders_model::find($payload['data']['object']['metadata']['order_id'])) {
             if (!$order->isPaymentProcessed()) {
                 if ($payload['data']['object']['status'] === 'requires_capture') {
                     $order->logPaymentAttempt('Payment authorized', 1, [], $payload['data']['object']);
