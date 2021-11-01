@@ -28,7 +28,7 @@
         @else
             <div class="square-ccbox">
                 <div id="sq-card"></div>
-                @if ($paymentMethod->supportsPaymentProfiles() AND $order->customer)
+                @if ($paymentMethod->supportsPaymentProfiles() && $order->customer)
                     <div class="custom-control custom-checkbox mt-2">
                         <input
                             id="save-customer-profile"

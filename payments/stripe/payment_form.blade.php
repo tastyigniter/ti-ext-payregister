@@ -40,7 +40,7 @@
             <!-- Used to display form errors. -->
             <div id="stripe-card-errors" class="text-danger" role="alert"></div>
 
-            @if ($paymentMethod->supportsPaymentProfiles() AND $order->customer)
+            @if ($paymentMethod->supportsPaymentProfiles() && $order->customer)
                 <div class="custom-control custom-checkbox mt-2">
                     <input
                         id="save-customer-profile"
