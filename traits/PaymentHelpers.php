@@ -10,7 +10,7 @@ trait PaymentHelpers
     protected function validatePaymentMethod($order, $host)
     {
         $paymentMethod = $order->payment_method;
-        if (!$paymentMethod OR $paymentMethod->code != $host->code)
+        if (!$paymentMethod || $paymentMethod->code != $host->code)
             throw new ApplicationException('Payment method not found');
 
         if (!$this->isApplicable($order->order_total, $host))

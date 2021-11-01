@@ -73,7 +73,7 @@ class Extension extends BaseExtension
         });
 
         Event::listen('igniter.checkout.afterSaveOrder', function ($order) {
-            if (!$order->payment_method OR !$order->payment_method instanceof Payments_model)
+            if (!$order->payment_method || !$order->payment_method instanceof Payments_model)
                 return;
 
             if (!$order->payment_method->methodExists('updatePaymentIntentSession'))

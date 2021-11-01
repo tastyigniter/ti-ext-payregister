@@ -154,7 +154,7 @@ class Stripe extends BasePaymentGateway
 
             $fields = $this->getPaymentFormFields($order, $data, TRUE);
 
-            if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
+            if (array_get($data, 'create_payment_profile', 0) == 1 && $order->customer) {
                 $data['stripe_payment_method'] = $paymentIntent->payment_method;
                 $profile = $this->updatePaymentProfile($order->customer, $data);
                 $fields['customer'] = array_get($profile->profile_data, 'customer_id');
@@ -243,7 +243,7 @@ class Stripe extends BasePaymentGateway
         $host = $this->getHostObject();
         $profile = $host->findPaymentProfile($order->customer);
 
-        if (!$profile OR !$profile->hasProfileData())
+        if (!$profile || !$profile->hasProfileData())
             throw new ApplicationException('Payment profile not found');
 
         $gateway = $this->createGateway();
@@ -399,11 +399,11 @@ class Stripe extends BasePaymentGateway
 
     public function processRefundForm($data, $order, $paymentLog)
     {
-        if (!is_null($paymentLog->refunded_at) OR !is_array($paymentLog->response))
+        if (!is_null($paymentLog->refunded_at) || !is_array($paymentLog->response))
             throw new ApplicationException('Nothing to refund');
 
         if (!array_get($paymentLog->response, 'status') === 'succeeded'
-            OR !array_get($paymentLog->response, 'object') === 'payment_intent'
+            || !array_get($paymentLog->response, 'object') === 'payment_intent'
         ) throw new ApplicationException('No charge to refund');
 
         $paymentChargeId = array_get($paymentLog->response, 'id');
@@ -450,7 +450,7 @@ class Stripe extends BasePaymentGateway
             ],
         ];
 
-        if ($this->supportsPaymentProfiles() AND $order->customer)
+        if ($this->supportsPaymentProfiles() && $order->customer)
             $fields['setup_future_usage'] = 'off_session';
 
         $this->fireSystemEvent('payregister.stripe.extendFields', [&$fields, $order, $data, $updatingIntent]);
@@ -497,7 +497,7 @@ class Stripe extends BasePaymentGateway
             return response('Request method must be POST', 400);
 
         $payload = json_decode(request()->getContent(), TRUE);
-        if (!isset($payload['type']) OR !strlen($eventType = $payload['type']))
+        if (!isset($payload['type']) || !strlen($eventType = $payload['type']))
             return response('Missing webhook event name', 400);
 
         $eventName = Str::studly(str_replace('.', '_', $eventType));
