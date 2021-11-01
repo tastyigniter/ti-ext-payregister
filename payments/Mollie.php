@@ -85,7 +85,7 @@ class Mollie extends BasePaymentGateway
         $order = $this->createOrderModel()->whereHash($hash)->first();
 
         try {
-            if (!$hash OR !$order instanceof Orders_model)
+            if (!$hash || !$order instanceof Orders_model)
                 throw new ApplicationException('No order found');
 
             if (!strlen($redirectPage))
@@ -95,7 +95,7 @@ class Mollie extends BasePaymentGateway
                 throw new ApplicationException('No cancel page found');
 
             $paymentMethod = $order->payment_method;
-            if (!$paymentMethod OR $paymentMethod->getGatewayClass() != static::class)
+            if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class)
                 throw new ApplicationException('No valid payment method found');
 
             if (!$order->isPaymentProcessed())
@@ -118,11 +118,11 @@ class Mollie extends BasePaymentGateway
     {
         $hash = $params[0] ?? null;
         $order = $this->createOrderModel()->whereHash($hash)->first();
-        if (!$hash OR !$order instanceof Orders_model)
+        if (!$hash || !$order instanceof Orders_model)
             return Response::json(['error' => 'No order found']);
 
         $paymentMethod = $order->payment_method;
-        if (!$paymentMethod OR $paymentMethod->getGatewayClass() != static::class)
+        if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class)
             return Response::json(['error' => 'No valid payment method found']);
 
         $gateway = $this->createGateway();

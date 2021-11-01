@@ -67,7 +67,7 @@ class PaypalExpress extends BasePaymentGateway
         $order = $this->createOrderModel()->whereHash($hash)->first();
 
         try {
-            if (!$hash OR !$order instanceof Orders_model)
+            if (!$hash || !$order instanceof Orders_model)
                 throw new ApplicationException('No order found');
 
             if (!strlen($redirectPage))
@@ -77,7 +77,7 @@ class PaypalExpress extends BasePaymentGateway
                 throw new ApplicationException('No cancel page found');
 
             $paymentMethod = $order->payment_method;
-            if (!$paymentMethod OR $paymentMethod->getGatewayClass() != static::class)
+            if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class)
                 throw new ApplicationException('No valid payment method found');
 
             $gateway = $this->createGateway($paymentMethod);
@@ -108,14 +108,14 @@ class PaypalExpress extends BasePaymentGateway
     {
         $hash = $params[0] ?? null;
         $order = $this->createOrderModel()->whereHash($hash)->first();
-        if (!$hash OR !$order instanceof Orders_model)
+        if (!$hash || !$order instanceof Orders_model)
             throw new ApplicationException('No order found');
 
         if (!strlen($redirectPage = input('redirect')))
             throw new ApplicationException('No redirect page found');
 
         $paymentMethod = $order->payment_method;
-        if (!$paymentMethod OR $paymentMethod->getGatewayClass() != static::class)
+        if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class)
             throw new ApplicationException('No valid payment method found');
 
         $order->logPaymentAttempt('Payment canceled by customer', 0, input());

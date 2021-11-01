@@ -78,7 +78,7 @@ class Square extends BasePaymentGateway
 
         $fields = $this->getPaymentFormFields($order, $data);
 
-        if (array_get($data, 'create_payment_profile', 0) == 1 AND $order->customer) {
+        if (array_get($data, 'create_payment_profile', 0) == 1 && $order->customer) {
             $profile = $this->updatePaymentProfile($order->customer, $data);
             $fields['customerCardId'] = array_get($profile->profile_data, 'card_id');
             $fields['customerReference'] = array_get($profile->profile_data, 'customer_id');
@@ -136,7 +136,7 @@ class Square extends BasePaymentGateway
         $host = $this->getHostObject();
         $profile = $host->findPaymentProfile($order->customer);
 
-        if (!$profile OR !$profile->hasProfileData())
+        if (!$profile || !$profile->hasProfileData())
             throw new ApplicationException('Payment profile not found');
 
         $fields = $this->getPaymentFormFields($order, $data);

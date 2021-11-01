@@ -12,7 +12,7 @@ class SeedDefaultPaymentGateways extends Migration
 {
     public function up()
     {
-        if (!Schema::hasTable('payments') OR DB::table('payments')->count())
+        if (!Schema::hasTable('payments') || DB::table('payments')->count())
             return;
 
         if (!ThemeManager::instance()->getActiveTheme())
