@@ -112,7 +112,7 @@ class PaymentAttempts extends BaseFormWidget
 
         $widgetConfig['model'] = $this->model;
         $widgetConfig['data'] = $this->data;
-        $widgetConfig['alias'] = $this->alias.'Form'.'paymentAttempt';
+        $widgetConfig['alias'] = $this->alias.'FormPaymentAttempt';
         $widgetConfig['arrayName'] = $this->formField->arrayName.'[paymentAttempt]';
 
         $widget = $this->makeFormWidget('Admin\FormWidgets\DataTable', $field, $widgetConfig);
@@ -127,7 +127,7 @@ class PaymentAttempts extends BaseFormWidget
         $widgetConfig = is_string($this->form) ? $this->loadConfig($this->form, ['form'], 'form') : $this->form;
         $widgetConfig['model'] = $model;
         $widgetConfig['data'] = array_merge($model->toArray(), ['refund_amount' => $model->order->order_total]);
-        $widgetConfig['alias'] = $this->alias.'Form'.'payment-attempt';
+        $widgetConfig['alias'] = $this->alias.'FormPaymentAttempt';
         $widgetConfig['arrayName'] = $this->formField->arrayName.'[paymentAttempt]';
         $widgetConfig['context'] = 'edit';
         $widget = $this->makeWidget(Form::class, $widgetConfig);
