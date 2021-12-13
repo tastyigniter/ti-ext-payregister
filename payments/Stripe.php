@@ -182,6 +182,56 @@ class Stripe extends BasePaymentGateway
         }
     }
 
+    public function capturePaymentIntent($paymentIntentId, $order, $data = [])
+    {
+        if ($order->payment !== $this->model->code)
+            return;
+
+        try {
+            $response = $this->createGateway()->paymentIntents->capture(
+                $paymentIntentId,
+                $this->getPaymentCaptureFields($order, $data),
+                $this->getStripeOptions()
+            );
+
+            if ($response->status == 'succeeded') {
+                $order->logPaymentAttempt('Payment captured successfully', 1, $data, $response);
+            }
+            else {
+                $order->logPaymentAttempt('Payment captured failed', 0, $data, $response);
+            }
+
+            return $response;
+        }
+        catch (Exception $ex) {
+            $order->logPaymentAttempt('Payment capture failed -> '.$ex->getMessage(), 0, $data, $response);
+        }
+    }
+
+    public function cancelPaymentIntent($paymentIntentId, $order, $data = [])
+    {
+        if ($order->payment !== $this->model->code)
+            return;
+
+        try {
+            $response = $this->createGateway()->paymentIntents->cancel(
+                $paymentIntentId, $data, $this->getStripeOptions()
+            );
+
+            if ($response->status == 'canceled') {
+                $order->logPaymentAttempt('Payment canceled successfully', 1, $data, $response);
+            }
+            else {
+                $order->logPaymentAttempt('Payment canceled failed', 0, $data, $response);
+            }
+
+            return $response;
+        }
+        catch (Exception $ex) {
+            $order->logPaymentAttempt('Payment canceled failed -> '.$ex->getMessage(), 0, $data, $response);
+        }
+    }
+
     public function updatePaymentIntentSession($order)
     {
         try {
@@ -454,6 +504,15 @@ class Stripe extends BasePaymentGateway
             $fields['setup_future_usage'] = 'off_session';
 
         $this->fireSystemEvent('payregister.stripe.extendFields', [&$fields, $order, $data, $updatingIntent]);
+
+        return $fields;
+    }
+
+    protected function getPaymentCaptureFields($order, $fields = [])
+    {
+        $eventResult = $this->fireSystemEvent('payregister.stripe.extendCaptureFields', [$fields, $order], FALSE);
+        if (is_array($eventResult))
+            $fields = array_merge($fields, ...$eventResult);
 
         return $fields;
     }
