@@ -309,7 +309,7 @@ class Stripe extends BasePaymentGateway
 
             $intent = $gateway->paymentIntents->create($fields, $stripeOptions);
 
-            if (!$intent->status !== 'succeeded')
+            if ($intent->status !== 'succeeded')
                 throw new Exception('Status '.$intent->status);
 
             $order->logPaymentAttempt('Payment successful', 1, $fields, $intent, TRUE);
