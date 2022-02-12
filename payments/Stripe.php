@@ -304,6 +304,7 @@ class Stripe extends BasePaymentGateway
             $fields['customer'] = array_get($profile->profile_data, 'customer_id');
             $fields['payment_method'] = array_get($profile->profile_data, 'card_id');
             $fields['off_session'] = TRUE;
+            $fields['confirm'] = TRUE;
 
             $intent = $gateway->paymentIntents->create($fields, $stripeOptions);
 
