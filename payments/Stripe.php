@@ -303,6 +303,7 @@ class Stripe extends BasePaymentGateway
             $fields = $this->getPaymentFormFields($order);
             $fields['customer'] = array_get($profile->profile_data, 'customer_id');
             $fields['payment_method'] = array_get($profile->profile_data, 'card_id');
+            unset($fields['setup_future_usage']);
             $fields['off_session'] = TRUE;
             $fields['confirm'] = TRUE;
 
