@@ -304,10 +304,14 @@ class Stripe extends BasePaymentGateway
             $fields['customer'] = array_get($profile->profile_data, 'customer_id');
             $fields['payment_method'] = array_get($profile->profile_data, 'card_id');
             $fields['off_session'] = TRUE;
+            $fields['confirm'] = TRUE;
 
-            $intent = $gateway->paymentIntents->create($fields, $stripeOptions);
+            $intent = $gateway->paymentIntents->create(
+                array_except($fields, ['setup_future_usage']),
+                $stripeOptions
+            );
 
-            if (!$intent->status !== 'succeeded')
+            if ($intent->status !== 'succeeded')
                 throw new Exception('Status '.$intent->status);
 
             $order->logPaymentAttempt('Payment successful', 1, $fields, $intent, TRUE);
