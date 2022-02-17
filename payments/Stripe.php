@@ -108,7 +108,9 @@ class Stripe extends BasePaymentGateway
 
             $this->validatePaymentMethod($order, $this->model);
 
-            if (!$response = $this->updatePaymentIntentSession($order)) {
+            $response = $this->updatePaymentIntentSession($order);
+
+            if (!$response || in_array($response->status, ['requires_capture', 'succeeded'])) {
                 $fields = $this->getPaymentFormFields($order);
                 $stripeOptions = $this->getStripeOptions();
                 $response = $this->createGateway()->paymentIntents->create($fields, $stripeOptions);
