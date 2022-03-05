@@ -27,7 +27,7 @@ return [
         'order_status' => [
             'label' => 'lang:igniter.payregister::default.label_order_status',
             'type' => 'select',
-            'options' => ['Admin\Models\Statuses_model', 'getDropdownOptionsForOrder'],
+            'options' => [\Admin\Models\Statuses_model::class, 'getDropdownOptionsForOrder'],
             'comment' => 'lang:igniter.payregister::default.help_order_status',
         ],
     ],

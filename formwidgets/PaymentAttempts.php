@@ -115,7 +115,7 @@ class PaymentAttempts extends BaseFormWidget
         $widgetConfig['alias'] = $this->alias.'FormPaymentAttempt';
         $widgetConfig['arrayName'] = $this->formField->arrayName.'[paymentAttempt]';
 
-        $widget = $this->makeFormWidget('Admin\FormWidgets\DataTable', $field, $widgetConfig);
+        $widget = $this->makeFormWidget(\Admin\FormWidgets\DataTable::class, $field, $widgetConfig);
         $widget->bindToController();
         $widget->previewMode = $this->previewMode;
 
