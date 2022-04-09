@@ -12,32 +12,32 @@ class Extension extends BaseExtension
     public function registerPaymentGateways()
     {
         return [
-            'Igniter\PayRegister\Payments\Cod' => [
+            \Igniter\PayRegister\Payments\Cod::class => [
                 'code' => 'cod',
                 'name' => 'lang:igniter.payregister::default.cod.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.cod.text_payment_desc',
             ],
-            'Igniter\PayRegister\Payments\PaypalExpress' => [
+            \Igniter\PayRegister\Payments\PaypalExpress::class => [
                 'code' => 'paypalexpress',
                 'name' => 'lang:igniter.payregister::default.paypal.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.paypal.text_payment_desc',
             ],
-            'Igniter\PayRegister\Payments\AuthorizeNetAim' => [
+            \Igniter\PayRegister\Payments\AuthorizeNetAim::class => [
                 'code' => 'authorizenetaim',
                 'name' => 'lang:igniter.payregister::default.authorize_net_aim.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.authorize_net_aim.text_payment_desc',
             ],
-            'Igniter\PayRegister\Payments\Stripe' => [
+            \Igniter\PayRegister\Payments\Stripe::class => [
                 'code' => 'stripe',
                 'name' => 'lang:igniter.payregister::default.stripe.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.stripe.text_payment_desc',
             ],
-            'Igniter\PayRegister\Payments\Mollie' => [
+            \Igniter\PayRegister\Payments\Mollie::class => [
                 'code' => 'mollie',
                 'name' => 'lang:igniter.payregister::default.mollie.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.mollie.text_payment_desc',
             ],
-            'Igniter\PayRegister\Payments\Square' => [
+            \Igniter\PayRegister\Payments\Square::class => [
                 'code' => 'square',
                 'name' => 'lang:igniter.payregister::default.square.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.square.text_payment_desc',
@@ -48,7 +48,7 @@ class Extension extends BaseExtension
     public function registerFormWidgets()
     {
         return [
-            'Igniter\PayRegister\FormWidgets\PaymentAttempts' => [
+            \Igniter\PayRegister\FormWidgets\PaymentAttempts::class => [
                 'label' => 'Payment Attempts',
                 'code' => 'paymentattempts',
             ],
