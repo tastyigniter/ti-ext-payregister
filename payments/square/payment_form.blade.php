@@ -29,16 +29,16 @@
             <div class="square-ccbox">
                 <div id="sq-card"></div>
                 @if ($paymentMethod->supportsPaymentProfiles() && $order->customer)
-                    <div class="custom-control custom-checkbox mt-2">
+                    <div class="form-check mt-2">
                         <input
                             id="save-customer-profile"
                             type="checkbox"
-                            class="custom-control-input"
+                            class="form-check-input"
                             name="create_payment_profile"
                             value="1"
                         >
                         <label
-                            class="custom-control-label"
+                            class="form-check-label"
                             for="save-customer-profile"
                         >@lang('igniter.payregister::default.text_save_card_profile')</label>
                     </div>
