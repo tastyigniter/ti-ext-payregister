@@ -14,6 +14,8 @@ return [
     'label_refund_type' => 'Refund Type',
     'label_refund_amount' => 'Refund Partial Amount',
 
+    'label_payments' => 'Payments',
+
     'button_delete_card' => 'Delete and use a different card.',
     'button_refund' => 'Refund',
 
@@ -25,6 +27,9 @@ return [
     'help_order_total' => 'The total amount the order must reach before this payment gateway becomes active',
     'help_order_fee' => 'Extra charge to the order total when this payment gateway becomes active',
     'help_order_status' => 'Default order status when this payment method is used.',
+
+    'help_payments' => 'Select the payment(s) available at this location. Leave blank to use all enabled payments',
+    'help_no_payments' => 'No enabled payment was found.',
 
     'cod' => [
         'text_tab_general' => 'General',

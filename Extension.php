@@ -3,6 +3,7 @@
 namespace Igniter\PayRegister;
 
 use Admin\Models\Payments_model;
+use Admin\Requests\Location;
 use Admin\Widgets\Form;
 use Illuminate\Support\Facades\Event;
 use System\Classes\BaseExtension;
@@ -80,6 +81,37 @@ class Extension extends BaseExtension
                 return;
 
             $order->payment_method->updatePaymentIntentSession($order);
+        });
+
+        $this->extendLocationOptionsFields();
+    }
+
+    protected function extendLocationOptionsFields()
+    {
+        Event::listen('admin.locations.defineOptionsFormFields', function () {
+            return [
+                'payments' => [
+                    'label' => 'lang:igniter.payregister::default.label_payments',
+                    'accordion' => 'lang:admin::lang.locations.text_tab_general_options',
+                    'type' => 'checkboxlist',
+                    'options' => ['Admin\Models\Payments_model', 'listDropdownOptions'],
+                    'commentAbove' => 'lang:igniter.payregister::default.help_payments',
+                    'placeholder' => 'lang:igniter.payregister::default.help_no_payments',
+                ],
+            ];
+        });
+
+        Event::listen('system.formRequest.extendValidator', function ($formRequest, $dataHolder) {
+            if (!$formRequest instanceof Location)
+                return;
+
+            $dataHolder->attributes = array_merge($dataHolder->attributes, [
+                'options.payments.*' => lang('igniter.payregister::default.label_payments'),
+            ]);
+
+            $dataHolder->rules = array_merge($dataHolder->rules, [
+                'options.payments.*' => ['string'],
+            ]);
         });
     }
 }
