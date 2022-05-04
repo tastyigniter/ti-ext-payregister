@@ -132,16 +132,16 @@ class Mollie extends BasePaymentGateway
         if (!$order->isPaymentProcessed()) {
             if ($response->isPaid()) {
                 $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
-                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
+                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
                 $order->markAsPaymentProcessed();
             }
             else {
                 $order->logPaymentAttempt('Payment unsuccessful', 0, $fields, $response->getData());
-                $order->updateOrderStatus(setting('canceled_order_status'), ['notify' => FALSE]);
+                $order->updateOrderStatus(setting('canceled_order_status'), ['notify' => false]);
             }
         }
 
-        return Response::json(['success' => TRUE]);
+        return Response::json(['success' => true]);
     }
 
     //
@@ -172,7 +172,7 @@ class Mollie extends BasePaymentGateway
 
     protected function createOrFetchCustomer($profileData, $customer)
     {
-        $response = FALSE;
+        $response = false;
         $newCustomerRequired = !array_get($profileData, 'customer_id');
         $gateway = $this->createGateway();
 
@@ -182,7 +182,7 @@ class Mollie extends BasePaymentGateway
             ])->send();
 
             if (!$response->isSuccessful())
-                $newCustomerRequired = TRUE;
+                $newCustomerRequired = true;
         }
 
         if ($newCustomerRequired) {

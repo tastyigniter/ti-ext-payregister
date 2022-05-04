@@ -88,7 +88,7 @@ class PaypalExpress extends BasePaymentGateway
                 throw new ApplicationException($response->getMessage());
 
             $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
-            $order->updateOrderStatus($paymentMethod->order_status, ['notify' => FALSE]);
+            $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
             $order->markAsPaymentProcessed();
 
             return Redirect::to(page_url($redirectPage, [

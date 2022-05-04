@@ -60,7 +60,7 @@ class Square extends BasePaymentGateway
 
     public function completesPaymentOnClient()
     {
-        return TRUE;
+        return true;
     }
 
     /**
@@ -109,7 +109,7 @@ class Square extends BasePaymentGateway
      */
     public function supportsPaymentProfiles()
     {
-        return TRUE;
+        return true;
     }
 
     /**
@@ -157,7 +157,7 @@ class Square extends BasePaymentGateway
 
     protected function createOrFetchCustomer($profileData, $customer)
     {
-        $response = FALSE;
+        $response = false;
         $gateway = $this->createGateway();
         $newCustomerRequired = !array_get($profileData, 'customer_id');
 
@@ -167,7 +167,7 @@ class Square extends BasePaymentGateway
             ])->send();
 
             if (!$response->isSuccessful())
-                $newCustomerRequired = TRUE;
+                $newCustomerRequired = true;
         }
 
         if ($newCustomerRequired) {
@@ -190,7 +190,7 @@ class Square extends BasePaymentGateway
         $cardId = array_get($profileData, 'card_id');
         $nonce = array_get($data, 'square_card_nonce');
 
-        $response = FALSE;
+        $response = false;
         $gateway = $this->createGateway();
         $newCardRequired = !$cardId;
 
@@ -201,7 +201,7 @@ class Square extends BasePaymentGateway
             ])->send();
 
             if (!$response->isSuccessful())
-                $newCardRequired = TRUE;
+                $newCardRequired = true;
         }
 
         if ($newCardRequired) {
