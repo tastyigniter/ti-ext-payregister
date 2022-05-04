@@ -63,11 +63,11 @@ trait PaymentHelpers
      * @return void
      * @throws \Exception
      */
-    protected function handlePaymentResponse($response, $order, $host, $fields, $isRefundable = FALSE)
+    protected function handlePaymentResponse($response, $order, $host, $fields, $isRefundable = false)
     {
         if ($response->isSuccessful()) {
             $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData(), $isRefundable);
-            $order->updateOrderStatus($host->order_status, ['notify' => FALSE]);
+            $order->updateOrderStatus($host->order_status, ['notify' => false]);
             $order->markAsPaymentProcessed();
         }
         else {

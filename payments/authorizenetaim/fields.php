@@ -36,7 +36,7 @@ return [
         'accepted_cards' => [
             'label' => 'lang:igniter.payregister::default.authorize_net_aim.label_accepted_cards',
             'type' => 'select',
-            'multiOption' => TRUE,
+            'multiOption' => true,
             'default' => ['visa', 'mastercard', 'american_express', 'jcb', 'diners_club'],
             'options' => 'getAcceptedCards',
         ],
