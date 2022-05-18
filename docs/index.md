@@ -60,8 +60,8 @@ class Cod extends BasePaymentGateway
      * Processes payment using passed data.
      *
      * @param array $data
-     * @param \Admin\Models\Payments_model $host
-     * @param \Admin\Models\Orders_model $order
+     * @param \Igniter\Admin\Models\Payment $host
+     * @param \Igniter\Admin\Models\Order $order
      *
      * @throws \Igniter\Flame\Exception\ApplicationException
      */
