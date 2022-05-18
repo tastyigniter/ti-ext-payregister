@@ -1,0 +1,22 @@
+#stripe-card-element.StripeElement {
+  background-color: white;
+  height: 40px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px 0 #E6EBF1;
+  -webkit-transition: box-shadow 150ms ease;
+  transition: box-shadow 150ms ease;
+}
+
+#stripe-card-element.StripeElement--focus {
+  box-shadow: 0 1px 3px 0 #CFD7DF;
+}
+
+#stripe-card-element.StripeElement--invalid {
+  border-color: #FA755A;
+}
+
+#stripe-card-element.StripeElement--webkit-autofill {
+  background-color: #FEFDE5 !important;
+}
