@@ -14,7 +14,7 @@ return new class extends Migration {
         if (!Schema::hasTable('payments') || DB::table('payments')->count())
             return;
 
-        if (!ThemeManager::instance()->getActiveTheme())
+        if (!resolve(ThemeManager::class)->getActiveTheme())
             return;
 
         Payment::syncAll();
