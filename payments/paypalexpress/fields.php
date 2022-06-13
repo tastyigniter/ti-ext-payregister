@@ -2,34 +2,86 @@
 
 return [
     'fields' => [
-        'api_user' => [
-            'label' => 'lang:igniter.payregister::default.paypal.label_api_user',
-            'type' => 'text',
-        ],
-        'api_pass' => [
-            'label' => 'lang:igniter.payregister::default.paypal.label_api_pass',
-            'type' => 'text',
-        ],
-        'api_signature' => [
-            'label' => 'lang:igniter.payregister::default.paypal.label_api_signature',
-            'type' => 'text',
+        'setup' => [
+            'type' => 'partial',
+            'path' => '$/igniter/payregister/payments/paypalexpress/info',
         ],
         'api_mode' => [
             'label' => 'lang:igniter.payregister::default.paypal.label_api_mode',
             'type' => 'radiotoggle',
+            'span' => 'left',
             'default' => 'sandbox',
             'options' => [
-                'sandbox' => 'lang:igniter.payregister::default.paypal.text_sandbox',
                 'live' => 'lang:igniter.payregister::default.paypal.text_go_live',
+                'sandbox' => 'lang:igniter.payregister::default.paypal.text_sandbox',
             ],
         ],
         'api_action' => [
             'label' => 'lang:igniter.payregister::default.paypal.label_api_action',
             'type' => 'radiotoggle',
+            'span' => 'right',
             'default' => 'sale',
             'options' => [
                 'sale' => 'lang:igniter.payregister::default.paypal.text_sale',
                 'authorization' => 'lang:igniter.payregister::default.paypal.text_authorization',
+            ],
+        ],
+        'api_user' => [
+            'label' => 'lang:igniter.payregister::default.paypal.label_api_user',
+            'type' => 'text',
+            'span' => 'left',
+            'trigger' => [
+                'action' => 'show',
+                'field' => 'api_mode',
+                'condition' => 'value[live]',
+            ],
+        ],
+        'api_pass' => [
+            'label' => 'lang:igniter.payregister::default.paypal.label_api_pass',
+            'type' => 'text',
+            'span' => 'right',
+            'trigger' => [
+                'action' => 'show',
+                'field' => 'api_mode',
+                'condition' => 'value[live]',
+            ],
+        ],
+        'api_signature' => [
+            'label' => 'lang:igniter.payregister::default.paypal.label_api_signature',
+            'type' => 'text',
+            'trigger' => [
+                'action' => 'show',
+                'field' => 'api_mode',
+                'condition' => 'value[live]',
+            ],
+        ],
+        'api_sandbox_user' => [
+            'label' => 'lang:igniter.payregister::default.paypal.label_api_sandbox_user',
+            'type' => 'text',
+            'span' => 'left',
+            'trigger' => [
+                'action' => 'show',
+                'field' => 'api_mode',
+                'condition' => 'value[sandbox]',
+            ],
+        ],
+        'api_sandbox_pass' => [
+            'label' => 'lang:igniter.payregister::default.paypal.label_api_sandbox_pass',
+            'type' => 'text',
+            'span' => 'right',
+            'trigger' => [
+                'action' => 'show',
+                'field' => 'api_mode',
+                'condition' => 'value[sandbox]',
+            ],
+        ],
+        'api_sandbox_signature' => [
+            'label' => 'lang:igniter.payregister::default.paypal.label_api_sandbox_signature',
+            'type' => 'text',
+            'trigger' => [
+                'action' => 'show',
+                'field' => 'api_mode',
+                'condition' => 'value[sandbox]',
             ],
         ],
         'order_fee_type' => [
