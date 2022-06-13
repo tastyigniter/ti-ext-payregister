@@ -12,8 +12,8 @@ return [
             'default' => 'test',
             'span' => 'left',
             'options' => [
-                'test' => 'lang:igniter.payregister::default.stripe.text_test',
                 'live' => 'lang:igniter.payregister::default.stripe.text_live',
+                'test' => 'lang:igniter.payregister::default.stripe.text_test',
             ],
         ],
         'transaction_type' => [
@@ -22,8 +22,8 @@ return [
             'default' => 'auth_capture',
             'span' => 'right',
             'options' => [
-                'auth_only' => 'lang:igniter.payregister::default.stripe.text_auth_only',
                 'auth_capture' => 'lang:igniter.payregister::default.stripe.text_auth_capture',
+                'auth_only' => 'lang:igniter.payregister::default.stripe.text_auth_only',
             ],
         ],
         'live_secret_key' => [
