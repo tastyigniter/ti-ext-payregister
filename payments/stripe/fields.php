@@ -66,10 +66,16 @@ return [
                 'condition' => 'value[test]',
             ],
         ],
+        'locale_code' => [
+            'label' => 'lang:igniter.payregister::default.stripe.label_locale_code',
+            'type' => 'text',
+            'span' => 'left',
+        ],
         'order_fee_type' => [
             'label' => 'lang:igniter.payregister::default.label_order_fee_type',
             'type' => 'radiotoggle',
-            'span' => 'left',
+            'span' => 'right',
+            'cssClass' => 'flex-width',
             'default' => 1,
             'options' => [
                 1 => 'lang:admin::lang.menus.text_fixed_amount',
@@ -80,6 +86,7 @@ return [
             'label' => 'lang:igniter.payregister::default.label_order_fee',
             'type' => 'currency',
             'span' => 'right',
+            'cssClass' => 'flex-width',
             'default' => 0,
             'comment' => 'lang:igniter.payregister::default.help_order_fee',
         ],

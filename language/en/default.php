@@ -111,8 +111,11 @@ return [
         'label_test_publishable_key' => 'Test Publishable Key',
         'label_live_secret_key' => 'Live Secret Key',
         'label_live_publishable_key' => 'Live Publishable Key',
+        'label_locale_code' => 'Locale Code',
         'label_priority' => 'Priority',
         'label_status' => 'Status',
+
+        'help_locale_code' => 'See <a href="https://stripe.com/docs/js/appendix/supported_locales">Stripe.js supported locales</a',
     ],
 
     'mollie' => [
