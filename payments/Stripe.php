@@ -79,7 +79,7 @@ class Stripe extends BasePaymentGateway
     public function getStripeJsOptions($order)
     {
         $options = [
-            'locale' => $this->model->locale ?? app()->getLocale(),
+            'locale' => $this->model->locale_code ?? app()->getLocale(),
         ];
 
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendJsOptions', [$options, $order], false);
