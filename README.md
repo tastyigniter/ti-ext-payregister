@@ -25,4 +25,5 @@ security vulnerabilities.
 
 ### License
 
-TastyIgniter Pay Register extension is open-sourced software licensed under the [MIT license](LICENSE).
+TastyIgniter Pay Register extension is open-sourced software licensed under
+the [MIT license](https://github.com/tastyigniter/ti-ext-payregister/LICENSE.md).
