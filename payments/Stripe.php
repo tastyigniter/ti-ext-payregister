@@ -166,13 +166,6 @@ class Stripe extends BasePaymentGateway
                 'amount', 'currency', 'capture_method', 'setup_future_usage',
             ]), $stripeOptions);
 
-            if ($paymentIntent->status === 'requires_capture') {
-                $order->logPaymentAttempt('Payment authorized', 1, $data, $paymentIntent->toArray());
-            }
-            else {
-                $order->logPaymentAttempt('Payment successful', 1, $data, $paymentIntent->toArray(), true);
-            }
-
             $order->updateOrderStatus($host->order_status, ['notify' => false]);
             $order->markAsPaymentProcessed();
 
