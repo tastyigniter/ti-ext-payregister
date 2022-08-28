@@ -26,6 +26,16 @@ return [
                 'auth_only' => 'lang:igniter.payregister::default.stripe.text_auth_only',
             ],
         ],
+        'live_publishable_key' => [
+            'label' => 'lang:igniter.payregister::default.stripe.label_live_publishable_key',
+            'type' => 'text',
+            'span' => 'right',
+            'trigger' => [
+                'action' => 'show',
+                'field' => 'transaction_mode',
+                'condition' => 'value[live]',
+            ],
+        ],
         'live_secret_key' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_live_secret_key',
             'type' => 'text',
@@ -36,14 +46,14 @@ return [
                 'condition' => 'value[live]',
             ],
         ],
-        'live_publishable_key' => [
-            'label' => 'lang:igniter.payregister::default.stripe.label_live_publishable_key',
+        'test_publishable_key' => [
+            'label' => 'lang:igniter.payregister::default.stripe.label_test_publishable_key',
             'type' => 'text',
             'span' => 'right',
             'trigger' => [
                 'action' => 'show',
                 'field' => 'transaction_mode',
-                'condition' => 'value[live]',
+                'condition' => 'value[test]',
             ],
         ],
         'test_secret_key' => [
@@ -56,14 +66,16 @@ return [
                 'condition' => 'value[test]',
             ],
         ],
-        'test_publishable_key' => [
-            'label' => 'lang:igniter.payregister::default.stripe.label_test_publishable_key',
+        'webhook' => [
             'type' => 'text',
-            'span' => 'right',
+            'default' => md5(random_bytes(32)),
             'trigger' => [
                 'action' => 'show',
                 'field' => 'transaction_mode',
-                'condition' => 'value[test]',
+            ],
+            'attributes' => [
+                'readonly' => true,
+                'hidden' => true,
             ],
         ],
         'locale_code' => [

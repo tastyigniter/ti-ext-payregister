@@ -23,7 +23,7 @@ class Stripe extends BasePaymentGateway
     public function registerEntryPoints()
     {
         return [
-            'stripe_webhook' => 'processWebhookUrl',
+            $this->getWebhook() => 'processWebhookUrl',
         ];
     }
 
@@ -48,6 +48,11 @@ class Stripe extends BasePaymentGateway
     public function getSecretKey()
     {
         return $this->isTestMode() ? $this->model->test_secret_key : $this->model->live_secret_key;
+    }
+
+    public function getWebhook()
+    {
+        return $this->model->webhook;
     }
 
     public function shouldAuthorizePayment()
