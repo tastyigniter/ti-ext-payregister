@@ -21,7 +21,7 @@ class StripeCheckout extends BasePaymentGateway
     public function registerEntryPoints()
     {
         return [
-            'stripe_webhook' => 'processWebhookUrl',
+            'stripe_checkout_webhook' => 'processWebhookUrl',
             'stripe_checkout_return_url' => 'processSuccessUrl',
             'stripe_checkout_cancel_url' => 'processCancelUrl',
         ];

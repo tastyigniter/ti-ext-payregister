@@ -23,7 +23,7 @@ class Stripe extends BasePaymentGateway
     public function registerEntryPoints()
     {
         return [
-            // 'stripe_webhook' => 'processWebhookUrl',
+            'stripe_webhook' => 'processWebhookUrl',
         ];
     }
 
