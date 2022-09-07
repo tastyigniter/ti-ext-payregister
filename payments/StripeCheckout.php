@@ -165,7 +165,7 @@ class StripeCheckout extends BasePaymentGateway
                         // All amounts sent to Stripe must be in integers, representing the lowest currency unit (cents)
                         'unit_amount_decimal' => number_format($order->order_total, 2, '.', '') * 100,
                         'product_data' => [
-                            'name' => 'Test',
+                            'name' => 'Meals',
                         ],
                     ],
                     'quantity' => 1,
@@ -177,6 +177,7 @@ class StripeCheckout extends BasePaymentGateway
             'metadata' => [
                 'order_id' => $order->order_id,
             ],
+            'customer_email' => array_get($data, 'email'),
         ];
 
         $this->fireSystemEvent('payregister.stripecheckout.extendFields', [&$fields, $order, $data]);
