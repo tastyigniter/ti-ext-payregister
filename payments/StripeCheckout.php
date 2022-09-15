@@ -177,8 +177,18 @@ class StripeCheckout extends BasePaymentGateway
             'metadata' => [
                 'order_id' => $order->order_id,
             ],
-            'customer_email' => array_get($data, 'email'),
         ];
+
+        
+        // Share the email field in our form to Stripe checkout session,
+        // so customers don't need to enter twice
+        if (!is_null(array_get($data, 'email'))) {
+            // if is unregistered customer
+            $fields['customer_email'] = array_get($data, 'email');
+        } elseif (!is_null($order->customer) && !is_null($order->customer->email)) {
+            // else if is registered, get email from customer profile
+            $fields['customer_email'] = $order->customer->email;
+        }
 
         $this->fireSystemEvent('payregister.stripecheckout.extendFields', [&$fields, $order, $data]);
 
