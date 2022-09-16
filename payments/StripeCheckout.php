@@ -98,7 +98,8 @@ class StripeCheckout extends BasePaymentGateway
             if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class)
                 throw new ApplicationException('No valid payment method found');
 
-            $order->logPaymentAttempt('Payment successful', 1, [], $paymentMethod, true);
+            // Don't have detailed payment info, not refundable.
+            $order->logPaymentAttempt('Payment successful (not final)', 1, [], $paymentMethod, true);
             $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
             $order->markAsPaymentProcessed();
 
@@ -151,6 +152,58 @@ class StripeCheckout extends BasePaymentGateway
         return $stripeClient;
     }
 
+    protected function getPaymentRefundFields($order, $data)
+    {
+        $fields = [];
+
+        $eventResult = $this->fireSystemEvent('payregister.stripe.extendRefundFields', [$fields, $order, $data], false);
+        if (is_array($eventResult))
+            $fields = array_merge($fields, ...$eventResult);
+
+        return $fields;
+    }
+
+    public function processRefundForm($data, $order, $paymentLog)
+    {
+        if (!is_null($paymentLog->refunded_at) || !is_array($paymentLog->response))
+            throw new ApplicationException('Nothing to refund');
+
+        if (!array_get($paymentLog->response, 'status') === 'succeeded'
+            || !array_get($paymentLog->response, 'object') === 'payment_intent'
+        ) throw new ApplicationException('No charge to refund');
+
+        $paymentIntentId = array_get($paymentLog->response, 'payment_intent');
+        $refundAmount = array_get($data, 'refund_type') == 'full'
+            ? $order->order_total : array_get($data, 'refund_amount');
+
+        if ($refundAmount > $order->order_total)
+            throw new ApplicationException('Refund amount should be be less than total');
+
+        try {
+            $gateway = $this->createGateway();
+            $fields = $this->getPaymentRefundFields($order, $data);
+            $response = $gateway->refunds->create(array_merge($fields, [
+                'payment_intent' => $paymentIntentId,
+                'amount' => number_format($refundAmount, 2, '', ''),
+            ]));
+
+            if ($response->status === 'failed')
+                throw new Exception('Refund failed');
+
+            $message = sprintf('Payment intent %s refunded successfully -> (%s: %s)',
+                $paymentIntentId,
+                currency_format($refundAmount),
+                array_get($response->toArray(), 'refunds.data.0.id')
+            );
+
+            $order->logPaymentAttempt($message, 1, $fields, $response->toArray());
+            $paymentLog->markAsRefundProcessed();
+        }
+        catch (Exception $e) {
+            $order->logPaymentAttempt('Refund failed -> '.$response->getMessage(), 0, $fields, $response->toArray());
+        }
+    }
+
     protected function getPaymentFormFields($order, $data = [])
     {
         $cancelUrl = $this->makeEntryPointUrl('stripe_checkout_cancel_url').'/'.$order->hash;
@@ -179,7 +232,6 @@ class StripeCheckout extends BasePaymentGateway
             ],
         ];
 
-        
         // Share the email field in our form to Stripe checkout session,
         // so customers don't need to enter twice
         if (!is_null(array_get($data, 'email'))) {
@@ -218,16 +270,15 @@ class StripeCheckout extends BasePaymentGateway
     protected function webhookHandleCheckoutSessionCompleted($payload)
     {
         if ($order = Orders_model::find($payload['data']['object']['metadata']['order_id'])) {
-            if (!$order->isPaymentProcessed()) {
-                if ($payload['data']['object']['status'] === 'requires_capture') {
-                    $order->logPaymentAttempt('Payment authorized', 1, [], $payload['data']['object']);
-                } else {
-                    $order->logPaymentAttempt('Payment successful', 1, [], $payload['data']['object'], true);
-                }
-
-                $order->updateOrderStatus($this->model->order_status, ['notify' => false]);
-                $order->markAsPaymentProcessed();
+            if ($payload['data']['object']['status'] === 'requires_capture') {
+                $order->logPaymentAttempt('Payment authorized', 1, [], $payload['data']['object']);
+            } else {
+                // Have detailed payment info, refundable.
+                $order->logPaymentAttempt('Payment confirmed (Finalized, Refundable)', 1, [], $payload['data']['object'], true);
             }
+
+            $order->updateOrderStatus($this->model->order_status, ['notify' => false]);
+            $order->markAsPaymentProcessed();
         }
     }
 }
