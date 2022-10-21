@@ -50,6 +50,11 @@ class Stripe extends BasePaymentGateway
         return $this->isTestMode() ? $this->model->test_secret_key : $this->model->live_secret_key;
     }
 
+    public function getWebhookSecret()
+    {
+        return $this->isTestMode() ? $this->model->test_webhook_secret : $this->model->live_webhook_secret;
+    }
+
     public function shouldAuthorizePayment()
     {
         return $this->model->transaction_type == 'auth_only';
@@ -561,7 +566,8 @@ class Stripe extends BasePaymentGateway
         if (strtolower(request()->method()) !== 'post')
             return response('Request method must be POST', 400);
 
-        $payload = json_decode(request()->getContent(), true);
+        $payload = $this->getWebhookPayload();
+
         if (!isset($payload['type']) || !strlen($eventType = $payload['type']))
             return response('Missing webhook event name', 400);
 
@@ -591,5 +597,19 @@ class Stripe extends BasePaymentGateway
                 $order->markAsPaymentProcessed();
             }
         }
+    }
+
+    protected function getWebhookPayload(): array
+    {
+        if (!$webhookSecret = $this->getWebhookSecret())
+            return json_decode(request()->getContent(), true);
+
+        $event = \Stripe\Webhook::constructEvent(
+            request()->getContent(),
+            request()->header('HTTP_STRIPE_SIGNATURE'),
+            $webhookSecret
+        );
+
+        return $event->toArray();
     }
 }

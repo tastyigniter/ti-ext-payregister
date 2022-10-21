@@ -26,6 +26,16 @@ return [
                 'auth_only' => 'lang:igniter.payregister::default.stripe.text_auth_only',
             ],
         ],
+        'live_publishable_key' => [
+            'label' => 'lang:igniter.payregister::default.stripe.label_live_publishable_key',
+            'type' => 'text',
+            'span' => 'right',
+            'trigger' => [
+                'action' => 'show',
+                'field' => 'transaction_mode',
+                'condition' => 'value[live]',
+            ],
+        ],
         'live_secret_key' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_live_secret_key',
             'type' => 'text',
@@ -36,14 +46,14 @@ return [
                 'condition' => 'value[live]',
             ],
         ],
-        'live_publishable_key' => [
-            'label' => 'lang:igniter.payregister::default.stripe.label_live_publishable_key',
+        'test_webhook_secret' => [
+            'label' => 'lang:igniter.payregister::default.stripe.label_test_webhook_secret',
             'type' => 'text',
             'span' => 'right',
             'trigger' => [
                 'action' => 'show',
                 'field' => 'transaction_mode',
-                'condition' => 'value[live]',
+                'condition' => 'value[test]',
             ],
         ],
         'test_secret_key' => [
@@ -56,20 +66,20 @@ return [
                 'condition' => 'value[test]',
             ],
         ],
-        'test_publishable_key' => [
-            'label' => 'lang:igniter.payregister::default.stripe.label_test_publishable_key',
+        'live_webhook_secret' => [
+            'label' => 'lang:igniter.payregister::default.stripe.label_live_webhook_secret',
             'type' => 'text',
-            'span' => 'right',
+            'span' => 'left',
             'trigger' => [
                 'action' => 'show',
                 'field' => 'transaction_mode',
-                'condition' => 'value[test]',
+                'condition' => 'value[live]',
             ],
         ],
         'locale_code' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_locale_code',
             'type' => 'text',
-            'span' => 'left',
+            'span' => 'right',
         ],
         'order_fee_type' => [
             'label' => 'lang:igniter.payregister::default.label_order_fee_type',
@@ -110,6 +120,8 @@ return [
         ['live_publishable_key', 'lang:igniter.payregister::default.stripe.label_live_publishable_key', 'string'],
         ['test_secret_key', 'lang:igniter.payregister::default.stripe.label_test_secret_key', 'string'],
         ['test_publishable_key', 'lang:igniter.payregister::default.stripe.label_test_publishable_key', 'string'],
+        ['test_webhook_secret', 'lang:igniter.payregister::default.stripe.label_test_webhook_secret', 'string'],
+        ['live_webhook_secret', 'lang:igniter.payregister::default.stripe.label_live_webhook_secret', 'string'],
         ['order_fee_type', 'lang:igniter.payregister::default.label_order_fee_type', 'integer'],
         ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'numeric'],
         ['order_total', 'lang:igniter.payregister::default.label_order_total', 'numeric'],
