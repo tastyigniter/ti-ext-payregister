@@ -116,6 +116,8 @@ return [
         'label_test_publishable_key' => 'Test Publishable Key',
         'label_live_secret_key' => 'Live Secret Key',
         'label_live_publishable_key' => 'Live Publishable Key',
+        'label_test_webhook_secret' => 'Test Webhook Secret',
+        'label_live_webhook_secret' => 'Live Webhook Secret',
         'label_locale_code' => 'Locale Code',
         'label_priority' => 'Priority',
         'label_status' => 'Status',
