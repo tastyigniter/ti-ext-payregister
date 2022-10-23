@@ -2,9 +2,22 @@
 
 return [
     'fields' => [
+        'test_connect_id' => [
+            'type' => 'hidden',
+        ],
+        'live_connect_id' => [
+            'type' => 'hidden',
+        ],
+        'tenant_fee' => [
+            'type' => 'hidden',
+        ],
         'setup' => [
             'type' => 'partial',
             'path' => '$/igniter/payregister/payments/stripe/info',
+        ],
+        'connect' => [
+            'type' => 'partial',
+            'path' => '$/extensions/igniter/payregister/payments/stripe/connect',
         ],
         'transaction_mode' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_transaction_mode',
@@ -28,23 +41,15 @@ return [
         ],
         'live_publishable_key' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_live_publishable_key',
-            'type' => 'text',
-            'span' => 'right',
-            'trigger' => [
-                'action' => 'show',
-                'field' => 'transaction_mode',
-                'condition' => 'value[live]',
-            ],
+            'type' => 'hidden',
+        ],
+        'test_publishable_key' => [
+            'label' => 'lang:igniter.payregister::default.stripe.label_test_publishable_key',
+            'type' => 'hidden',
         ],
         'live_secret_key' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_live_secret_key',
-            'type' => 'text',
-            'span' => 'left',
-            'trigger' => [
-                'action' => 'show',
-                'field' => 'transaction_mode',
-                'condition' => 'value[live]',
-            ],
+            'type' => 'hidden',
         ],
         'test_webhook_secret' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_test_webhook_secret',
@@ -58,13 +63,7 @@ return [
         ],
         'test_secret_key' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_test_secret_key',
-            'type' => 'text',
-            'span' => 'left',
-            'trigger' => [
-                'action' => 'show',
-                'field' => 'transaction_mode',
-                'condition' => 'value[test]',
-            ],
+            'type' => 'hidden',
         ],
         'live_webhook_secret' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_live_webhook_secret',

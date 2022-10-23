@@ -10,6 +10,11 @@ use System\Classes\BaseExtension;
 
 class Extension extends BaseExtension
 {
+    public function register()
+    {
+        $this->mergeConfigFrom(__DIR__ . '/config/payments.php', 'payments');
+    }
+
     public function registerPaymentGateways()
     {
         return [

@@ -24,6 +24,7 @@ class Stripe extends BasePaymentGateway
     {
         return [
             'stripe_webhook' => 'processWebhookUrl',
+            'stripe_connect' => 'connectWebhook',
         ];
     }
 
@@ -42,12 +43,16 @@ class Stripe extends BasePaymentGateway
 
     public function getPublishableKey()
     {
-        return $this->isTestMode() ? $this->model->test_publishable_key : $this->model->live_publishable_key;
+        $stored = $this->isTestMode() ? $this->model->test_publishable_key : $this->model->live_publishable_key;
+
+        return !empty($stored) ?: ($this->isTestMode() ? $this->model->test_publishable_key : $this->model->live_publishable_key);
     }
 
     public function getSecretKey()
     {
-        return $this->isTestMode() ? $this->model->test_secret_key : $this->model->live_secret_key;
+        $stored = $this->isTestMode() ? $this->model->test_secret_key : $this->model->live_secret_key;
+
+        return !empty($stored) ?: config('payments.gateways.stripe.'.$this->model->transaction_mode.'.secretKey');
     }
 
     public function getWebhookSecret()
@@ -124,8 +129,7 @@ class Stripe extends BasePaymentGateway
             }
 
             return optional($response)->client_secret;
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             flash()->warning($ex->getMessage())->important()->now();
         }
     }
@@ -173,8 +177,7 @@ class Stripe extends BasePaymentGateway
 
             if ($paymentIntent->status === 'requires_capture') {
                 $order->logPaymentAttempt('Payment authorized', 1, $data, $paymentIntent->toArray());
-            }
-            else {
+            } else {
                 $order->logPaymentAttempt('Payment successful', 1, $data, $paymentIntent->toArray(), true);
             }
 
@@ -182,8 +185,7 @@ class Stripe extends BasePaymentGateway
             $order->markAsPaymentProcessed();
 
             Session::forget($this->sessionKey);
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $data, $paymentIntent ?? []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
@@ -203,14 +205,12 @@ class Stripe extends BasePaymentGateway
 
             if ($response->status == 'succeeded') {
                 $order->logPaymentAttempt('Payment captured successfully', 1, $data, $response);
-            }
-            else {
+            } else {
                 $order->logPaymentAttempt('Payment captured failed', 0, $data, $response);
             }
 
             return $response;
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment capture failed -> '.$ex->getMessage(), 0, $data, $response);
         }
     }
@@ -227,14 +227,12 @@ class Stripe extends BasePaymentGateway
 
             if ($response->status == 'canceled') {
                 $order->logPaymentAttempt('Payment canceled successfully', 1, $data, $response);
-            }
-            else {
+            } else {
                 $order->logPaymentAttempt('Payment canceled failed', 0, $data, $response);
             }
 
             return $response;
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment canceled failed -> '.$ex->getMessage(), 0, $data, $response);
         }
     }
@@ -258,8 +256,7 @@ class Stripe extends BasePaymentGateway
 
                 return $paymentIntent;
             }
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             return false;
         }
     }
@@ -324,8 +321,7 @@ class Stripe extends BasePaymentGateway
             $order->logPaymentAttempt('Payment successful', 1, $fields, $intent, true);
             $order->updateOrderStatus($host->order_status, ['notify' => false]);
             $order->markAsPaymentProcessed();
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             $order->logPaymentAttempt('Payment error -> '.$e->getMessage(), 0, $data, $intent ?? []);
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
@@ -346,12 +342,10 @@ class Stripe extends BasePaymentGateway
         if (!$profile)
             $profile = $this->model->initPaymentProfile($customer);
 
-        $this->updatePaymentProfileData($profile, [
+        return $this->updatePaymentProfileData($profile, [
             'customer_id' => $customerId,
             'card_id' => $cardId,
         ], $cardData);
-
-        return $profile;
     }
 
     protected function handleDeletePaymentProfile($customer, $profile)
@@ -382,8 +376,7 @@ class Stripe extends BasePaymentGateway
                 if (isset($response->deleted)) {
                     $newCustomerRequired = true;
                 }
-            }
-            catch (Exception $e) {
+            } catch (Exception $e) {
                 $newCustomerRequired = true;
             }
         }
@@ -395,8 +388,7 @@ class Stripe extends BasePaymentGateway
                     'email' => $customer->email,
                 ], $stripeOptions);
             }
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             throw new ApplicationException($ex->getMessage());
         }
 
@@ -419,8 +411,7 @@ class Stripe extends BasePaymentGateway
 
                 if ($response->customer != $customerId)
                     $newCardRequired = true;
-            }
-            catch (Exception $e) {
+            } catch (Exception $e) {
                 $newCardRequired = true;
             }
         }
@@ -430,8 +421,7 @@ class Stripe extends BasePaymentGateway
                 $response = $gateway->paymentMethods->attach($token, [
                     'customer' => $customerId,
                 ], $stripeOptions);
-            }
-            catch (Exception $ex) {
+            } catch (Exception $ex) {
                 throw new ApplicationException($ex->getMessage());
             }
         }
@@ -449,6 +439,7 @@ class Stripe extends BasePaymentGateway
     {
         $profile->card_brand = strtolower(array_get($cardData, 'card.brand'));
         $profile->card_last4 = array_get($cardData, 'card.last4');
+        $this->fireSystemEvent('payregister.stripe.customer.upsert_payment_profile', [&$profile]);
         $profile->setProfileData($profileData);
 
         return $profile;
@@ -494,8 +485,7 @@ class Stripe extends BasePaymentGateway
 
             $order->logPaymentAttempt($message, 1, $fields, $response->toArray());
             $paymentLog->markAsRefundProcessed();
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             $order->logPaymentAttempt('Refund failed -> '.$response->getMessage(), 0, $fields, $response->toArray());
         }
     }
@@ -588,8 +578,7 @@ class Stripe extends BasePaymentGateway
             if (!$order->isPaymentProcessed()) {
                 if ($payload['data']['object']['status'] === 'requires_capture') {
                     $order->logPaymentAttempt('Payment authorized', 1, [], $payload['data']['object']);
-                }
-                else {
+                } else {
                     $order->logPaymentAttempt('Payment successful', 1, [], $payload['data']['object'], true);
                 }
 
@@ -611,5 +600,80 @@ class Stripe extends BasePaymentGateway
         );
 
         return $event->toArray();
+    }
+
+    public function getConnectId()
+    {
+        $mode_connect_id = $this->model->transaction_mode.'_connect_id';
+
+        return $this->model->$mode_connect_id;
+    }
+
+    public function getApplicationFee($order_total)
+    {
+        $tenant_fee = ($this->model->tenant_fee ?? 2) / 100;
+
+        return $tenant_fee * $order_total;
+    }
+
+    public function showConnect()
+    {
+        if (!empty($this->getConnectId())) {
+            $gateway = $this->createGateway();
+            $account = $gateway->accounts->retrieve($this->getConnectId());
+
+            return !$account->details_submitted || !$account->charges_enabled;
+        }
+
+        return true;
+    }
+
+    public function connectWebhook($operation)
+    {
+        switch ($operation[0]) {
+            case 'account_link':
+            case 'refresh':
+                return $this->connectAccountLinking();
+            case 'return':
+                return redirect()->to(admin_url('payments'));
+        }
+
+    }
+
+    public function generateAccountLink()
+    {
+        $account_info = [];
+
+        $stripeOptions = $this->getStripeOptions();
+        $account_info = array_merge(
+            $account_info,
+            [
+                'type' => 'express',
+            ]
+        );
+        $gateway = $this->createGateway();
+        if (empty($connectId = $this->getConnectId())) {
+            $account = $gateway->accounts->create($account_info, $stripeOptions);
+            $connectId = $account->id;
+            $mode_connect_id = $this->model->transaction_mode.'_connect_id';
+            $this->model->$mode_connect_id = $connectId;
+            $this->model->save();
+        }
+        $accountLink = $gateway->accountLinks->create(
+            [
+                'account' => $connectId,
+                'refresh_url' => site_url('ti_payregister/stripe_connect/refresh'),
+                'return_url' => site_url('ti_payregister/stripe_connect/return'),
+                'type' => 'account_onboarding',
+            ]
+        );
+
+        return $accountLink->url;
+
+    }
+
+    private function connectAccountLinking()
+    {
+        return redirect()->to($this->generateAccountLink());
     }
 }

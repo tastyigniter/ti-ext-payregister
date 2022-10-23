@@ -107,6 +107,9 @@ return [
         'text_test' => 'Test',
         'text_stripe_charge_description' => '%s Charge for %s',
         'text_payment_status' => 'Payment %s (%s)',
+        'text_configure_connect' => 'Configure your stripe account',
+        'text_link_stripe_connect' => 'Link your strip account',
+        'text_stripe_connect_linked' => 'Your stripe account is connected',
 
         'label_title' => 'Title',
         'label_description' => 'Description',
