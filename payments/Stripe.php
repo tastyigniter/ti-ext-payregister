@@ -171,6 +171,11 @@ class Stripe extends BasePaymentGateway
                 'amount', 'currency', 'capture_method', 'setup_future_usage',
             ]), $stripeOptions);
 
+            // Avoid logging payment and updating the order status more than once
+            // For cases where the webhook is triggered before the user is redirected
+            if ($order->isPaymentProcessed())
+                return true;
+
             if ($paymentIntent->status === 'requires_capture') {
                 $order->logPaymentAttempt('Payment authorized', 1, $data, $paymentIntent->toArray());
             }
@@ -587,10 +592,10 @@ class Stripe extends BasePaymentGateway
         if ($order = Orders_model::find($payload['data']['object']['metadata']['order_id'])) {
             if (!$order->isPaymentProcessed()) {
                 if ($payload['data']['object']['status'] === 'requires_capture') {
-                    $order->logPaymentAttempt('Payment authorized', 1, [], $payload['data']['object']);
+                    $order->logPaymentAttempt('Payment authorized via webhook', 1, [], $payload['data']['object']);
                 }
                 else {
-                    $order->logPaymentAttempt('Payment successful', 1, [], $payload['data']['object'], true);
+                    $order->logPaymentAttempt('Payment successful via webhook', 1, [], $payload['data']['object'], true);
                 }
 
                 $order->updateOrderStatus($this->model->order_status, ['notify' => false]);
