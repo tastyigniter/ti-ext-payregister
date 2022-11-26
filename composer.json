@@ -1,6 +1,6 @@
 {
   "name": "tastyigniter/ti-ext-payregister",
-  "type": "tastyigniter-extension",
+  "type": "tastyigniter-package",
   "description": "Allows you to accept credit card payments using PayPal, Stripe, Authorize.Net and/or Mollie.",
   "keywords": [
     "tastyigniter",
