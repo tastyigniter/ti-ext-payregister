@@ -1,7 +1,5 @@
 <?php
 
-namespace Igniter\PayRegister\Database\Migrations;
-
 use Igniter\Admin\Models\Payment;
 use Igniter\Main\Classes\ThemeManager;
 use Illuminate\Database\Migrations\Migration;
