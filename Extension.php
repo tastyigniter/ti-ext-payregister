@@ -2,6 +2,7 @@
 
 namespace Igniter\PayRegister;
 
+use Admin\Controllers\Orders;
 use Admin\Models\Payments_model;
 use Admin\Requests\Location;
 use Admin\Widgets\Form;
@@ -59,7 +60,7 @@ class Extension extends BaseExtension
     public function boot()
     {
         Event::listen('admin.form.extendFieldsBefore', function (Form $form) {
-            if ($form->model instanceof \Admin\Models\Orders_model) {
+            if ($form->getController() instanceof Orders && $form->model instanceof \Admin\Models\Orders_model) {
                 $form->tabs['fields']['payment_logs']['type'] = 'paymentattempts';
                 $form->tabs['fields']['payment_logs']['form'] = '$/igniter/payregister/models/config/payment_logs_model';
                 $form->tabs['fields']['payment_logs']['columns']['is_refundable'] = [
