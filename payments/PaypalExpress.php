@@ -153,6 +153,8 @@ class PaypalExpress extends BasePaymentGateway
         $gateway->setTestMode($this->isSandboxMode());
         $gateway->setBrandName(setting('site_name'));
 
+        $this->fireSystemEvent('payregister.paypalexpress.extendGateway', [$gateway]);
+
         return $gateway;
     }
 

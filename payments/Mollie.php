@@ -213,6 +213,8 @@ class Mollie extends BasePaymentGateway
 
         $gateway->setApiKey($this->getApiKey());
 
+        $this->fireSystemEvent('payregister.mollie.extendGateway', [$gateway]);
+
         return $gateway;
     }
 

@@ -112,6 +112,8 @@ class AuthorizeNetAim extends BasePaymentGateway
         $gateway->setTestMode($this->isTestMode());
         $gateway->setDeveloperMode($this->isTestMode());
 
+        $this->fireSystemEvent('payregister.authorizenetaim.extendGateway', [$gateway]);
+
         return $gateway;
     }
 

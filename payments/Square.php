@@ -249,6 +249,8 @@ class Square extends BasePaymentGateway
         $gateway->setAccessToken($this->getAccessToken());
         $gateway->setLocationId($this->getLocationId());
 
+        $this->fireSystemEvent('payregister.square.extendGateway', [$gateway]);
+
         return $gateway;
     }
 

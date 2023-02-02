@@ -557,7 +557,7 @@ class Stripe extends BasePaymentGateway
             'api_key' => $this->getSecretKey(),
         ]);
 
-        $this->fireSystemEvent('payregister.stripe.extendClient', [$stripeClient]);
+        $this->fireSystemEvent('payregister.stripe.extendGateway', [$stripeClient]);
 
         return $stripeClient;
     }
