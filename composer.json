@@ -6,6 +6,7 @@
     "tastyigniter",
     "paypal",
     "stripe",
+    "square",
     "payment",
     "gateway",
     "authorizenet",
@@ -24,7 +25,7 @@
     "omnipay/paypal": "~3.0",
     "stripe/stripe-php": "~7.93.0",
     "omnipay/mollie": "~5.1",
-    "sampoyigi/omnipay-square": "~2.0"
+    "square/square": "25.1.0.20230119"
   },
   "extra": {
     "tastyigniter-extension": {
