@@ -421,7 +421,6 @@ class Square extends BasePaymentGateway
 
 
         $cardId = $profile['profile_data']['card_id'];
-        Log::info($profile);
         $client = $this->createClient();
         $cardsApi = $client->getCardsApi();
 
