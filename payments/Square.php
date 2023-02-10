@@ -7,11 +7,9 @@ use Exception;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
-
+use Square\Environment;
 use Square\Models;
 use Square\SquareClient;
-use Square\Environment;
-use Square\Exceptions\ApiException;
 
 class Square extends BasePaymentGateway
 {
@@ -67,7 +65,7 @@ class Square extends BasePaymentGateway
         return true;
     }
 
-    public function createPayment($fields, $order, $host){
+    public function createPayment($fields, $order, $host) {
         try {
 
             $client = $this->createClient();
@@ -85,24 +83,21 @@ class Square extends BasePaymentGateway
                 $body_amountMoney
             );
 
-
-            if( isset($fields['tip']) ){
+            if(isset($fields['tip'])){
                 $body_tipMoney = new Models\Money();
                 $body_tipMoney->setAmount($fields['tip'] * 100);
                 $body_tipMoney->setCurrency($fields['currency']);
                 $body->setTipMoney($body_tipMoney);
             }
-            
-
 
             $body->setAutocomplete(true);
-            if( isset($fields['customerReference'])){
+            if(isset($fields['customerReference'])){
                 $body->setCustomerId($fields['customerReference']);
             }
-            if( isset($fields['token'])){
+            if(isset($fields['token'])){
                 $body->setVerificationToken($fields['token']);
             }
-            
+
             $body->setLocationId($this->getLocationId());
             $body->setReferenceId($fields['referenceId']);
             $body->setNote($order->getCustomerNameAttribute(''));
@@ -132,7 +127,6 @@ class Square extends BasePaymentGateway
 
         $fields = $this->getPaymentFormFields($order, $data);
 
-
         if (array_get($data, 'create_payment_profile', 0) == 1 && $order->customer) {
             $profile = $this->updatePaymentProfile($order->customer, $data);
             $fields['sourceId'] = array_get($profile->profile_data, 'card_id');
@@ -144,7 +138,7 @@ class Square extends BasePaymentGateway
         }
 
         $this->createPayment($fields, $order, $host);
-        
+
     }
 
     //
@@ -206,10 +200,10 @@ class Square extends BasePaymentGateway
 
             $response = $customersApi->retrieveCustomer(array_get($profileData, 'customer_id'));
 
-            if ( !$response->isSuccess() ) {
+            if (!$response->isSuccess()) {
                 $newCustomerRequired = true;
-            } 
-                
+            }
+
         }
 
         if ($newCustomerRequired) {
@@ -219,14 +213,14 @@ class Square extends BasePaymentGateway
             $body->setFamilyName($customer->last_name);
             $body->setEmailAddress($customer->email);
 
-            $body->setReferenceId('SqCustRef#' . $customer->customer_id);
+            $body->setReferenceId('SqCustRef#'.$customer->customer_id);
 
             $response = $customersApi->createCustomer($body);
 
             if (!$response->isSuccess()) {
                 $errors = $response->getErrors();
                 $errors = $errors[0]->getDetail();
-                throw new ApplicationException('Square Customer Create Error: ' . $errors);
+                throw new ApplicationException('Square Customer Create Error: '.$errors);
             }
 
             
@@ -253,14 +247,14 @@ class Square extends BasePaymentGateway
             if (!$response->isSuccess()) {
                 $newCardRequired = true;
             } 
-                
+
         }
 
         if ($newCardRequired) {
 
             $body_card = new Models\Card();
 
-            $body_card->setCardholderName($data['first_name'] . ' ' . $data['last_name']);
+            $body_card->setCardholderName($data['first_name'].' '.$data['last_name']);
             $body_card->setCustomerId($customerId);
             $body_card->setReferenceId($referenceId);
 
@@ -270,14 +264,13 @@ class Square extends BasePaymentGateway
                 $body_card
             );
 
-
             $response = $cardsApi->createCard($body);
 
             if (!$response->isSuccess()) {
                 $errors = $response->getErrors();
                 $errors = $errors[0]->getDetail();
 
-                throw new ApplicationException('Square Create Payment Card Error ' . $errors);
+                throw new ApplicationException('Square Create Payment Card Error '.$errors);
             } 
                 
         }
@@ -309,8 +302,6 @@ class Square extends BasePaymentGateway
      */
     protected function deletePaymentProfileData($profile)
     {
-
-        
         $profile->setProfileData([]);
 
         return $profile;
@@ -430,12 +421,10 @@ class Square extends BasePaymentGateway
             $errors = $response->getErrors();
             $errors = $errors[0]->getDetail();
 
-            throw new ApplicationException('Square Delete Payment Card Error ' . $errors);
+            throw new ApplicationException('Square Delete Payment Card Error '.$errors);
         } 
 
-        
         $this->deletePaymentProfileData($profile);
-        
 
     }
 }
