@@ -223,7 +223,6 @@ class Square extends BasePaymentGateway
                 throw new ApplicationException('Square Customer Create Error: '.$errors);
             }
 
-            
         }
 
         return $response->getResult();
@@ -246,7 +245,7 @@ class Square extends BasePaymentGateway
 
             if (!$response->isSuccess()) {
                 $newCardRequired = true;
-            } 
+            }
 
         }
 
@@ -271,8 +270,8 @@ class Square extends BasePaymentGateway
                 $errors = $errors[0]->getDetail();
 
                 throw new ApplicationException('Square Create Payment Card Error '.$errors);
-            } 
-                
+            }
+   
         }
 
         return $response->getResult();
@@ -372,7 +371,7 @@ class Square extends BasePaymentGateway
         else {
             $errors = $response->getErrors();
             $errors = $errors[0]->getDetail();
-            $order->logPaymentAttempt('Payment error -> '. $errors, 0, $fields, $response->getResult());
+            $order->logPaymentAttempt('Payment error -> '.$errors, 0, $fields, $response->getResult());
             throw new Exception($errors);
         }
     }
@@ -395,7 +394,6 @@ class Square extends BasePaymentGateway
         if (!$profile)
             $profile = $this->model->initPaymentProfile($customer);
 
-        
         $this->updatePaymentProfileData($profile, [
             'customer_id' => $customerId,
             'card_id' => $cardId,
@@ -404,12 +402,10 @@ class Square extends BasePaymentGateway
         return $profile;
     }
 
-
     protected function handleDeletePaymentProfile($customer, $profile)
     {
         if (!isset($profile->profile_data['customer_id']))
             return;
-
 
         $cardId = $profile['profile_data']['card_id'];
         $client = $this->createClient();
@@ -422,7 +418,7 @@ class Square extends BasePaymentGateway
             $errors = $errors[0]->getDetail();
 
             throw new ApplicationException('Square Delete Payment Card Error '.$errors);
-        } 
+        }
 
         $this->deletePaymentProfileData($profile);
 
