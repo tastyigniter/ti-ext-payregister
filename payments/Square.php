@@ -271,7 +271,7 @@ class Square extends BasePaymentGateway
 
                 throw new ApplicationException('Square Create Payment Card Error '.$errors);
             }
-   
+
         }
 
         return $response->getResult();
