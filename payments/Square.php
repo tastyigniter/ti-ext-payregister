@@ -65,42 +65,38 @@ class Square extends BasePaymentGateway
         return true;
     }
 
-    public function createPayment($fields, $order, $host) {
+    public function createPayment($fields, $order, $host)
+    {
         try {
-
             $client = $this->createClient();
             $paymentsApi = $client->getPaymentsApi();
 
-            $body_idempotencyKey = md5(rand());
+            $idempotencyKey = str_random();
 
-            $body_amountMoney = new Models\Money();
-            $body_amountMoney->setAmount($fields['amount'] * 100);
-            $body_amountMoney->setCurrency($fields['currency']);
+            $amountMoney = new Models\Money();
+            $amountMoney->setAmount($fields['amount'] * 100);
+            $amountMoney->setCurrency($fields['currency']);
 
-            $body = new Models\CreatePaymentRequest(
-                $fields['sourceId'],
-                md5(rand()), // idempotency key
-                $body_amountMoney
-            );
+            $body = new Models\CreatePaymentRequest($fields['sourceId'], $idempotencyKey, $amountMoney);
 
-            if(isset($fields['tip'])){
-                $body_tipMoney = new Models\Money();
-                $body_tipMoney->setAmount($fields['tip'] * 100);
-                $body_tipMoney->setCurrency($fields['currency']);
-                $body->setTipMoney($body_tipMoney);
+            if (isset($fields['tip'])) {
+                $tipMoney = new Models\Money();
+                $tipMoney->setAmount($fields['tip'] * 100);
+                $tipMoney->setCurrency($fields['currency']);
+                $body->setTipMoney($tipMoney);
             }
 
             $body->setAutocomplete(true);
-            if(isset($fields['customerReference'])){
+            if (isset($fields['customerReference'])) {
                 $body->setCustomerId($fields['customerReference']);
             }
-            if(isset($fields['token'])){
+            if (isset($fields['token'])) {
                 $body->setVerificationToken($fields['token']);
             }
 
             $body->setLocationId($this->getLocationId());
             $body->setReferenceId($fields['referenceId']);
-            $body->setNote($order->getCustomerNameAttribute(''));
+            $body->setNote($order->customer_name);
 
             $response = $paymentsApi->createPayment($body);
 
@@ -138,7 +134,6 @@ class Square extends BasePaymentGateway
         }
 
         $this->createPayment($fields, $order, $host);
-
     }
 
     //
@@ -185,7 +180,6 @@ class Square extends BasePaymentGateway
         $fields['customerReference'] = array_get($profile->profile_data, 'customer_id');
 
         $this->createPayment($fields, $order, $host);
-
     }
 
     protected function createOrFetchCustomer($profileData, $customer)
@@ -197,17 +191,14 @@ class Square extends BasePaymentGateway
         $newCustomerRequired = !array_get($profileData, 'customer_id');
 
         if (!$newCustomerRequired) {
-
             $response = $customersApi->retrieveCustomer(array_get($profileData, 'customer_id'));
 
             if (!$response->isSuccess()) {
                 $newCustomerRequired = true;
             }
-
         }
 
         if ($newCustomerRequired) {
-
             $body = new Models\CreateCustomerRequest();
             $body->setGivenName($customer->first_name);
             $body->setFamilyName($customer->last_name);
@@ -222,7 +213,6 @@ class Square extends BasePaymentGateway
                 $errors = $errors[0]->getDetail();
                 throw new ApplicationException('Square Customer Create Error: '.$errors);
             }
-
         }
 
         return $response->getResult();
@@ -240,28 +230,21 @@ class Square extends BasePaymentGateway
         $newCardRequired = !$cardId;
 
         if (!$newCardRequired) {
-
             $response = $cardsApi->retrieveCard($cardId);
 
             if (!$response->isSuccess()) {
                 $newCardRequired = true;
             }
-
         }
 
         if ($newCardRequired) {
-
             $body_card = new Models\Card();
 
             $body_card->setCardholderName($data['first_name'].' '.$data['last_name']);
             $body_card->setCustomerId($customerId);
             $body_card->setReferenceId($referenceId);
 
-            $body = new Models\CreateCardRequest(
-                md5(rand()),
-                $nonce,
-                $body_card
-            );
+            $body = new Models\CreateCardRequest(str_random(), $nonce, $body_card);
 
             $response = $cardsApi->createCard($body);
 
@@ -271,7 +254,6 @@ class Square extends BasePaymentGateway
 
                 throw new ApplicationException('Square Create Payment Card Error '.$errors);
             }
-
         }
 
         return $response->getResult();
@@ -285,7 +267,6 @@ class Square extends BasePaymentGateway
      */
     protected function updatePaymentProfileData($profile, $profileData = [], $cardData = [])
     {
-
         $profile->card_brand = strtolower($cardData->getCardBrand());
         $profile->card_last4 = $cardData->getLast4();
         $profile->setProfileData($profileData);
@@ -320,32 +301,33 @@ class Square extends BasePaymentGateway
             'environment' => $this->isTestMode() ? Environment::SANDBOX : Environment::PRODUCTION,
         ]);
 
+        $this->fireSystemEvent('payregister.square.extendGateway', [$client]);
+
         return $client;
     }
 
     protected function getPaymentFormFields($order, $data = [])
     {
-
         // just for Square - record tips as separate amount
-        $order_amt = $order->order_total;
-        $tip_amt = 0;
-        foreach($order->getOrderTotals() as $ot){
-            if($ot->code == 'tip'){
-                $tip_amt = $ot->value;
-                $order_amt -= $tip_amt;
+        $orderAmount = $order->order_total;
+        $tipAmount = 0;
+        foreach ($order->getOrderTotals() as $ot) {
+            if ($ot->code == 'tip') {
+                $tipAmount = $ot->value;
+                $orderAmount -= $tipAmount;
             }
         }
 
         $fields = [
             'idempotencyKey' => uniqid(),
-            'amount' => number_format($order_amt, 2, '.', ''),
+            'amount' => number_format($orderAmount, 2, '.', ''),
             'currency' => currency()->getUserCurrency(),
             'note' => 'Payment for Order '.$order->order_id,
             'referenceId' => (string)$order->order_id,
         ];
 
-        if($tip_amt){
-            $fields['tip'] = number_format($tip_amt, 2, '.', '');
+        if ($tipAmount) {
+            $fields['tip'] = number_format($tipAmount, 2, '.', '');
         }
 
         $this->fireSystemEvent('payregister.square.extendFields', [&$fields, $order, $data]);
@@ -354,7 +336,7 @@ class Square extends BasePaymentGateway
     }
 
     /**
-     * @param \Square\Models\CretePaymentResponse $response
+     * @param \Square\Http\ApiResponse $response
      * @param \Admin\Models\Orders_model $order
      * @param \Admin\Models\Payments_model $host
      * @param $fields
@@ -421,6 +403,5 @@ class Square extends BasePaymentGateway
         }
 
         $this->deletePaymentProfileData($profile);
-
     }
 }
