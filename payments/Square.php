@@ -7,7 +7,9 @@ use Exception;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
-use Omnipay\Omnipay;
+use Square\Environment;
+use Square\Models;
+use Square\SquareClient;
 
 class Square extends BasePaymentGateway
 {
@@ -63,6 +65,49 @@ class Square extends BasePaymentGateway
         return true;
     }
 
+    public function createPayment($fields, $order, $host)
+    {
+        try {
+            $client = $this->createClient();
+            $paymentsApi = $client->getPaymentsApi();
+
+            $idempotencyKey = str_random();
+
+            $amountMoney = new Models\Money();
+            $amountMoney->setAmount($fields['amount'] * 100);
+            $amountMoney->setCurrency($fields['currency']);
+
+            $body = new Models\CreatePaymentRequest($fields['sourceId'], $idempotencyKey, $amountMoney);
+
+            if (isset($fields['tip'])) {
+                $tipMoney = new Models\Money();
+                $tipMoney->setAmount($fields['tip'] * 100);
+                $tipMoney->setCurrency($fields['currency']);
+                $body->setTipMoney($tipMoney);
+            }
+
+            $body->setAutocomplete(true);
+            if (isset($fields['customerReference'])) {
+                $body->setCustomerId($fields['customerReference']);
+            }
+            if (isset($fields['token'])) {
+                $body->setVerificationToken($fields['token']);
+            }
+
+            $body->setLocationId($this->getLocationId());
+            $body->setReferenceId($fields['referenceId']);
+            $body->setNote($order->customer_name);
+
+            $response = $paymentsApi->createPayment($body);
+
+            $this->handlePaymentResponse($response, $order, $host, $fields);
+        }
+        catch (Exception $ex) {
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
+            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later');
+        }
+    }
+
     /**
      * Processes payment using passed data.
      *
@@ -80,24 +125,15 @@ class Square extends BasePaymentGateway
 
         if (array_get($data, 'create_payment_profile', 0) == 1 && $order->customer) {
             $profile = $this->updatePaymentProfile($order->customer, $data);
-            $fields['customerCardId'] = array_get($profile->profile_data, 'card_id');
+            $fields['sourceId'] = array_get($profile->profile_data, 'card_id');
             $fields['customerReference'] = array_get($profile->profile_data, 'customer_id');
         }
         else {
-            $fields['nonce'] = array_get($data, 'square_card_nonce');
+            $fields['sourceId'] = array_get($data, 'square_card_nonce');
             $fields['token'] = array_get($data, 'square_card_token');
         }
 
-        try {
-            $gateway = $this->createGateway();
-            $response = $gateway->purchase($fields)->send();
-
-            $this->handlePaymentResponse($response, $order, $host, $fields);
-        }
-        catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
-            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
-        }
+        $this->createPayment($fields, $order, $host);
     }
 
     //
@@ -140,82 +176,87 @@ class Square extends BasePaymentGateway
             throw new ApplicationException('Payment profile not found');
 
         $fields = $this->getPaymentFormFields($order, $data);
-        $fields['customerCardId'] = array_get($profile->profile_data, 'card_id');
+        $fields['sourceId'] = array_get($profile->profile_data, 'card_id');
         $fields['customerReference'] = array_get($profile->profile_data, 'customer_id');
 
-        try {
-            $gateway = $this->createGateway();
-            $response = $gateway->purchase($fields)->send();
-
-            $this->handlePaymentResponse($response, $order, $host, $fields);
-        }
-        catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
-            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
-        }
+        $this->createPayment($fields, $order, $host);
     }
 
     protected function createOrFetchCustomer($profileData, $customer)
     {
         $response = false;
-        $gateway = $this->createGateway();
+        $client = $this->createClient();
+        $customersApi = $client->getCustomersApi();
+
         $newCustomerRequired = !array_get($profileData, 'customer_id');
 
         if (!$newCustomerRequired) {
-            $response = $gateway->fetchCustomer([
-                'customerReference' => array_get($profileData, 'customer_id'),
-            ])->send();
+            $response = $customersApi->retrieveCustomer(array_get($profileData, 'customer_id'));
 
-            if (!$response->isSuccessful())
+            if (!$response->isSuccess()) {
                 $newCustomerRequired = true;
-        }
-
-        if ($newCustomerRequired) {
-            $response = $gateway->createCustomer([
-                'firstName' => $customer->first_name,
-                'lastName' => $customer->last_name,
-                'email' => $customer->email,
-            ])->send();
-
-            if (!$response->isSuccessful()) {
-                throw new ApplicationException($response->getMessage());
             }
         }
 
-        return $response;
+        if ($newCustomerRequired) {
+            $body = new Models\CreateCustomerRequest();
+            $body->setGivenName($customer->first_name);
+            $body->setFamilyName($customer->last_name);
+            $body->setEmailAddress($customer->email);
+
+            $body->setReferenceId('SqCustRef#'.$customer->customer_id);
+
+            $response = $customersApi->createCustomer($body);
+
+            if (!$response->isSuccess()) {
+                $errors = $response->getErrors();
+                $errors = $errors[0]->getDetail();
+                throw new ApplicationException('Square Customer Create Error: '.$errors);
+            }
+        }
+
+        return $response->getResult();
     }
 
-    protected function createOrFetchCard($customerId, $profileData, $data)
+    protected function createOrFetchCard($customerId, $referenceId, $profileData, $data)
     {
         $cardId = array_get($profileData, 'card_id');
         $nonce = array_get($data, 'square_card_nonce');
 
         $response = false;
-        $gateway = $this->createGateway();
+        $client = $this->createClient();
+        $cardsApi = $client->getCardsApi();
+
         $newCardRequired = !$cardId;
 
         if (!$newCardRequired) {
-            $response = $gateway->fetchCard([
-                'card' => $cardId,
-                'customerReference' => $customerId,
-            ])->send();
+            $response = $cardsApi->retrieveCard($cardId);
 
-            if (!$response->isSuccessful())
+            if (!$response->isSuccess()) {
                 $newCardRequired = true;
+            }
         }
 
         if ($newCardRequired) {
-            $response = $gateway->createCard([
-                'cardholderName' => array_get($data, 'first_name').' '.array_get($data, 'last_name'),
-                'customerReference' => $customerId,
-                'card' => $nonce,
-            ])->send();
+            $body_card = new Models\Card();
 
-            if (!$response->isSuccessful())
-                throw new ApplicationException($response->getMessage());
+            $body_card->setCardholderName($data['first_name'].' '.$data['last_name']);
+            $body_card->setCustomerId($customerId);
+            $body_card->setReferenceId($referenceId);
+
+            $body = new Models\CreateCardRequest(str_random(), $nonce, $body_card);
+
+            $response = $cardsApi->createCard($body);
+
+            if (!$response->isSuccess()) {
+                $errors = $response->getErrors();
+                $errors = $errors[0]->getDetail();
+
+                throw new ApplicationException('Square Create Payment Card Error '.$errors);
+            }
         }
 
-        return $response;
+        return $response->getResult();
     }
 
     /**
@@ -226,9 +267,22 @@ class Square extends BasePaymentGateway
      */
     protected function updatePaymentProfileData($profile, $profileData = [], $cardData = [])
     {
-        $profile->card_brand = strtolower(array_get($cardData, 'card.card_brand'));
-        $profile->card_last4 = array_get($cardData, 'card.last_4');
+        $profile->card_brand = strtolower($cardData->getCardBrand());
+        $profile->card_last4 = $cardData->getLast4();
         $profile->setProfileData($profileData);
+
+        return $profile;
+    }
+
+    /**
+     * @param \Admin\Models\Payment_profiles_model $profile
+     * @param array $profileData
+     * @param array $cardData
+     * @return \Admin\Models\Payment_profiles_model
+     */
+    protected function deletePaymentProfileData($profile)
+    {
+        $profile->setProfileData([]);
 
         return $profile;
     }
@@ -238,34 +292,116 @@ class Square extends BasePaymentGateway
     //
 
     /**
-     * @return \Omnipay\Square\Gateway|\Omnipay\Common\GatewayInterface
+     * @return \Square\SquareClient
      */
-    protected function createGateway()
+    protected function createClient()
     {
-        $gateway = Omnipay::create('Square');
+        $client = new SquareClient([
+            'accessToken' => $this->getAccessToken(),
+            'environment' => $this->isTestMode() ? Environment::SANDBOX : Environment::PRODUCTION,
+        ]);
 
-        $gateway->setTestMode($this->isTestMode());
-        $gateway->setAppId($this->getAppId());
-        $gateway->setAccessToken($this->getAccessToken());
-        $gateway->setLocationId($this->getLocationId());
+        $this->fireSystemEvent('payregister.square.extendGateway', [$client]);
 
-        $this->fireSystemEvent('payregister.square.extendGateway', [$gateway]);
-
-        return $gateway;
+        return $client;
     }
 
     protected function getPaymentFormFields($order, $data = [])
     {
+        // just for Square - record tips as separate amount
+        $orderAmount = $order->order_total;
+        $tipAmount = 0;
+        foreach ($order->getOrderTotals() as $ot) {
+            if ($ot->code == 'tip') {
+                $tipAmount = $ot->value;
+                $orderAmount -= $tipAmount;
+            }
+        }
+
         $fields = [
             'idempotencyKey' => uniqid(),
-            'amount' => number_format($order->order_total, 2, '.', ''),
+            'amount' => number_format($orderAmount, 2, '.', ''),
             'currency' => currency()->getUserCurrency(),
             'note' => 'Payment for Order '.$order->order_id,
             'referenceId' => (string)$order->order_id,
         ];
 
+        if ($tipAmount) {
+            $fields['tip'] = number_format($tipAmount, 2, '.', '');
+        }
+
         $this->fireSystemEvent('payregister.square.extendFields', [&$fields, $order, $data]);
 
         return $fields;
+    }
+
+    /**
+     * @param \Square\Http\ApiResponse $response
+     * @param \Admin\Models\Orders_model $order
+     * @param \Admin\Models\Payments_model $host
+     * @param $fields
+     * @return void
+     * @throws \Exception
+     */
+    protected function handlePaymentResponse($response, $order, $host, $fields, $isRefundable = false)
+    {
+        if ($response->isSuccess()) {
+            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getResult(), $isRefundable);
+            $order->updateOrderStatus($host->order_status, ['notify' => false]);
+            $order->markAsPaymentProcessed();
+        }
+        else {
+            $errors = $response->getErrors();
+            $errors = $errors[0]->getDetail();
+            $order->logPaymentAttempt('Payment error -> '.$errors, 0, $fields, $response->getResult());
+            throw new Exception($errors);
+        }
+    }
+
+    protected function handleUpdatePaymentProfile($customer, $data)
+    {
+        $profile = $this->model->findPaymentProfile($customer);
+        $profileData = $profile ? (array)$profile->profile_data : [];
+
+        $response = $this->createOrFetchCustomer($profileData, $customer);
+
+        $customerId = $response->getCustomer()->getId();
+        $referenceId = $response->getCustomer()->getReferenceId();
+
+        $response = $this->createOrFetchCard($customerId, $referenceId, $profileData, $data);
+
+        $cardData = $response->getCard();
+        $cardId = $response->getCard()->getId();
+
+        if (!$profile)
+            $profile = $this->model->initPaymentProfile($customer);
+
+        $this->updatePaymentProfileData($profile, [
+            'customer_id' => $customerId,
+            'card_id' => $cardId,
+        ], $cardData);
+
+        return $profile;
+    }
+
+    protected function handleDeletePaymentProfile($customer, $profile)
+    {
+        if (!isset($profile->profile_data['customer_id']))
+            return;
+
+        $cardId = $profile['profile_data']['card_id'];
+        $client = $this->createClient();
+        $cardsApi = $client->getCardsApi();
+
+        $response = $cardsApi->disableCard($cardId);
+
+        if (!$response->isSuccess()) {
+            $errors = $response->getErrors();
+            $errors = $errors[0]->getDetail();
+
+            throw new ApplicationException('Square Delete Payment Card Error '.$errors);
+        }
+
+        $this->deletePaymentProfileData($profile);
     }
 }
