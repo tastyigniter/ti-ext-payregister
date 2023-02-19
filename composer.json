@@ -19,7 +19,6 @@
     }
   ],
   "require": {
-    "tastyigniter/flame": "v4.x-dev",
     "omnipay/common": "~3.2",
     "php-http/guzzle7-adapter": "~1.0",
     "omnipay/authorizenet": "~3.3",
