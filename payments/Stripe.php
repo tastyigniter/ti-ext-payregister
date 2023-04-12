@@ -477,7 +477,7 @@ class Stripe extends BasePaymentGateway
             ? $order->order_total : array_get($data, 'refund_amount');
 
         if ($refundAmount > $order->order_total)
-            throw new ApplicationException('Refund amount should be be less than total');
+            throw new ApplicationException('Refund amount should be be less than or equal to the order total');
 
         try {
             $gateway = $this->createGateway();
