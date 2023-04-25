@@ -6,6 +6,7 @@
     "tastyigniter",
     "paypal",
     "stripe",
+    "square",
     "payment",
     "gateway",
     "authorizenet",
@@ -25,7 +26,7 @@
     "omnipay/paypal": "~3.0",
     "stripe/stripe-php": "~7.93.0",
     "omnipay/mollie": "~5.4",
-    "blasttech/omnipay-square": "~1.3"
+    "square/square": "26.0.0.20230419"
   },
   "autoload": {
     "psr-4": {
@@ -43,5 +44,19 @@
       },
       "homepage": "https://tastyigniter.com/marketplace/item/igniter-payregister"
     }
+  },
+  "require-dev": {
+    "laravel/pint": "^1.2",
+    "nunomaduro/larastan": "^2.4.0",
+    "pestphp/pest-plugin-laravel": "^2.0",
+    "pestphp/pest": "^2.5",
+    "orchestra/testbench": "^8.5"
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true,
+      "php-http/discovery": true
+    },
+    "sort-packages": true
   }
 }
