@@ -6,8 +6,8 @@ use Exception;
 use Igniter\Admin\Classes\BasePaymentGateway;
 use Igniter\Admin\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
-use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
+use Igniter\Flame\Traits\EventEmitter;
 use Illuminate\Support\Facades\Redirect;
 use Omnipay\Omnipay;
 
@@ -29,6 +29,26 @@ class PaypalExpress extends BasePaymentGateway
         return $host->order_total <= $total;
     }
 
+    public function isSandboxMode()
+    {
+        return $this->model->api_mode == 'sandbox';
+    }
+
+    public function getApiUsername()
+    {
+        return $this->isSandboxMode() ? $this->model->api_sandbox_user : $this->model->api_user;
+    }
+
+    public function getApiPassword()
+    {
+        return $this->isSandboxMode() ? $this->model->api_sandbox_pass : $this->model->api_pass;
+    }
+
+    public function getApiSignature()
+    {
+        return $this->isSandboxMode() ? $this->model->api_sandbox_signature : $this->model->api_signature;
+    }
+
     /**
      * @param array $data
      * @param \Igniter\Admin\Models\Payment $host
@@ -43,7 +63,7 @@ class PaypalExpress extends BasePaymentGateway
         $fields = $this->getPaymentFormFields($order, $data);
 
         try {
-            $gateway = $this->createGateway($host);
+            $gateway = $this->createGateway();
             $response = $gateway->purchase($fields)->send();
 
             if ($response->isRedirect())
@@ -80,7 +100,7 @@ class PaypalExpress extends BasePaymentGateway
             if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class)
                 throw new ApplicationException('No valid payment method found');
 
-            $gateway = $this->createGateway($paymentMethod);
+            $gateway = $this->createGateway();
             $fields = $this->getPaymentFormFields($order);
             $response = $gateway->completePurchase($fields)->send();
 
@@ -123,15 +143,17 @@ class PaypalExpress extends BasePaymentGateway
         return Redirect::to(page_url($redirectPage));
     }
 
-    protected function createGateway($host)
+    protected function createGateway()
     {
         $gateway = Omnipay::create('PayPal_Express');
 
-        $gateway->setUsername($host->api_user);
-        $gateway->setPassword($host->api_pass);
-        $gateway->setSignature($host->api_signature);
-        $gateway->setTestMode($host->api_mode == 'sandbox');
+        $gateway->setUsername($this->getApiUsername());
+        $gateway->setPassword($this->getApiPassword());
+        $gateway->setSignature($this->getApiSignature());
+        $gateway->setTestMode($this->isSandboxMode());
         $gateway->setBrandName(setting('site_name'));
+
+        $this->fireSystemEvent('payregister.paypalexpress.extendGateway', [$gateway]);
 
         return $gateway;
     }

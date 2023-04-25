@@ -5,8 +5,8 @@ namespace Igniter\PayRegister\Payments;
 use Exception;
 use Igniter\Admin\Classes\BasePaymentGateway;
 use Igniter\Flame\Exception\ApplicationException;
-use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
+use Igniter\Flame\Traits\EventEmitter;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Response;
 use Omnipay\Omnipay;
@@ -211,6 +211,8 @@ class Mollie extends BasePaymentGateway
         $gateway = Omnipay::create('Mollie');
 
         $gateway->setApiKey($this->getApiKey());
+
+        $this->fireSystemEvent('payregister.mollie.extendGateway', [$gateway]);
 
         return $gateway;
     }

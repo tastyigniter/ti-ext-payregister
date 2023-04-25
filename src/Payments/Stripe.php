@@ -6,8 +6,8 @@ use Exception;
 use Igniter\Admin\Classes\BasePaymentGateway;
 use Igniter\Admin\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
-use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
+use Igniter\Flame\Traits\EventEmitter;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
@@ -50,6 +50,11 @@ class Stripe extends BasePaymentGateway
         return $this->isTestMode() ? $this->model->test_secret_key : $this->model->live_secret_key;
     }
 
+    public function getWebhookSecret()
+    {
+        return $this->isTestMode() ? $this->model->test_webhook_secret : $this->model->live_webhook_secret;
+    }
+
     public function shouldAuthorizePayment()
     {
         return $this->model->transaction_type == 'auth_only';
@@ -79,7 +84,7 @@ class Stripe extends BasePaymentGateway
     public function getStripeJsOptions($order)
     {
         $options = [
-            'locale' => app()->getLocale(),
+            'locale' => $this->model->locale_code ?? app()->getLocale(),
         ];
 
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendJsOptions', [$options, $order], false);
@@ -165,6 +170,11 @@ class Stripe extends BasePaymentGateway
             $gateway->paymentIntents->update($paymentIntent->id, array_except($fields, [
                 'amount', 'currency', 'capture_method', 'setup_future_usage',
             ]), $stripeOptions);
+
+            // Avoid logging payment and updating the order status more than once
+            // For cases where the webhook is triggered before the user is redirected
+            if ($order->isPaymentProcessed())
+                return true;
 
             if ($paymentIntent->status === 'requires_capture') {
                 $order->logPaymentAttempt('Payment authorized', 1, $data, $paymentIntent->toArray());
@@ -467,7 +477,7 @@ class Stripe extends BasePaymentGateway
             ? $order->order_total : array_get($data, 'refund_amount');
 
         if ($refundAmount > $order->order_total)
-            throw new ApplicationException('Refund amount should be be less than total');
+            throw new ApplicationException('Refund amount should be be less than or equal to the order total');
 
         try {
             $gateway = $this->createGateway();
@@ -547,7 +557,7 @@ class Stripe extends BasePaymentGateway
             'api_key' => $this->getSecretKey(),
         ]);
 
-        $this->fireSystemEvent('payregister.stripe.extendClient', [$stripeClient]);
+        $this->fireSystemEvent('payregister.stripe.extendGateway', [$stripeClient]);
 
         return $stripeClient;
     }
@@ -561,7 +571,8 @@ class Stripe extends BasePaymentGateway
         if (strtolower(request()->method()) !== 'post')
             return response('Request method must be POST', 400);
 
-        $payload = json_decode(request()->getContent(), true);
+        $payload = $this->getWebhookPayload();
+
         if (!isset($payload['type']) || !strlen($eventType = $payload['type']))
             return response('Missing webhook event name', 400);
 
@@ -581,15 +592,29 @@ class Stripe extends BasePaymentGateway
         if ($order = Order::find($payload['data']['object']['metadata']['order_id'])) {
             if (!$order->isPaymentProcessed()) {
                 if ($payload['data']['object']['status'] === 'requires_capture') {
-                    $order->logPaymentAttempt('Payment authorized', 1, [], $payload['data']['object']);
+                    $order->logPaymentAttempt('Payment authorized via webhook', 1, [], $payload['data']['object']);
                 }
                 else {
-                    $order->logPaymentAttempt('Payment successful', 1, [], $payload['data']['object'], true);
+                    $order->logPaymentAttempt('Payment successful via webhook', 1, [], $payload['data']['object'], true);
                 }
 
                 $order->updateOrderStatus($this->model->order_status, ['notify' => false]);
                 $order->markAsPaymentProcessed();
             }
         }
+    }
+
+    protected function getWebhookPayload(): array
+    {
+        if (!$webhookSecret = $this->getWebhookSecret())
+            return json_decode(request()->getContent(), true);
+
+        $event = \Stripe\Webhook::constructEvent(
+            request()->getContent(),
+            request()->header('HTTP_STRIPE_SIGNATURE'),
+            $webhookSecret
+        );
+
+        return $event->toArray();
     }
 }

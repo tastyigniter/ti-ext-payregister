@@ -5,8 +5,8 @@ namespace Igniter\PayRegister\Payments;
 use Exception;
 use Igniter\Admin\Classes\BasePaymentGateway;
 use Igniter\Flame\Exception\ApplicationException;
-use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
+use Igniter\Flame\Traits\EventEmitter;
 use Omnipay\Omnipay;
 
 class AuthorizeNetAim extends BasePaymentGateway
@@ -111,6 +111,8 @@ class AuthorizeNetAim extends BasePaymentGateway
         $gateway->setTransactionKey($this->getTransactionKey());
         $gateway->setTestMode($this->isTestMode());
         $gateway->setDeveloperMode($this->isTestMode());
+
+        $this->fireSystemEvent('payregister.authorizenetaim.extendGateway', [$gateway]);
 
         return $gateway;
     }
