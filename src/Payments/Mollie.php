@@ -64,13 +64,14 @@ class Mollie extends BasePaymentGateway
             $gateway = $this->createGateway();
             $response = $gateway->purchase($fields)->send();
 
-            if ($response->isRedirect())
+            if ($response->isRedirect()) {
                 return Redirect::to($response->getRedirectUrl());
+            }
 
             $this->handlePaymentResponse($response, $order, $host, $fields);
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
+
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
@@ -84,28 +85,32 @@ class Mollie extends BasePaymentGateway
         $order = $this->createOrderModel()->whereHash($hash)->first();
 
         try {
-            if (!$hash || !$order instanceof Order)
+            if (!$hash || !$order instanceof Order) {
                 throw new ApplicationException('No order found');
+            }
 
-            if (!strlen($redirectPage))
+            if (!strlen($redirectPage)) {
                 throw new ApplicationException('No redirect page found');
+            }
 
-            if (!strlen($cancelPage))
+            if (!strlen($cancelPage)) {
                 throw new ApplicationException('No cancel page found');
+            }
 
             $paymentMethod = $order->payment_method;
-            if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class)
+            if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class) {
                 throw new ApplicationException('No valid payment method found');
+            }
 
-            if (!$order->isPaymentProcessed())
+            if (!$order->isPaymentProcessed()) {
                 throw new ApplicationException('Sorry, your payment was not successful. Please contact your bank or try again later.');
+            }
 
             return Redirect::to(page_url($redirectPage, [
                 'id' => $order->getKey(),
                 'hash' => $order->hash,
             ]));
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], []);
             flash()->warning($ex->getMessage())->important();
         }
@@ -117,12 +122,14 @@ class Mollie extends BasePaymentGateway
     {
         $hash = $params[0] ?? null;
         $order = $this->createOrderModel()->whereHash($hash)->first();
-        if (!$hash || !$order instanceof Order)
+        if (!$hash || !$order instanceof Order) {
             return Response::json(['error' => 'No order found']);
+        }
 
         $paymentMethod = $order->payment_method;
-        if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class)
+        if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class) {
             return Response::json(['error' => 'No valid payment method found']);
+        }
 
         $gateway = $this->createGateway();
         $fields = $this->getPaymentFormFields($order);
@@ -133,8 +140,7 @@ class Mollie extends BasePaymentGateway
                 $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
                 $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
                 $order->markAsPaymentProcessed();
-            }
-            else {
+            } else {
                 $order->logPaymentAttempt('Payment unsuccessful', 0, $fields, $response->getData());
                 $order->updateOrderStatus(setting('canceled_order_status'), ['notify' => false]);
             }
@@ -158,8 +164,9 @@ class Mollie extends BasePaymentGateway
         $response = $this->createOrFetchCustomer($profileData, $customer);
         $customerId = $response->getCustomerReference();
 
-        if (!$profile)
+        if (!$profile) {
             $profile = $this->model->initPaymentProfile($customer);
+        }
 
         $profile->setProfileData([
             'customer_id' => $customerId,
@@ -180,8 +187,9 @@ class Mollie extends BasePaymentGateway
                 'customerReference' => array_get($profileData, 'customer_id'),
             ])->send();
 
-            if (!$response->isSuccessful())
+            if (!$response->isSuccessful()) {
                 $newCustomerRequired = true;
+            }
         }
 
         if ($newCustomerRequired) {

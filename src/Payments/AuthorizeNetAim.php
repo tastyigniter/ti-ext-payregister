@@ -92,9 +92,9 @@ class AuthorizeNetAim extends BasePaymentGateway
             $response = $gateway->purchase($fields)->send();
 
             $this->handlePaymentResponse($response, $order, $host, $fields);
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
+
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }

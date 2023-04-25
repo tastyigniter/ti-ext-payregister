@@ -10,14 +10,16 @@ trait PaymentHelpers
     protected function validatePaymentMethod($order, $host)
     {
         $paymentMethod = $order->payment_method;
-        if (!$paymentMethod || $paymentMethod->code != $host->code)
+        if (!$paymentMethod || $paymentMethod->code != $host->code) {
             throw new ApplicationException('Payment method not found');
+        }
 
-        if (!$this->isApplicable($order->order_total, $host))
+        if (!$this->isApplicable($order->order_total, $host)) {
             throw new ApplicationException(sprintf(
                 lang('igniter.payregister::default.alert_min_order_total'),
                 currency_format($host->order_total), $host->name
             ));
+        }
     }
 
     protected function handleUpdatePaymentProfile($customer, $data)
@@ -32,8 +34,9 @@ trait PaymentHelpers
         $cardData = $response->getData();
         $cardId = $response->getCardReference();
 
-        if (!$profile)
+        if (!$profile) {
             $profile = $this->model->initPaymentProfile($customer);
+        }
 
         $this->updatePaymentProfileData($profile, [
             'customer_id' => $customerId,
@@ -45,8 +48,9 @@ trait PaymentHelpers
 
     protected function handleDeletePaymentProfile($customer, $profile)
     {
-        if (!isset($profile->profile_data['customer_id']))
+        if (!isset($profile->profile_data['customer_id'])) {
             return;
+        }
 
         $this->createGateway()->deleteCustomer([
             'customerReference' => $profile->profile_data['customer_id'],
@@ -59,7 +63,6 @@ trait PaymentHelpers
      * @param \Omnipay\Common\Message\ResponseInterface $response
      * @param \Igniter\Admin\Models\Order $order
      * @param \Igniter\Admin\Models\Payment $host
-     * @param $fields
      * @return void
      * @throws \Exception
      */
@@ -69,9 +72,9 @@ trait PaymentHelpers
             $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData(), $isRefundable);
             $order->updateOrderStatus($host->order_status, ['notify' => false]);
             $order->markAsPaymentProcessed();
-        }
-        else {
+        } else {
             $order->logPaymentAttempt('Payment error -> '.$response->getMessage(), 0, $fields, $response->getData());
+
             throw new Exception($response->getMessage());
         }
     }
