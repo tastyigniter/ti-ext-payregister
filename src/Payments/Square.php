@@ -100,9 +100,9 @@ class Square extends BasePaymentGateway
             $response = $paymentsApi->createPayment($body);
 
             $this->handlePaymentResponse($response, $order, $host, $fields);
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
+
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later');
         }
     }
@@ -126,8 +126,7 @@ class Square extends BasePaymentGateway
             $profile = $this->updatePaymentProfile($order->customer, $data);
             $fields['sourceId'] = array_get($profile->profile_data, 'card_id');
             $fields['customerReference'] = array_get($profile->profile_data, 'customer_id');
-        }
-        else {
+        } else {
             $fields['sourceId'] = array_get($data, 'square_card_nonce');
             $fields['token'] = array_get($data, 'square_card_token');
         }
@@ -171,8 +170,9 @@ class Square extends BasePaymentGateway
         $host = $this->getHostObject();
         $profile = $host->findPaymentProfile($order->customer);
 
-        if (!$profile || !$profile->hasProfileData())
+        if (!$profile || !$profile->hasProfileData()) {
             throw new ApplicationException('Payment profile not found');
+        }
 
         $fields = $this->getPaymentFormFields($order, $data);
         $fields['sourceId'] = array_get($profile->profile_data, 'card_id');
@@ -210,6 +210,7 @@ class Square extends BasePaymentGateway
             if (!$response->isSuccess()) {
                 $errors = $response->getErrors();
                 $errors = $errors[0]->getDetail();
+
                 throw new ApplicationException('Square Customer Create Error: '.$errors);
             }
         }
@@ -338,7 +339,6 @@ class Square extends BasePaymentGateway
      * @param \Square\Http\ApiResponse $response
      * @param \Admin\Models\Orders_model $order
      * @param \Admin\Models\Payments_model $host
-     * @param $fields
      * @return void
      * @throws \Exception
      */
@@ -348,11 +348,11 @@ class Square extends BasePaymentGateway
             $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getResult(), $isRefundable);
             $order->updateOrderStatus($host->order_status, ['notify' => false]);
             $order->markAsPaymentProcessed();
-        }
-        else {
+        } else {
             $errors = $response->getErrors();
             $errors = $errors[0]->getDetail();
             $order->logPaymentAttempt('Payment error -> '.$errors, 0, $fields, $response->getResult());
+
             throw new Exception($errors);
         }
     }
@@ -372,8 +372,9 @@ class Square extends BasePaymentGateway
         $cardData = $response->getCard();
         $cardId = $response->getCard()->getId();
 
-        if (!$profile)
+        if (!$profile) {
             $profile = $this->model->initPaymentProfile($customer);
+        }
 
         $this->updatePaymentProfileData($profile, [
             'customer_id' => $customerId,
@@ -385,8 +386,9 @@ class Square extends BasePaymentGateway
 
     protected function handleDeletePaymentProfile($customer, $profile)
     {
-        if (!isset($profile->profile_data['customer_id']))
+        if (!isset($profile->profile_data['customer_id'])) {
             return;
+        }
 
         $cardId = $profile['profile_data']['card_id'];
         $client = $this->createClient();

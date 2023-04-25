@@ -6,8 +6,8 @@ use Exception;
 use Igniter\Admin\Classes\BasePaymentGateway;
 use Igniter\Admin\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
-use Igniter\PayRegister\Traits\PaymentHelpers;
 use Igniter\Flame\Traits\EventEmitter;
+use Igniter\PayRegister\Traits\PaymentHelpers;
 use Illuminate\Support\Facades\Redirect;
 use Omnipay\Omnipay;
 
@@ -66,14 +66,16 @@ class PaypalExpress extends BasePaymentGateway
             $gateway = $this->createGateway();
             $response = $gateway->purchase($fields)->send();
 
-            if ($response->isRedirect())
+            if ($response->isRedirect()) {
                 return Redirect::to($response->getRedirectUrl());
+            }
 
             $order->logPaymentAttempt('Payment error -> '.$response->getMessage(), 0, $fields, $response->getData());
+
             throw new ApplicationException($response->getMessage());
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
+
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
@@ -87,25 +89,30 @@ class PaypalExpress extends BasePaymentGateway
         $order = $this->createOrderModel()->whereHash($hash)->first();
 
         try {
-            if (!$hash || !$order instanceof Order)
+            if (!$hash || !$order instanceof Order) {
                 throw new ApplicationException('No order found');
+            }
 
-            if (!strlen($redirectPage))
+            if (!strlen($redirectPage)) {
                 throw new ApplicationException('No redirect page found');
+            }
 
-            if (!strlen($cancelPage))
+            if (!strlen($cancelPage)) {
                 throw new ApplicationException('No cancel page found');
+            }
 
             $paymentMethod = $order->payment_method;
-            if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class)
+            if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class) {
                 throw new ApplicationException('No valid payment method found');
+            }
 
             $gateway = $this->createGateway();
             $fields = $this->getPaymentFormFields($order);
             $response = $gateway->completePurchase($fields)->send();
 
-            if (!$response->isSuccessful())
+            if (!$response->isSuccessful()) {
                 throw new ApplicationException($response->getMessage());
+            }
 
             $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
             $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
@@ -115,8 +122,7 @@ class PaypalExpress extends BasePaymentGateway
                 'id' => $order->getKey(),
                 'hash' => $order->hash,
             ]));
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], []);
             flash()->warning($ex->getMessage())->important();
         }
@@ -128,15 +134,18 @@ class PaypalExpress extends BasePaymentGateway
     {
         $hash = $params[0] ?? null;
         $order = $this->createOrderModel()->whereHash($hash)->first();
-        if (!$hash || !$order instanceof Order)
+        if (!$hash || !$order instanceof Order) {
             throw new ApplicationException('No order found');
+        }
 
-        if (!strlen($redirectPage = input('redirect')))
+        if (!strlen($redirectPage = input('redirect'))) {
             throw new ApplicationException('No redirect page found');
+        }
 
         $paymentMethod = $order->payment_method;
-        if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class)
+        if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class) {
             throw new ApplicationException('No valid payment method found');
+        }
 
         $order->logPaymentAttempt('Payment canceled by customer', 0, input());
 

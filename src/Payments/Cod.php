@@ -21,15 +21,17 @@ class Cod extends BasePaymentGateway
      */
     public function processPaymentForm($data, $host, $order)
     {
-        if (!$paymentMethod = $order->payment)
+        if (!$paymentMethod = $order->payment) {
             throw new ApplicationException('Payment method not found');
+        }
 
-        if (!$this->isApplicable($order->order_total, $host))
+        if (!$this->isApplicable($order->order_total, $host)) {
             throw new ApplicationException(sprintf(
                 lang('igniter.payregister::default.alert_min_order_total'),
                 currency_format($host->order_total),
                 $host->name
             ));
+        }
 
         $order->updateOrderStatus($host->order_status, ['notify' => false]);
         $order->markAsPaymentProcessed();

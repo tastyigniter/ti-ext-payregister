@@ -59,8 +59,9 @@ class PaymentAttempts extends BaseFormWidget
 
         $model = PaymentLog::find($paymentLogId);
 
-        if (!$model)
+        if (!$model) {
             throw new ApplicationException('Record not found');
+        }
 
         $formTitle = sprintf(lang($this->formTitle), currency_format($model->order->order_total));
 
@@ -101,8 +102,9 @@ class PaymentAttempts extends BaseFormWidget
 
     protected function makeDataTableWidget()
     {
-        if (!is_null($this->dataTableWidget))
+        if (!is_null($this->dataTableWidget)) {
             return $this->dataTableWidget;
+        }
 
         $field = clone $this->formField;
 

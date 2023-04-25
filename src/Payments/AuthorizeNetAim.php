@@ -5,8 +5,8 @@ namespace Igniter\PayRegister\Payments;
 use Exception;
 use Igniter\Admin\Classes\BasePaymentGateway;
 use Igniter\Flame\Exception\ApplicationException;
-use Igniter\PayRegister\Traits\PaymentHelpers;
 use Igniter\Flame\Traits\EventEmitter;
+use Igniter\PayRegister\Traits\PaymentHelpers;
 use Omnipay\Omnipay;
 
 class AuthorizeNetAim extends BasePaymentGateway
@@ -92,9 +92,9 @@ class AuthorizeNetAim extends BasePaymentGateway
             $response = $gateway->purchase($fields)->send();
 
             $this->handlePaymentResponse($response, $order, $host, $fields);
-        }
-        catch (Exception $ex) {
+        } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
+
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
