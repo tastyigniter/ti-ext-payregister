@@ -96,7 +96,7 @@ class Extension extends BaseExtension
                     'label' => 'lang:igniter.payregister::default.label_payments',
                     'accordion' => 'lang:admin::lang.locations.text_tab_general_options',
                     'type' => 'checkboxlist',
-                    'options' => ['Admin\Models\Payments_model', 'listDropdownOptions'],
+                    'options' => [\Igniter\Admin\Models\Payment::class, 'listDropdownOptions'],
                     'commentAbove' => 'lang:igniter.payregister::default.help_payments',
                     'placeholder' => 'lang:igniter.payregister::default.help_no_payments',
                 ],
