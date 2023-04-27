@@ -5,6 +5,7 @@ namespace Igniter\PayRegister\Payments;
 use Exception;
 use Igniter\Admin\Classes\BasePaymentGateway;
 use Igniter\Flame\Exception\ApplicationException;
+use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Traits\PaymentHelpers;
 use Square\Environment;
 use Square\Models;
