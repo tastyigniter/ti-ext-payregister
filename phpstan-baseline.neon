@@ -1,87 +1,12 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Call to static method syncAll\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: database/migrations/2021_05_08_000300_seed_default_payment_gateways.php
-
-		-
-			message: "#^Class Igniter\\\\Main\\\\Classes\\\\ThemeManager not found\\.$#"
-			count: 1
-			path: database/migrations/2021_05_08_000300_seed_default_payment_gateways.php
-
-		-
-			message: "#^Access to property \\$model on an unknown class Igniter\\\\Admin\\\\Widgets\\\\Form\\.$#"
+			message: "#^Call to an undefined method Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:updatePaymentIntentSession\\(\\)\\.$#"
 			count: 1
 			path: src/Extension.php
 
 		-
-			message: "#^Access to property \\$tabs on an unknown class Igniter\\\\Admin\\\\Widgets\\\\Form\\.$#"
-			count: 6
-			path: src/Extension.php
-
-		-
-			message: "#^Call to method methodExists\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Extension.php
-
-		-
-			message: "#^Call to method updatePaymentIntentSession\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Extension.php
-
-		-
-			message: "#^Call to static method syncAll\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Extension.php
-
-		-
-			message: "#^Class Igniter\\\\Admin\\\\Models\\\\Order not found\\.$#"
-			count: 1
-			path: src/Extension.php
-
-		-
-			message: "#^Class Igniter\\\\Admin\\\\Models\\\\Payment not found\\.$#"
-			count: 1
-			path: src/Extension.php
-
-		-
-			message: "#^Class Igniter\\\\Admin\\\\Requests\\\\Location not found\\.$#"
-			count: 1
-			path: src/Extension.php
-
-		-
-			message: "#^Function lang not found\\.$#"
-			count: 1
-			path: src/Extension.php
-
-		-
-			message: "#^Parameter \\$form of anonymous function has invalid type Igniter\\\\Admin\\\\Widgets\\\\Form\\.$#"
-			count: 1
-			path: src/Extension.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\FormWidgets\\\\PaymentAttempts\\:\\:\\$alias\\.$#"
-			count: 1
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\FormWidgets\\\\PaymentAttempts\\:\\:\\$formField\\.$#"
-			count: 2
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\FormWidgets\\\\PaymentAttempts\\:\\:\\$previewMode\\.$#"
-			count: 1
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\FormWidgets\\\\PaymentAttempts\\:\\:\\$vars\\.$#"
-			count: 1
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Access to constant NO_SAVE_DATA on an unknown class Igniter\\\\Admin\\\\Classes\\\\FormField\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Classes\\\\BaseWidget\\:\\:\\$previewMode\\.$#"
 			count: 1
 			path: src/FormWidgets/PaymentAttempts.php
 
@@ -91,68 +16,8 @@ parameters:
 			path: src/FormWidgets/PaymentAttempts.php
 
 		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\FormWidgets\\\\PaymentAttempts\\:\\:addJs\\(\\)\\.$#"
+			message: "#^Call to an undefined static method Igniter\\\\Admin\\\\Models\\\\PaymentLog\\:\\:find\\(\\)\\.$#"
 			count: 2
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\FormWidgets\\\\PaymentAttempts\\:\\:fillFromConfig\\(\\)\\.$#"
-			count: 1
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\FormWidgets\\\\PaymentAttempts\\:\\:loadConfig\\(\\)\\.$#"
-			count: 1
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\FormWidgets\\\\PaymentAttempts\\:\\:makePartial\\(\\)\\.$#"
-			count: 2
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\FormWidgets\\\\PaymentAttempts\\:\\:makeWidget\\(\\)\\.$#"
-			count: 1
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\FormWidgets\\\\PaymentAttempts\\:\\:validate\\(\\)\\.$#"
-			count: 1
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Call to static method find\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\PaymentLog\\.$#"
-			count: 2
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Class Igniter\\\\Admin\\\\Widgets\\\\Form not found\\.$#"
-			count: 1
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Function currency_format not found\\.$#"
-			count: 1
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Function lang not found\\.$#"
-			count: 1
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Function post not found\\.$#"
-			count: 2
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Instantiated class Igniter\\\\Flame\\\\Exception\\\\ApplicationException not found\\.$#"
-			count: 1
-			path: src/FormWidgets/PaymentAttempts.php
-
-		-
-			message: "#^Property Igniter\\\\PayRegister\\\\FormWidgets\\\\PaymentAttempts\\:\\:\\$dataTableWidget has unknown class Igniter\\\\Admin\\\\Classes\\\\BaseFormWidget as its type\\.$#"
-			count: 1
 			path: src/FormWidgets/PaymentAttempts.php
 
 		-
@@ -161,12 +26,37 @@ parameters:
 			path: src/FormWidgets/PaymentAttempts.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Payments\\\\AuthorizeNetAim\\:\\:\\$model\\.$#"
-			count: 6
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
+			count: 1
 			path: src/Payments/AuthorizeNetAim.php
 
 		-
-			message: "#^Access to property \\$order_status on an unknown class Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_login_id\\.$#"
+			count: 1
+			path: src/Payments/AuthorizeNetAim.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$client_key\\.$#"
+			count: 1
+			path: src/Payments/AuthorizeNetAim.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$transaction_key\\.$#"
+			count: 1
+			path: src/Payments/AuthorizeNetAim.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$transaction_mode\\.$#"
+			count: 1
+			path: src/Payments/AuthorizeNetAim.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:findPaymentProfile\\(\\)\\.$#"
+			count: 1
+			path: src/Payments/AuthorizeNetAim.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:initPaymentProfile\\(\\)\\.$#"
 			count: 1
 			path: src/Payments/AuthorizeNetAim.php
 
@@ -178,11 +68,6 @@ parameters:
 		-
 			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\AuthorizeNetAim\\:\\:createOrFetchCustomer\\(\\)\\.$#"
 			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\AuthorizeNetAim\\:\\:fireSystemEvent\\(\\)\\.$#"
-			count: 2
 			path: src/Payments/AuthorizeNetAim.php
 
 		-
@@ -211,157 +96,57 @@ parameters:
 			path: src/Payments/AuthorizeNetAim.php
 
 		-
-			message: "#^Call to method addJs\\(\\) on an unknown class Igniter\\\\Main\\\\Classes\\\\MainController\\.$#"
-			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Call to method logPaymentAttempt\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 3
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Call to method markAsPaymentProcessed\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Call to method updateOrderStatus\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Function array_get not found\\.$#"
-			count: 2
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Function currency not found\\.$#"
-			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Function currency_format not found\\.$#"
-			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Function lang not found\\.$#"
-			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Instantiated class Igniter\\\\Flame\\\\Exception\\\\ApplicationException not found\\.$#"
-			count: 3
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Parameter \\$controller of method Igniter\\\\PayRegister\\\\Payments\\\\AuthorizeNetAim\\:\\:beforeRenderPaymentForm\\(\\) has invalid type Igniter\\\\Main\\\\Classes\\\\MainController\\.$#"
-			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Parameter \\$host of method Igniter\\\\PayRegister\\\\Payments\\\\AuthorizeNetAim\\:\\:handlePaymentResponse\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Parameter \\$host of method Igniter\\\\PayRegister\\\\Payments\\\\AuthorizeNetAim\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Parameter \\$order of method Igniter\\\\PayRegister\\\\Payments\\\\AuthorizeNetAim\\:\\:handlePaymentResponse\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Parameter \\$order of method Igniter\\\\PayRegister\\\\Payments\\\\AuthorizeNetAim\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/AuthorizeNetAim.php
-
-		-
-			message: "#^Access to property \\$name on an unknown class Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$order_total\\.$#"
 			count: 1
 			path: src/Payments/Cod.php
 
 		-
-			message: "#^Access to property \\$order_status on an unknown class Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$payment\\.$#"
 			count: 1
 			path: src/Payments/Cod.php
 
 		-
-			message: "#^Access to property \\$order_total on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$name\\.$#"
 			count: 1
 			path: src/Payments/Cod.php
 
 		-
-			message: "#^Access to property \\$order_total on an unknown class Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
 			count: 1
 			path: src/Payments/Cod.php
 
 		-
-			message: "#^Access to property \\$payment on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_total\\.$#"
 			count: 1
 			path: src/Payments/Cod.php
 
 		-
-			message: "#^Call to method markAsPaymentProcessed\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$customer\\.$#"
 			count: 1
-			path: src/Payments/Cod.php
-
-		-
-			message: "#^Call to method updateOrderStatus\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Cod.php
-
-		-
-			message: "#^Function currency_format not found\\.$#"
-			count: 1
-			path: src/Payments/Cod.php
-
-		-
-			message: "#^Function lang not found\\.$#"
-			count: 1
-			path: src/Payments/Cod.php
-
-		-
-			message: "#^Instantiated class Igniter\\\\Flame\\\\Exception\\\\ApplicationException not found\\.$#"
-			count: 2
-			path: src/Payments/Cod.php
-
-		-
-			message: "#^PHPDoc tag @throws with type Igniter\\\\Flame\\\\Exception\\\\ApplicationException is not subtype of Throwable$#"
-			count: 1
-			path: src/Payments/Cod.php
-
-		-
-			message: "#^Parameter \\$host of method Igniter\\\\PayRegister\\\\Payments\\\\Cod\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Payments/Cod.php
-
-		-
-			message: "#^Parameter \\$order of method Igniter\\\\PayRegister\\\\Payments\\\\Cod\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Cod.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Payments\\\\Mollie\\:\\:\\$model\\.$#"
-			count: 7
 			path: src/Payments/Mollie.php
 
 		-
-			message: "#^Access to property \\$customer on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 2
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
+			count: 1
+			path: src/Payments/Mollie.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$live_api_key\\.$#"
+			count: 1
+			path: src/Payments/Mollie.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$test_api_key\\.$#"
+			count: 1
+			path: src/Payments/Mollie.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$transaction_mode\\.$#"
+			count: 1
 			path: src/Payments/Mollie.php
 
 		-
 			message: "#^Access to property \\$hash on an unknown class Igniter\\\\PayRegister\\\\Payments\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Access to property \\$order_status on an unknown class Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
 			count: 1
 			path: src/Payments/Mollie.php
 
@@ -371,23 +156,18 @@ parameters:
 			path: src/Payments/Mollie.php
 
 		-
+			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:findPaymentProfile\\(\\)\\.$#"
+			count: 2
+			path: src/Payments/Mollie.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:initPaymentProfile\\(\\)\\.$#"
+			count: 2
+			path: src/Payments/Mollie.php
+
+		-
 			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\Mollie\\:\\:createOrFetchCard\\(\\)\\.$#"
 			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\Mollie\\:\\:createOrderModel\\(\\)\\.$#"
-			count: 2
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\Mollie\\:\\:fireSystemEvent\\(\\)\\.$#"
-			count: 2
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\Mollie\\:\\:makeEntryPointUrl\\(\\)\\.$#"
-			count: 2
 			path: src/Payments/Mollie.php
 
 		-
@@ -436,27 +216,12 @@ parameters:
 			path: src/Payments/Mollie.php
 
 		-
-			message: "#^Call to method logPaymentAttempt\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 3
-			path: src/Payments/Mollie.php
-
-		-
 			message: "#^Call to method logPaymentAttempt\\(\\) on an unknown class Igniter\\\\PayRegister\\\\Payments\\\\Order\\.$#"
 			count: 2
 			path: src/Payments/Mollie.php
 
 		-
-			message: "#^Call to method markAsPaymentProcessed\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
 			message: "#^Call to method markAsPaymentProcessed\\(\\) on an unknown class Igniter\\\\PayRegister\\\\Payments\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Call to method updateOrderStatus\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
 			count: 1
 			path: src/Payments/Mollie.php
 
@@ -471,103 +236,68 @@ parameters:
 			path: src/Payments/Mollie.php
 
 		-
-			message: "#^Function array_get not found\\.$#"
-			count: 5
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Function currency not found\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Function currency_format not found\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Function flash not found\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Function input not found\\.$#"
-			count: 2
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Function lang not found\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Function page_url not found\\.$#"
-			count: 2
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Function setting not found\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Function str_random not found\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Instantiated class Igniter\\\\Flame\\\\Exception\\\\ApplicationException not found\\.$#"
-			count: 9
-			path: src/Payments/Mollie.php
-
-		-
 			message: "#^Method Igniter\\\\PayRegister\\\\Payments\\\\Mollie\\:\\:processPaymentForm\\(\\) should return bool\\|Illuminate\\\\Http\\\\RedirectResponse but return statement is missing\\.$#"
 			count: 1
 			path: src/Payments/Mollie.php
 
 		-
-			message: "#^PHPDoc tag @throws with type Igniter\\\\Flame\\\\Exception\\\\ApplicationException is not subtype of Throwable$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Parameter \\$host of method Igniter\\\\PayRegister\\\\Payments\\\\Mollie\\:\\:handlePaymentResponse\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Parameter \\$host of method Igniter\\\\PayRegister\\\\Payments\\\\Mollie\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Parameter \\$order of method Igniter\\\\PayRegister\\\\Payments\\\\Mollie\\:\\:handlePaymentResponse\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Parameter \\$order of method Igniter\\\\PayRegister\\\\Payments\\\\Mollie\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Payments\\\\PaypalExpress\\:\\:\\$model\\.$#"
-			count: 9
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Access to property \\$hash on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$hash\\.$#"
 			count: 1
 			path: src/Payments/PaypalExpress.php
 
 		-
-			message: "#^Access to property \\$order_status on an unknown class Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Access to property \\$payment_method on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$payment_method\\.$#"
 			count: 2
+			path: src/Payments/PaypalExpress.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
+			count: 1
+			path: src/Payments/PaypalExpress.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_mode\\.$#"
+			count: 1
+			path: src/Payments/PaypalExpress.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_pass\\.$#"
+			count: 1
+			path: src/Payments/PaypalExpress.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_sandbox_pass\\.$#"
+			count: 1
+			path: src/Payments/PaypalExpress.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_sandbox_signature\\.$#"
+			count: 1
+			path: src/Payments/PaypalExpress.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_sandbox_user\\.$#"
+			count: 1
+			path: src/Payments/PaypalExpress.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_signature\\.$#"
+			count: 1
+			path: src/Payments/PaypalExpress.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_user\\.$#"
+			count: 1
+			path: src/Payments/PaypalExpress.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:findPaymentProfile\\(\\)\\.$#"
+			count: 1
+			path: src/Payments/PaypalExpress.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:initPaymentProfile\\(\\)\\.$#"
+			count: 1
 			path: src/Payments/PaypalExpress.php
 
 		-
@@ -578,21 +308,6 @@ parameters:
 		-
 			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\PaypalExpress\\:\\:createOrFetchCustomer\\(\\)\\.$#"
 			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\PaypalExpress\\:\\:createOrderModel\\(\\)\\.$#"
-			count: 2
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\PaypalExpress\\:\\:fireSystemEvent\\(\\)\\.$#"
-			count: 2
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\PaypalExpress\\:\\:makeEntryPointUrl\\(\\)\\.$#"
-			count: 2
 			path: src/Payments/PaypalExpress.php
 
 		-
@@ -626,113 +341,53 @@ parameters:
 			path: src/Payments/PaypalExpress.php
 
 		-
-			message: "#^Call to method getKey\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Call to method logPaymentAttempt\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 6
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Call to method markAsPaymentProcessed\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 2
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Call to method updateOrderStatus\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 2
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Class Igniter\\\\Admin\\\\Models\\\\Order not found\\.$#"
-			count: 2
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Function array_get not found\\.$#"
-			count: 3
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Function currency not found\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Function currency_format not found\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Function flash not found\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Function input not found\\.$#"
-			count: 4
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Function lang not found\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Function page_url not found\\.$#"
-			count: 3
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Function setting not found\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Instantiated class Igniter\\\\Flame\\\\Exception\\\\ApplicationException not found\\.$#"
-			count: 12
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Parameter \\$host of method Igniter\\\\PayRegister\\\\Payments\\\\PaypalExpress\\:\\:handlePaymentResponse\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Parameter \\$host of method Igniter\\\\PayRegister\\\\Payments\\\\PaypalExpress\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Parameter \\$order of method Igniter\\\\PayRegister\\\\Payments\\\\PaypalExpress\\:\\:handlePaymentResponse\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Parameter \\$order of method Igniter\\\\PayRegister\\\\Payments\\\\PaypalExpress\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Payments\\\\Square\\:\\:\\$model\\.$#"
-			count: 9
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Access to property \\$card_brand on an unknown class Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$customer\\.$#"
 			count: 2
 			path: src/Payments/Square.php
 
 		-
-			message: "#^Access to property \\$card_last4 on an unknown class Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\.$#"
-			count: 2
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\:\\:\\$card_brand\\.$#"
+			count: 1
 			path: src/Payments/Square.php
 
 		-
-			message: "#^Access to property \\$customer on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 2
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\:\\:\\$card_last4\\.$#"
+			count: 1
+			path: src/Payments/Square.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$live_access_token\\.$#"
+			count: 1
+			path: src/Payments/Square.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$live_app_id\\.$#"
+			count: 1
+			path: src/Payments/Square.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$live_location_id\\.$#"
+			count: 1
+			path: src/Payments/Square.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$test_access_token\\.$#"
+			count: 1
+			path: src/Payments/Square.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$test_app_id\\.$#"
+			count: 1
+			path: src/Payments/Square.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$test_location_id\\.$#"
+			count: 1
+			path: src/Payments/Square.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$transaction_mode\\.$#"
+			count: 1
 			path: src/Payments/Square.php
 
 		-
@@ -741,18 +396,13 @@ parameters:
 			path: src/Payments/Square.php
 
 		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\Square\\:\\:fireSystemEvent\\(\\)\\.$#"
-			count: 2
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\Square\\:\\:getHostObject\\(\\)\\.$#"
+			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:findPaymentProfile\\(\\)\\.$#"
 			count: 1
 			path: src/Payments/Square.php
 
 		-
-			message: "#^Call to method addJs\\(\\) on an unknown class Igniter\\\\Main\\\\Classes\\\\MainController\\.$#"
-			count: 2
+			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:initPaymentProfile\\(\\)\\.$#"
+			count: 1
 			path: src/Payments/Square.php
 
 		-
@@ -767,11 +417,6 @@ parameters:
 
 		-
 			message: "#^Call to method setProfileData\\(\\) on an unknown class Admin\\\\Models\\\\Payment_profiles_model\\.$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Call to method setProfileData\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\.$#"
 			count: 1
 			path: src/Payments/Square.php
 
@@ -796,42 +441,7 @@ parameters:
 			path: src/Payments/Square.php
 
 		-
-			message: "#^Function array_get not found\\.$#"
-			count: 11
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Function currency not found\\.$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Function currency_format not found\\.$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Function lang not found\\.$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Function str_random not found\\.$#"
-			count: 2
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Instantiated class Igniter\\\\Flame\\\\Exception\\\\ApplicationException not found\\.$#"
-			count: 7
-			path: src/Payments/Square.php
-
-		-
 			message: "#^Method Igniter\\\\PayRegister\\\\Payments\\\\Square\\:\\:deletePaymentProfileData\\(\\) has invalid return type Admin\\\\Models\\\\Payment_profiles_model\\.$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Method Igniter\\\\PayRegister\\\\Payments\\\\Square\\:\\:updatePaymentProfileData\\(\\) has invalid return type Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\.$#"
 			count: 1
 			path: src/Payments/Square.php
 
@@ -846,22 +456,7 @@ parameters:
 			path: src/Payments/Square.php
 
 		-
-			message: "#^PHPDoc tag @throws with type Igniter\\\\Flame\\\\Exception\\\\ApplicationException is not subtype of Throwable$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Parameter \\$controller of method Igniter\\\\PayRegister\\\\Payments\\\\Square\\:\\:beforeRenderPaymentForm\\(\\) has invalid type Igniter\\\\Main\\\\Classes\\\\MainController\\.$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
 			message: "#^Parameter \\$host of method Igniter\\\\PayRegister\\\\Payments\\\\Square\\:\\:handlePaymentResponse\\(\\) has invalid type Admin\\\\Models\\\\Payments_model\\.$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Parameter \\$host of method Igniter\\\\PayRegister\\\\Payments\\\\Square\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
 			count: 1
 			path: src/Payments/Square.php
 
@@ -871,52 +466,92 @@ parameters:
 			path: src/Payments/Square.php
 
 		-
-			message: "#^Parameter \\$order of method Igniter\\\\PayRegister\\\\Payments\\\\Square\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
 			message: "#^Parameter \\$profile of method Igniter\\\\PayRegister\\\\Payments\\\\Square\\:\\:deletePaymentProfileData\\(\\) has invalid type Admin\\\\Models\\\\Payment_profiles_model\\.$#"
 			count: 1
 			path: src/Payments/Square.php
 
 		-
-			message: "#^Parameter \\$profile of method Igniter\\\\PayRegister\\\\Payments\\\\Square\\:\\:updatePaymentProfileData\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$customer\\.$#"
+			count: 2
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
+			count: 3
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\:\\:\\$card_brand\\.$#"
 			count: 1
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:\\$model\\.$#"
-			count: 14
 			path: src/Payments/Stripe.php
 
 		-
-			message: "#^Access to property \\$card_brand on an unknown class Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\:\\:\\$card_last4\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$code\\.$#"
 			count: 2
 			path: src/Payments/Stripe.php
 
 		-
-			message: "#^Access to property \\$card_last4 on an unknown class Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\.$#"
-			count: 2
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$live_publishable_key\\.$#"
+			count: 1
 			path: src/Payments/Stripe.php
 
 		-
-			message: "#^Access to property \\$customer on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 2
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$live_secret_key\\.$#"
+			count: 1
 			path: src/Payments/Stripe.php
 
 		-
-			message: "#^Access to property \\$order_status on an unknown class Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 2
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$live_webhook_secret\\.$#"
+			count: 1
 			path: src/Payments/Stripe.php
 
 		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:fireSystemEvent\\(\\)\\.$#"
-			count: 6
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$order_status\\.$#"
+			count: 1
 			path: src/Payments/Stripe.php
 
 		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:getHostObject\\(\\)\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$test_publishable_key\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$test_secret_key\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$test_webhook_secret\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$transaction_mode\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$transaction_type\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:findPaymentProfile\\(\\)\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:initPaymentProfile\\(\\)\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\Admin\\\\Models\\\\Order\\:\\:find\\(\\)\\.$#"
 			count: 1
 			path: src/Payments/Stripe.php
 
@@ -926,122 +561,7 @@ parameters:
 			path: src/Payments/Stripe.php
 
 		-
-			message: "#^Call to method addCss\\(\\) on an unknown class Igniter\\\\Main\\\\Classes\\\\MainController\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Call to method addJs\\(\\) on an unknown class Igniter\\\\Main\\\\Classes\\\\MainController\\.$#"
-			count: 2
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Call to method isPaymentProcessed\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Call to method logPaymentAttempt\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 5
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Call to method markAsPaymentProcessed\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 2
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Call to method setProfileData\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Call to method updateOrderStatus\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 2
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Call to static method find\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Function array_except not found\\.$#"
-			count: 3
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Function array_get not found\\.$#"
-			count: 15
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Function currency not found\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Function currency_format not found\\.$#"
-			count: 2
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Function flash not found\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Function lang not found\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Instantiated class Igniter\\\\Flame\\\\Exception\\\\ApplicationException not found\\.$#"
-			count: 10
-			path: src/Payments/Stripe.php
-
-		-
 			message: "#^Method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:processPaymentForm\\(\\) should return bool\\|Illuminate\\\\Http\\\\RedirectResponse but return statement is missing\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:updatePaymentProfileData\\(\\) has invalid return type Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^PHPDoc tag @throws with type Igniter\\\\Flame\\\\Exception\\\\ApplicationException is not subtype of Throwable$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Parameter \\$controller of method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:beforeRenderPaymentForm\\(\\) has invalid type Igniter\\\\Main\\\\Classes\\\\MainController\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Parameter \\$host of method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:handlePaymentResponse\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Parameter \\$host of method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Payment\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Parameter \\$order of method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:handlePaymentResponse\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Parameter \\$order of method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:processPaymentForm\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\Order\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Parameter \\$profile of method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:updatePaymentProfileData\\(\\) has invalid type Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\.$#"
 			count: 1
 			path: src/Payments/Stripe.php
 
@@ -1049,33 +569,3 @@ parameters:
 			message: "#^Variable \\$response might not be defined\\.$#"
 			count: 2
 			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Class Igniter\\\\Admin\\\\Models\\\\Status not found\\.$#"
-			count: 1
-			path: src/Payments/authorizenetaim/fields.php
-
-		-
-			message: "#^Class Igniter\\\\Admin\\\\Models\\\\Status not found\\.$#"
-			count: 1
-			path: src/Payments/cod/fields.php
-
-		-
-			message: "#^Class Igniter\\\\Admin\\\\Models\\\\Status not found\\.$#"
-			count: 1
-			path: src/Payments/mollie/fields.php
-
-		-
-			message: "#^Class Igniter\\\\Admin\\\\Models\\\\Status not found\\.$#"
-			count: 1
-			path: src/Payments/paypalexpress/fields.php
-
-		-
-			message: "#^Class Igniter\\\\Admin\\\\Models\\\\Status not found\\.$#"
-			count: 1
-			path: src/Payments/square/fields.php
-
-		-
-			message: "#^Class Igniter\\\\Admin\\\\Models\\\\Status not found\\.$#"
-			count: 1
-			path: src/Payments/stripe/fields.php
