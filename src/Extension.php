@@ -3,7 +3,7 @@
 namespace Igniter\PayRegister;
 
 use Igniter\Admin\Models\Payment;
-use Igniter\Admin\Requests\Location;
+use Igniter\Admin\Requests\LocationRequest;
 use Igniter\Admin\Widgets\Form;
 use Igniter\System\Classes\BaseExtension;
 use Illuminate\Support\Facades\Event;
@@ -104,7 +104,7 @@ class Extension extends BaseExtension
         });
 
         Event::listen('system.formRequest.extendValidator', function ($formRequest, $dataHolder) {
-            if (!$formRequest instanceof Location) {
+            if (!$formRequest instanceof LocationRequest) {
                 return;
             }
 
