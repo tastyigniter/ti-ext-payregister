@@ -4,7 +4,7 @@ return [
     'fields' => [
         'setup' => [
             'type' => 'partial',
-            'path' => '$/igniter/payregister/payments/stripe/info',
+            'path' => __DIR__.'/info.blade.php',
         ],
         'transaction_mode' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_transaction_mode',
