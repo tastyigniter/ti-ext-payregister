@@ -71,9 +71,9 @@ class Stripe extends BasePaymentGateway
      */
     public function beforeRenderPaymentForm($host, $controller)
     {
-        $controller->addCss('$/igniter/payregister/assets/stripe.css', 'stripe-css');
+        $controller->addCss('igniter.payregister::/js/stripe.css', 'stripe-css');
         $controller->addJs('https://js.stripe.com/v3/', 'stripe-js');
-        $controller->addJs('$/igniter/payregister/assets/process.stripe.js', 'process-stripe-js');
+        $controller->addJs('igniter.payregister::/js/process.stripe.js', 'process-stripe-js');
     }
 
     public function completesPaymentOnClient()

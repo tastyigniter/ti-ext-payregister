@@ -4,7 +4,7 @@ return [
     'fields' => [
         'setup' => [
             'type' => 'partial',
-            'path' => '$/igniter/payregister/payments/paypalexpress/info',
+            'path' => __DIR__.'/info.blade.php',
         ],
         'api_mode' => [
             'label' => 'lang:igniter.payregister::default.paypal.label_api_mode',

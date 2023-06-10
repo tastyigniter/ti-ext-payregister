@@ -69,7 +69,7 @@ class AuthorizeNetAim extends BasePaymentGateway
      */
     public function beforeRenderPaymentForm($host, $controller)
     {
-        $controller->addJs('$/igniter/payregister/assets/authorizenetaim.js', 'authorizenetaim-js');
+        $controller->addJs('igniter.payregister::/js/authorizenetaim.js', 'authorizenetaim-js');
     }
 
     /**

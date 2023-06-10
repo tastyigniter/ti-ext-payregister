@@ -61,10 +61,10 @@ class Extension extends BaseExtension
         Event::listen('admin.form.extendFieldsBefore', function (Form $form) {
             if ($form->model instanceof \Igniter\Admin\Models\Order) {
                 $form->tabs['fields']['payment_logs']['type'] = 'paymentattempts';
-                $form->tabs['fields']['payment_logs']['form'] = '$/igniter/payregister/models/config/paymentlog';
+                $form->tabs['fields']['payment_logs']['form'] = 'igniter.payregister::/models/config/paymentlog';
                 $form->tabs['fields']['payment_logs']['columns']['is_refundable'] = [
                     'title' => 'Action',
-                    'partial' => '$/igniter/payregister/views/partials/refund_button',
+                    'partial' => 'igniter.payregister::_partials/refund_button',
                 ];
             }
         });
@@ -90,11 +90,11 @@ class Extension extends BaseExtension
 
     protected function extendLocationOptionsFields()
     {
-        Event::listen('admin.locations.defineOptionsFormFields', function () {
+        Event::listen('admin.location.defineOptionsFormFields', function () {
             return [
                 'payments' => [
                     'label' => 'lang:igniter.payregister::default.label_payments',
-                    'accordion' => 'lang:admin::lang.locations.text_tab_general_options',
+                    'accordion' => 'lang:igniter::admin.locations.text_tab_general_options',
                     'type' => 'checkboxlist',
                     'options' => [\Igniter\Admin\Models\Payment::class, 'listDropdownOptions'],
                     'commentAbove' => 'lang:igniter.payregister::default.help_payments',

@@ -90,8 +90,8 @@ class PaymentAttempts extends BaseFormWidget
 
     public function loadAssets()
     {
-        $this->addJs('~/app/admin/formwidgets/recordeditor/assets/js/recordeditor.modal.js', 'recordeditor-modal-js');
-        $this->addJs('$/igniter/payregister/formwidgets/paymentattempts/js/paymentattempts.js', 'paymentattempts-js');
+        $this->addJs('js/recordeditor.modal.js', 'recordeditor-modal-js');
+        $this->addJs('igniter.payregister::/js/paymentattempts.js', 'paymentattempts-js');
     }
 
     public function prepareVars()
