@@ -4,11 +4,11 @@ namespace Igniter\PayRegister\FormWidgets;
 
 use Igniter\Admin\Classes\BaseFormWidget;
 use Igniter\Admin\Classes\FormField;
-use Igniter\Admin\Models\PaymentLog;
 use Igniter\Admin\Traits\FormModelWidget;
 use Igniter\Admin\Traits\ValidatesForm;
 use Igniter\Admin\Widgets\Form;
 use Igniter\Flame\Exception\ApplicationException;
+use Igniter\PayRegister\Models\PaymentLog;
 
 class PaymentAttempts extends BaseFormWidget
 {

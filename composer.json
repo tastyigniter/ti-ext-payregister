@@ -1,74 +1,75 @@
 {
-	"name": "tastyigniter/ti-ext-payregister",
-	"type": "tastyigniter-package",
-	"description": "Allows you to accept credit card payments using PayPal, Stripe, Authorize.Net and/or Mollie.",
-	"license": "MIT",
-	"authors": [
-		{
-			"name": "Sam Poyigi",
-			"email": "sam@sampoyigi.com"
-		}
-	],
-	"keywords": [
-		"tastyigniter",
-		"paypal",
-		"stripe",
-		"square",
-		"payment",
-		"gateway",
-		"authorizenet",
-		"mollie"
-	],
-	"require": {
-		"omnipay/common": "~3.2",
-		"php-http/guzzle7-adapter": "~1.0",
-		"omnipay/authorizenet": "~3.3",
-		"omnipay/paypal": "~3.0",
-		"stripe/stripe-php": "~7.93.0",
-		"omnipay/mollie": "~5.4",
-		"square/square": "26.0.0.20230419"
-	},
-	"require-dev": {
-		"laravel/pint": "^1.2",
-		"nunomaduro/larastan": "^2.4.0",
-		"orchestra/testbench": "^8.5",
-		"pestphp/pest-plugin-laravel": "^2.0",
-		"tastyigniter/core": "dev-master"
-	},
-	"autoload": {
-		"psr-4": {
-			"Igniter\\PayRegister\\": "src/"
-		}
-	},
-	"autoload-dev": {
-		"psr-4": {
-			"Igniter\\PayRegister\\Tests\\": "tests/"
-		}
-	},
-	"extra": {
-		"tastyigniter-extension": {
-			"code": "igniter.payregister",
-			"name": "Pay Register",
-			"icon": {
-				"class": "fa fa-cash-register",
-				"backgroundColor": "#88C425",
-				"color": "#1B2707"
-			},
-			"homepage": "https://tastyigniter.com/marketplace/item/igniter-payregister"
-		}
-	},
-	"scripts": {
-		"test": "vendor/bin/pest",
-		"test-coverage": "vendor/bin/pest --coverage",
-		"format": "vendor/bin/pint",
-		"static": "vendor/bin/phpstan analyse --ansi --memory-limit 1056M"
-	},
-	"config": {
-		"allow-plugins": {
-			"pestphp/pest-plugin": true,
-			"php-http/discovery": true,
-			"composer/installers": true
-		},
-		"sort-packages": true
-	}
+  "name": "tastyigniter/ti-ext-payregister",
+  "type": "tastyigniter-package",
+  "description": "Allows you to accept credit card payments using PayPal, Stripe, Authorize.Net and/or Mollie.",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Sam Poyigi",
+      "email": "sam@sampoyigi.com"
+    }
+  ],
+  "keywords": [
+    "tastyigniter",
+    "paypal",
+    "stripe",
+    "square",
+    "payment",
+    "gateway",
+    "authorizenet",
+    "mollie"
+  ],
+  "require": {
+    "omnipay/common": "~3.2",
+    "php-http/guzzle7-adapter": "~1.0",
+    "omnipay/authorizenet": "~3.3",
+    "omnipay/paypal": "~3.0",
+    "stripe/stripe-php": "~7.93.0",
+    "omnipay/mollie": "~5.4",
+    "square/square": "26.0.0.20230419"
+  },
+  "require-dev": {
+    "laravel/pint": "^1.2",
+    "nunomaduro/larastan": "^2.4.0",
+    "orchestra/testbench": "^8.5",
+    "pestphp/pest-plugin-laravel": "^2.0",
+    "tastyigniter/core": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "Igniter\\PayRegister\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Igniter\\PayRegister\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "tastyigniter-extension": {
+      "code": "igniter.payregister",
+      "name": "Pay Register",
+      "icon": {
+        "class": "fa fa-cash-register",
+        "backgroundColor": "#88C425",
+        "color": "#1B2707"
+      },
+      "homepage": "https://tastyigniter.com/marketplace/item/igniter-payregister"
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/pest",
+    "test-coverage": "vendor/bin/pest --coverage",
+    "format": "vendor/bin/pint",
+    "static": "vendor/bin/phpstan analyse --ansi --memory-limit 1056M"
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true,
+      "php-http/discovery": true,
+      "composer/installers": true
+    },
+    "sort-packages": true
+  },
+  "minimum-stability": "dev"
 }

@@ -3,10 +3,10 @@
 namespace Igniter\PayRegister\Payments;
 
 use Exception;
-use Igniter\Admin\Classes\BasePaymentGateway;
-use Igniter\Admin\Models\Order;
+use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Flame\Traits\EventEmitter;
+use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Traits\PaymentHelpers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Session;
@@ -136,8 +136,8 @@ class Stripe extends BasePaymentGateway
      * Processes payment using passed data.
      *
      * @param array $data
-     * @param \Igniter\Admin\Models\Payment $host
-     * @param \Igniter\Admin\Models\Order $order
+     * @param \Igniter\PayRegister\Models\Payment $host
+     * @param \Igniter\Cart\Models\Order $order
      *
      * @return bool|\Illuminate\Http\RedirectResponse
      * @throws \Igniter\Flame\Exception\ApplicationException
@@ -448,10 +448,10 @@ class Stripe extends BasePaymentGateway
     }
 
     /**
-     * @param \Igniter\Admin\Models\PaymentProfile $profile
+     * @param \Igniter\PayRegister\Models\PaymentProfile $profile
      * @param array $profileData
      * @param array $cardData
-     * @return \Igniter\Admin\Models\PaymentProfile
+     * @return \Igniter\PayRegister\Models\PaymentProfile
      */
     protected function updatePaymentProfileData($profile, $profileData = [], $cardData = [])
     {
