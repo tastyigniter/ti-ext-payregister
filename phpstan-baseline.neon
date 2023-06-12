@@ -1,9 +1,59 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Call to an undefined method Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:updatePaymentIntentSession\\(\\)\\.$#"
+			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:normalizePath\\(\\)\\.$#"
 			count: 1
-			path: src/Extension.php
+			path: src/Classes/BasePaymentGateway.php
+
+		-
+			message: "#^Method Igniter\\\\PayRegister\\\\Classes\\\\BasePaymentGateway\\:\\:initialize\\(\\) should return array but return statement is missing\\.$#"
+			count: 1
+			path: src/Classes/BasePaymentGateway.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$controller$#"
+			count: 1
+			path: src/Classes/BasePaymentGateway.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$params$#"
+			count: 1
+			path: src/Classes/BasePaymentGateway.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:exists\\(\\)\\.$#"
+			count: 1
+			path: src/Classes/PaymentGateways.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:fromClass\\(\\)\\.$#"
+			count: 1
+			path: src/Classes/PaymentGateways.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:get\\(\\)\\.$#"
+			count: 2
+			path: src/Classes/PaymentGateways.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:isDirectory\\(\\)\\.$#"
+			count: 1
+			path: src/Classes/PaymentGateways.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:makeDirectory\\(\\)\\.$#"
+			count: 1
+			path: src/Classes/PaymentGateways.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:put\\(\\)\\.$#"
+			count: 1
+			path: src/Classes/PaymentGateways.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:whereIsEnabled\\(\\)\\.$#"
+			count: 1
+			path: src/Classes/PaymentGateways.php
 
 		-
 			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Classes\\\\BaseWidget\\:\\:\\$previewMode\\.$#"
@@ -16,7 +66,7 @@ parameters:
 			path: src/FormWidgets/PaymentAttempts.php
 
 		-
-			message: "#^Call to an undefined static method Igniter\\\\Admin\\\\Models\\\\PaymentLog\\:\\:find\\(\\)\\.$#"
+			message: "#^Call to an undefined static method Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:find\\(\\)\\.$#"
 			count: 2
 			path: src/FormWidgets/PaymentAttempts.php
 
@@ -26,9 +76,194 @@ parameters:
 			path: src/FormWidgets/PaymentAttempts.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
+			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Http\\\\Controllers\\\\Payments\\:\\:formCreateModelObject\\(\\)\\.$#"
 			count: 1
-			path: src/Payments/AuthorizeNetAim.php
+			path: src/Http/Controllers/Payments.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Http\\\\Controllers\\\\Payments\\:\\:formExtendQuery\\(\\)\\.$#"
+			count: 1
+			path: src/Http/Controllers/Payments.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Http\\\\Controllers\\\\Payments\\:\\:refreshList\\(\\)\\.$#"
+			count: 1
+			path: src/Http/Controllers/Payments.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\Admin\\\\Facades\\\\AdminMenu\\:\\:setContext\\(\\)\\.$#"
+			count: 1
+			path: src/Http/Controllers/Payments.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$payment_method\\.$#"
+			count: 1
+			path: src/Listeners/UpdatePaymentIntentSessionOnCheckout.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:updatePaymentIntentSession\\(\\)\\.$#"
+			count: 1
+			path: src/Listeners/UpdatePaymentIntentSessionOnCheckout.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$data\\.$#"
+			count: 2
+			path: src/Models/Observers/PaymentObserver.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$class_name\\.$#"
+			count: 5
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$gatewayManager\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$payment_id\\.$#"
+			count: 2
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$customer_id\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$payment_id\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\User\\\\Models\\\\Customer\\:\\:\\$customer_id\\.$#"
+			count: 2
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:beforeRenderPaymentForm\\(\\)\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:getConfigFields\\(\\)\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:whereIsEnabled\\(\\)\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Call to an undefined method Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:applyGatewayClass\\(\\)\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:pluck\\(\\)\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:select\\(\\)\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:whereIsEnabled\\(\\)\\.$#"
+			count: 2
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$created_at\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$is_refundable\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$is_success\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$message\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$order_id\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$payment_code\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$payment_name\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$refunded_at\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$request\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$response\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Call to static method dispatch\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\OrderBeforeRefundProcessedEvent\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Call to static method dispatch\\(\\) on an unknown class Igniter\\\\Admin\\\\Models\\\\OrderRefundProcessedEvent\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Unsafe usage of new static\\(\\)\\.$#"
+			count: 1
+			path: src/Models/PaymentLog.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$customer_id\\.$#"
+			count: 2
+			path: src/Models/PaymentProfile.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$is_primary\\.$#"
+			count: 1
+			path: src/Models/PaymentProfile.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$payment_profile_id\\.$#"
+			count: 1
+			path: src/Models/PaymentProfile.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$profile_data\\.$#"
+			count: 2
+			path: src/Models/PaymentProfile.php
+
+		-
+			message: "#^Call to an undefined static method Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:applyCustomer\\(\\)\\.$#"
+			count: 2
+			path: src/Models/PaymentProfile.php
 
 		-
 			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_login_id\\.$#"
@@ -47,6 +282,11 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$transaction_mode\\.$#"
+			count: 1
+			path: src/Payments/AuthorizeNetAim.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
 			count: 1
 			path: src/Payments/AuthorizeNetAim.php
 
@@ -96,37 +336,32 @@ parameters:
 			path: src/Payments/AuthorizeNetAim.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$order_total\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$order_total\\.$#"
 			count: 1
 			path: src/Payments/Cod.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$payment\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$payment\\.$#"
 			count: 1
 			path: src/Payments/Cod.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$name\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$name\\.$#"
 			count: 1
 			path: src/Payments/Cod.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
 			count: 1
 			path: src/Payments/Cod.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_total\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$order_total\\.$#"
 			count: 1
 			path: src/Payments/Cod.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$customer\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$customer\\.$#"
 			count: 1
 			path: src/Payments/Mollie.php
 
@@ -142,6 +377,11 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$transaction_mode\\.$#"
+			count: 1
+			path: src/Payments/Mollie.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
 			count: 1
 			path: src/Payments/Mollie.php
 
@@ -241,18 +481,13 @@ parameters:
 			path: src/Payments/Mollie.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$hash\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$hash\\.$#"
 			count: 1
 			path: src/Payments/PaypalExpress.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$payment_method\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$payment_method\\.$#"
 			count: 2
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
-			count: 1
 			path: src/Payments/PaypalExpress.php
 
 		-
@@ -287,6 +522,11 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_user\\.$#"
+			count: 1
+			path: src/Payments/PaypalExpress.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
 			count: 1
 			path: src/Payments/PaypalExpress.php
 
@@ -341,18 +581,8 @@ parameters:
 			path: src/Payments/PaypalExpress.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$customer\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$customer\\.$#"
 			count: 2
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\:\\:\\$card_brand\\.$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\:\\:\\$card_last4\\.$#"
-			count: 1
 			path: src/Payments/Square.php
 
 		-
@@ -387,6 +617,16 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$transaction_mode\\.$#"
+			count: 1
+			path: src/Payments/Square.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$card_brand\\.$#"
+			count: 1
+			path: src/Payments/Square.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$card_last4\\.$#"
 			count: 1
 			path: src/Payments/Square.php
 
@@ -471,23 +711,8 @@ parameters:
 			path: src/Payments/Square.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Order\\:\\:\\$customer\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$customer\\.$#"
 			count: 2
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
-			count: 3
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\:\\:\\$card_brand\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Models\\\\PaymentProfile\\:\\:\\$card_last4\\.$#"
-			count: 1
 			path: src/Payments/Stripe.php
 
 		-
@@ -541,6 +766,21 @@ parameters:
 			path: src/Payments/Stripe.php
 
 		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
+			count: 3
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$card_brand\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$card_last4\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
 			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:findPaymentProfile\\(\\)\\.$#"
 			count: 1
 			path: src/Payments/Stripe.php
@@ -551,7 +791,7 @@ parameters:
 			path: src/Payments/Stripe.php
 
 		-
-			message: "#^Call to an undefined static method Igniter\\\\Admin\\\\Models\\\\Order\\:\\:find\\(\\)\\.$#"
+			message: "#^Call to an undefined static method Igniter\\\\Cart\\\\Models\\\\Order\\:\\:find\\(\\)\\.$#"
 			count: 1
 			path: src/Payments/Stripe.php
 
