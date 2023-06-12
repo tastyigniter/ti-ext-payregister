@@ -61,8 +61,8 @@ trait PaymentHelpers
 
     /**
      * @param \Omnipay\Common\Message\ResponseInterface $response
-     * @param \Igniter\Admin\Models\Order $order
-     * @param \Igniter\Admin\Models\Payment $host
+     * @param \Igniter\Cart\Models\Order $order
+     * @param \Igniter\PayRegister\Models\Payment $host
      * @return void
      * @throws \Exception
      */

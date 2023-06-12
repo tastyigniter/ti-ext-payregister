@@ -2,14 +2,31 @@
 
 namespace Igniter\PayRegister;
 
-use Igniter\Admin\Models\Payment;
-use Igniter\Admin\Requests\LocationRequest;
-use Igniter\Admin\Widgets\Form;
+use Igniter\PayRegister\Classes\PaymentGateways;
+use Igniter\PayRegister\Listeners\UpdatePaymentIntentSessionOnCheckout;
+use Igniter\PayRegister\Models\Observers\PaymentObserver;
+use Igniter\PayRegister\Models\Payment;
+use Igniter\PayRegister\Subscribers\FormFieldsSubscriber;
 use Igniter\System\Classes\BaseExtension;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
 
 class Extension extends BaseExtension
 {
+    protected $listen = [
+        'igniter.checkout.afterSaveOrder' => [
+            UpdatePaymentIntentSessionOnCheckout::class,
+        ],
+    ];
+
+    protected $observers = [
+        Payment::class => PaymentObserver::class,
+    ];
+
+    public $singletons = [
+        PaymentGateways::class,
+    ];
+
     public function registerPaymentGateways()
     {
         return [
@@ -56,65 +73,58 @@ class Extension extends BaseExtension
         ];
     }
 
+    public function registerNavigation()
+    {
+        return [
+            'sales' => [
+                'child' => [
+                    'payments' => [
+                        'priority' => 50,
+                        'class' => 'payments',
+                        'href' => admin_url('payments'),
+                        'title' => lang('igniter.payregister::default.text_side_menu'),
+                        'permission' => 'Admin.Payments',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    public function registerPermissions()
+    {
+        return [
+            'Admin.Payments' => [
+                'label' => 'igniter.payregister::default.help_permission',
+                'group' => 'sales',
+            ],
+        ];
+    }
+
+    public function registerOnboardingSteps()
+    {
+        return [
+            'igniter.payregister::payments' => [
+                'label' => 'igniter.payregister::default.onboarding_payments',
+                'description' => 'igniter.payregister::default.help_onboarding_payments',
+                'icon' => 'fa-credit-card',
+                'url' => admin_url('payments'),
+                'priority' => 35,
+                'complete' => [\Igniter\PayRegister\Models\Payment::class, 'onboardingIsComplete'],
+            ],
+        ];
+    }
+
     public function boot()
     {
-        Event::listen('admin.form.extendFieldsBefore', function (Form $form) {
-            if ($form->model instanceof \Igniter\Admin\Models\Order) {
-                $form->tabs['fields']['payment_logs']['type'] = 'paymentattempts';
-                $form->tabs['fields']['payment_logs']['form'] = 'igniter.payregister::/models/config/paymentlog';
-                $form->tabs['fields']['payment_logs']['columns']['is_refundable'] = [
-                    'title' => 'Action',
-                    'partial' => 'igniter.payregister::_partials/refund_button',
-                ];
-            }
-        });
+        Event::subscribe(FormFieldsSubscriber::class);
 
         Event::listen('main.theme.activated', function () {
             Payment::syncAll();
         });
 
-        Event::listen('igniter.checkout.afterSaveOrder', function ($order) {
-            if (!$order->payment_method || !$order->payment_method instanceof Payment) {
-                return;
-            }
-
-            if (!$order->payment_method->methodExists('updatePaymentIntentSession')) {
-                return;
-            }
-
-            $order->payment_method->updatePaymentIntentSession($order);
-        });
-
-        $this->extendLocationOptionsFields();
-    }
-
-    protected function extendLocationOptionsFields()
-    {
-        Event::listen('admin.location.defineOptionsFormFields', function () {
-            return [
-                'payments' => [
-                    'label' => 'lang:igniter.payregister::default.label_payments',
-                    'accordion' => 'lang:igniter::admin.locations.text_tab_general_options',
-                    'type' => 'checkboxlist',
-                    'options' => [\Igniter\Admin\Models\Payment::class, 'listDropdownOptions'],
-                    'commentAbove' => 'lang:igniter.payregister::default.help_payments',
-                    'placeholder' => 'lang:igniter.payregister::default.help_no_payments',
-                ],
-            ];
-        });
-
-        Event::listen('system.formRequest.extendValidator', function ($formRequest, $dataHolder) {
-            if (!$formRequest instanceof LocationRequest) {
-                return;
-            }
-
-            $dataHolder->attributes = array_merge($dataHolder->attributes, [
-                'options.payments.*' => lang('igniter.payregister::default.label_payments'),
-            ]);
-
-            $dataHolder->rules = array_merge($dataHolder->rules, [
-                'options.payments.*' => ['string'],
-            ]);
-        });
+        Relation::enforceMorphMap([
+            'payment_logs' => \Igniter\PayRegister\Models\PaymentLog::class,
+            'payments' => \Igniter\PayRegister\Models\Payment::class,
+        ]);
     }
 }

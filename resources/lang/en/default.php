@@ -1,12 +1,23 @@
 <?php
 
 return [
+    'text_title' => 'Payments',
+    'text_side_menu' => 'Payments',
+    'text_form_name' => 'Payment',
+    'text_tab_config' => 'Config',
+    'text_filter_search' => 'Search by name or description.',
+    'text_empty' => 'There are no payments available.',
     'text_this_payment' => 'this payment method',
     'text_save_card_profile' => 'Save card details for later.',
     'text_refund_title' => 'Refund: %s',
     'text_refund_full' => 'Full Refund',
     'text_refund_partial' => 'Partial Refund',
+    'text_payment_logs' => 'Payment Attempts',
 
+    'label_payments' => 'Payment Gateways',
+    'label_code' => 'Unique Code',
+    'label_default' => 'Is Default',
+    'label_priority' => 'Priority',
     'label_order_fee_type' => 'Additional Fee Type',
     'label_order_fee' => 'Additional Fee',
     'label_order_total' => 'Minimum Order Total Amount',
@@ -14,7 +25,8 @@ return [
     'label_refund_type' => 'Refund Type',
     'label_refund_amount' => 'Refund Partial Amount',
 
-    'label_payments' => 'Payments',
+    'onboarding_payments' => 'Configure your payment gateways',
+    'help_onboarding_payments' => 'Enable and configure a default payment method for your customers.',
 
     'button_delete_card' => 'Delete and use a different card.',
     'button_refund' => 'Refund',
@@ -23,11 +35,19 @@ return [
     'alert_min_order_total' => 'You need to spend %s or more to pay with %s.',
     'alert_order_fee' => 'There\'s an additional fee of %s when you pay with %s.',
     'alert_missing_applicable_fee' => 'Missing additional fee for %s payment.',
+    'alert_set_default' => 'Payment set as default',
+    'alert_setting_missing_id' => 'Extension setting code has not been specified.',
+    'alert_invalid_code' => 'Invalid payment gateway code selected.',
+    'alert_code_not_found' => 'Unable to find payment gateway with code %s',
+    'alert_update_payment_profile' => 'The updatePaymentProfile() method is not supported by the payment gateway.',
+    'alert_delete_payment_profile' => 'The deletePaymentProfile() method is not supported by the payment gateway.',
+    'alert_pay_from_payment_profile' => 'The payFromPaymentProfile() method is not supported by the payment gateway.',
 
     'help_order_total' => 'The total amount the order must reach before this payment gateway becomes active',
     'help_order_fee' => 'Extra charge to the order total when this payment gateway becomes active',
     'help_order_status' => 'Default order status when this payment method is used.',
 
+    'help_permission' => 'Manage payment gateways',
     'help_payments' => 'Select the payment(s) available at this location. Leave blank to use all enabled payments',
     'help_no_payments' => 'No enabled payment was found.',
 

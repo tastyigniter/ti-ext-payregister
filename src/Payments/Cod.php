@@ -2,8 +2,8 @@
 
 namespace Igniter\PayRegister\Payments;
 
-use Igniter\Admin\Classes\BasePaymentGateway;
 use Igniter\Flame\Exception\ApplicationException;
+use Igniter\PayRegister\Classes\BasePaymentGateway;
 
 class Cod extends BasePaymentGateway
 {
@@ -14,8 +14,8 @@ class Cod extends BasePaymentGateway
 
     /**
      * @param array $data
-     * @param \Igniter\Admin\Models\Payment $host
-     * @param \Igniter\Admin\Models\Order $order
+     * @param \Igniter\PayRegister\Models\Payment $host
+     * @param \Igniter\Cart\Models\Order $order
      *
      * @throws \Igniter\Flame\Exception\ApplicationException
      */

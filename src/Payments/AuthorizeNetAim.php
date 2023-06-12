@@ -3,9 +3,9 @@
 namespace Igniter\PayRegister\Payments;
 
 use Exception;
-use Igniter\Admin\Classes\BasePaymentGateway;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Flame\Traits\EventEmitter;
+use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Traits\PaymentHelpers;
 use Omnipay\Omnipay;
 
@@ -74,8 +74,8 @@ class AuthorizeNetAim extends BasePaymentGateway
 
     /**
      * @param array $data
-     * @param \Igniter\Admin\Models\Payment $host
-     * @param \Igniter\Admin\Models\Order $order
+     * @param \Igniter\PayRegister\Models\Payment $host
+     * @param \Igniter\Cart\Models\Order $order
      *
      * @return mixed
      */
