@@ -94,7 +94,7 @@ class Payment extends Model
             }
 
             $data[$name] = $attributes[$name];
-            unset($attributes[$name]);
+            unset($this->attributes[$name]);
         }
 
         return $data;
