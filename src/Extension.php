@@ -3,6 +3,7 @@
 namespace Igniter\PayRegister;
 
 use Igniter\PayRegister\Classes\PaymentGateways;
+use Igniter\PayRegister\Listeners\CaptureAuthorizedPayment;
 use Igniter\PayRegister\Listeners\UpdatePaymentIntentSessionOnCheckout;
 use Igniter\PayRegister\Models\Observers\PaymentObserver;
 use Igniter\PayRegister\Models\Payment;
@@ -17,6 +18,9 @@ class Extension extends BaseExtension
         'igniter.checkout.afterSaveOrder' => [
             UpdatePaymentIntentSessionOnCheckout::class,
         ],
+        'admin.statusHistory.added' => [
+            CaptureAuthorizedPayment::class
+        ]
     ];
 
     protected $observers = [

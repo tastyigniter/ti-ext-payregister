@@ -7,9 +7,9 @@ use Igniter\PayRegister\Classes\BasePaymentGateway;
 
 class Cod extends BasePaymentGateway
 {
-    public function isApplicable($total, $host)
+    public function defineFieldsConfig()
     {
-        return $host->order_total <= $total;
+        return 'igniter.payregister::/models/cod';
     }
 
     /**

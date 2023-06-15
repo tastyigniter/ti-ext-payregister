@@ -5,9 +5,12 @@ namespace Igniter\PayRegister\Payments;
 use Exception;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
-use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
-use Igniter\PayRegister\Traits\PaymentHelpers;
+use Igniter\PayRegister\Concerns\WithAuthorizedPayment;
+use Igniter\PayRegister\Concerns\WithPaymentProfile;
+use Igniter\PayRegister\Concerns\WithPaymentRefund;
+use Igniter\PayRegister\Models\PaymentProfile;
+use Igniter\User\Models\Customer;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
@@ -15,10 +18,16 @@ use Stripe\StripeClient;
 
 class Stripe extends BasePaymentGateway
 {
-    use EventEmitter;
-    use PaymentHelpers;
+    use WithAuthorizedPayment;
+    use WithPaymentProfile;
+    use WithPaymentRefund;
 
     protected $sessionKey = 'ti_payregister_stripe_intent';
+
+    public function defineFieldsConfig()
+    {
+        return 'igniter.payregister::/models/stripe';
+    }
 
     public function registerEntryPoints()
     {
@@ -53,16 +62,6 @@ class Stripe extends BasePaymentGateway
     public function getWebhookSecret()
     {
         return $this->isTestMode() ? $this->model->test_webhook_secret : $this->model->live_webhook_secret;
-    }
-
-    public function shouldAuthorizePayment()
-    {
-        return $this->model->transaction_type == 'auth_only';
-    }
-
-    public function isApplicable($total, $host)
-    {
-        return $host->order_total <= $total;
     }
 
     /**
@@ -198,6 +197,21 @@ class Stripe extends BasePaymentGateway
         }
     }
 
+    public function captureAuthorizedPayment(Order $order)
+    {
+        throw_unless(
+            $paymentLog = $order->payment_logs()->firstWhere('is_success', true),
+            new ApplicationException('No successful payment to capture')
+        );
+
+        throw_unless(
+            $paymentIntentId = array_get($paymentLog->response, 'id'),
+            new ApplicationException('Missing payment intent ID in successful payment response')
+        );
+
+        return $this->capturePaymentIntent($paymentIntentId, $order);
+    }
+
     public function capturePaymentIntent($paymentIntentId, $order, $data = [])
     {
         if ($order->payment !== $this->model->code) {
@@ -275,34 +289,22 @@ class Stripe extends BasePaymentGateway
     // Payment Profiles
     //
 
-    /**
-     * {@inheritdoc}
-     */
-    public function supportsPaymentProfiles()
+    public function supportsPaymentProfiles(): bool
     {
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function updatePaymentProfile($customer, $data)
+    public function updatePaymentProfile(Customer $customer, array $data = []): PaymentProfile
     {
         return $this->handleUpdatePaymentProfile($customer, $data);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function deletePaymentProfile($customer, $profile)
+    public function deletePaymentProfile(Customer $customer, PaymentProfile $profile)
     {
         $this->handleDeletePaymentProfile($customer, $profile);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function payFromPaymentProfile($order, $data = [])
+    public function payFromPaymentProfile(Order $order, array $data = [])
     {
         $host = $this->getHostObject();
         $profile = $host->findPaymentProfile($order->customer);
@@ -479,21 +481,17 @@ class Stripe extends BasePaymentGateway
         }
 
         $paymentChargeId = array_get($paymentLog->response, 'id');
-        $refundAmount = array_get($data, 'refund_type') == 'full'
-            ? $order->order_total : array_get($data, 'refund_amount');
+        $fields = $this->getPaymentRefundFields($order, $data);
 
-        if ($refundAmount > $order->order_total) {
+        if ($fields['amount'] > $order->order_total) {
             throw new ApplicationException('Refund amount should be be less than or equal to the order total');
         }
 
         try {
             $gateway = $this->createGateway();
-            $stripeOptions = $this->getStripeOptions();
-            $fields = $this->getPaymentRefundFields($order, $data);
             $response = $gateway->refunds->create(array_merge($fields, [
                 'payment_intent' => $paymentChargeId,
-                'amount' => number_format($refundAmount, 2, '', ''),
-            ]), $stripeOptions);
+            ]), $this->getStripeOptions());
 
             if ($response->status === 'failed') {
                 throw new Exception('Refund failed');
@@ -501,14 +499,14 @@ class Stripe extends BasePaymentGateway
 
             $message = sprintf('Payment intent %s refunded successfully -> (%s: %s)',
                 $paymentChargeId,
-                currency_format($refundAmount),
+                currency_format($fields['amount']),
                 array_get($response->toArray(), 'refunds.data.0.id')
             );
 
             $order->logPaymentAttempt($message, 1, $fields, $response->toArray());
             $paymentLog->markAsRefundProcessed();
         } catch (Exception $e) {
-            $order->logPaymentAttempt('Refund failed -> '.$response->getMessage(), 0, $fields, $response->toArray());
+            $order->logPaymentAttempt('Refund failed -> '.$e->getMessage(), 0, $fields, []);
         }
     }
 
@@ -535,7 +533,7 @@ class Stripe extends BasePaymentGateway
     protected function getPaymentCaptureFields($order, $fields = [])
     {
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendCaptureFields', [$fields, $order], false);
-        if (is_array($eventResult)) {
+        if (is_array($eventResult) && array_filter($eventResult)) {
             $fields = array_merge($fields, ...$eventResult);
         }
 
@@ -544,10 +542,15 @@ class Stripe extends BasePaymentGateway
 
     protected function getPaymentRefundFields($order, $data)
     {
-        $fields = [];
+        $refundAmount = array_get($data, 'refund_type') == 'full'
+            ? $order->order_total : array_get($data, 'refund_amount');
+
+        $fields = [
+            'amount' => number_format($refundAmount, 2, '', ''),
+        ];
 
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendRefundFields', [$fields, $order, $data], false);
-        if (is_array($eventResult)) {
+        if (is_array($eventResult) && array_filter($eventResult)) {
             $fields = array_merge($fields, ...$eventResult);
         }
 

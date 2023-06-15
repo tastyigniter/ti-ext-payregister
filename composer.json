@@ -20,12 +20,10 @@
     "mollie"
   ],
   "require": {
-    "omnipay/common": "~3.2",
     "php-http/guzzle7-adapter": "~1.0",
-    "omnipay/authorizenet": "~3.3",
-    "omnipay/paypal": "~3.0",
+    "authorizenet/authorizenet": "2.0.2",
     "stripe/stripe-php": "~7.93.0",
-    "omnipay/mollie": "~5.4",
+    "mollie/mollie-api-php": "^2.0",
     "square/square": "26.0.0.20230419"
   },
   "require-dev": {

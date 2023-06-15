@@ -3,18 +3,26 @@
 namespace Igniter\PayRegister\Payments;
 
 use Exception;
+use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
-use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
-use Igniter\PayRegister\Traits\PaymentHelpers;
+use Igniter\PayRegister\Concerns\WithPaymentProfile;
+use Igniter\PayRegister\Models\Payment;
+use Igniter\PayRegister\Models\PaymentProfile;
+use Igniter\User\Models\Customer;
 use Square\Environment;
+use Square\Http\ApiResponse;
 use Square\Models;
 use Square\SquareClient;
 
 class Square extends BasePaymentGateway
 {
-    use EventEmitter;
-    use PaymentHelpers;
+    use WithPaymentProfile;
+
+    public function defineFieldsConfig()
+    {
+        return 'igniter.payregister::/models/square';
+    }
 
     public function getHiddenFields()
     {
@@ -44,11 +52,6 @@ class Square extends BasePaymentGateway
         return $this->isTestMode() ? $this->model->test_location_id : $this->model->live_location_id;
     }
 
-    public function isApplicable($total, $host)
-    {
-        return $host->order_total <= $total;
-    }
-
     /**
      * @param self $host
      * @param \Igniter\Main\Classes\MainController $controller
@@ -67,45 +70,40 @@ class Square extends BasePaymentGateway
 
     public function createPayment($fields, $order, $host)
     {
-        try {
-            $client = $this->createClient();
-            $paymentsApi = $client->getPaymentsApi();
+        $client = $this->createClient();
+        $paymentsApi = $client->getPaymentsApi();
 
-            $idempotencyKey = str_random();
+        $idempotencyKey = str_random();
 
-            $amountMoney = new Models\Money();
-            $amountMoney->setAmount($fields['amount'] * 100);
-            $amountMoney->setCurrency($fields['currency']);
+        $amountMoney = new Models\Money();
+        $amountMoney->setAmount($fields['amount'] * 100);
+        $amountMoney->setCurrency($fields['currency']);
 
-            $body = new Models\CreatePaymentRequest($fields['sourceId'], $idempotencyKey, $amountMoney);
+        $body = new Models\CreatePaymentRequest($fields['sourceId'], $idempotencyKey, $amountMoney);
 
-            if (isset($fields['tip'])) {
-                $tipMoney = new Models\Money();
-                $tipMoney->setAmount($fields['tip'] * 100);
-                $tipMoney->setCurrency($fields['currency']);
-                $body->setTipMoney($tipMoney);
-            }
-
-            $body->setAutocomplete(true);
-            if (isset($fields['customerReference'])) {
-                $body->setCustomerId($fields['customerReference']);
-            }
-            if (isset($fields['token'])) {
-                $body->setVerificationToken($fields['token']);
-            }
-
-            $body->setLocationId($this->getLocationId());
-            $body->setReferenceId($fields['referenceId']);
-            $body->setNote($order->customer_name);
-
-            $response = $paymentsApi->createPayment($body);
-
-            $this->handlePaymentResponse($response, $order, $host, $fields);
-        } catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
-
-            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later');
+        if (isset($fields['tip'])) {
+            $tipMoney = new Models\Money();
+            $tipMoney->setAmount($fields['tip'] * 100);
+            $tipMoney->setCurrency($fields['currency']);
+            $body->setTipMoney($tipMoney);
         }
+
+        $body->setAutocomplete(true);
+        if (isset($fields['customerReference'])) {
+            $body->setCustomerId($fields['customerReference']);
+        }
+
+        if (isset($fields['token'])) {
+            $body->setVerificationToken($fields['token']);
+        }
+
+        $body->setLocationId($this->getLocationId());
+        $body->setReferenceId($fields['referenceId']);
+        $body->setNote($order->customer_name);
+
+        $this->fireSystemEvent('payregister.square.extendCreatePaymentRequest', [$body, $paymentsApi]);
+
+        return $paymentsApi->createPayment($body);
     }
 
     /**
@@ -132,7 +130,17 @@ class Square extends BasePaymentGateway
             $fields['token'] = array_get($data, 'square_card_token');
         }
 
-        $this->createPayment($fields, $order, $host);
+        try {
+            $response = $this->createPayment($fields, $order, $host);
+
+            if ($this->handlePaymentResponse($response, $order, $host, $fields)) {
+                return;
+            }
+        } catch (Exception $ex) {
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
+        }
+
+        throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later');
     }
 
     //
@@ -147,26 +155,17 @@ class Square extends BasePaymentGateway
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function updatePaymentProfile($customer, $data)
+    public function updatePaymentProfile(Customer $customer, array $data = []): PaymentProfile
     {
         return $this->handleUpdatePaymentProfile($customer, $data);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function deletePaymentProfile($customer, $profile)
+    public function deletePaymentProfile(Customer $customer, PaymentProfile $profile)
     {
         $this->handleDeletePaymentProfile($customer, $profile);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function payFromPaymentProfile($order, $data = [])
+    public function payFromPaymentProfile(Order $order, array $data = [])
     {
         $host = $this->getHostObject();
         $profile = $host->findPaymentProfile($order->customer);
@@ -179,7 +178,17 @@ class Square extends BasePaymentGateway
         $fields['sourceId'] = array_get($profile->profile_data, 'card_id');
         $fields['customerReference'] = array_get($profile->profile_data, 'customer_id');
 
-        $this->createPayment($fields, $order, $host);
+        try {
+            $response = $this->createPayment($fields, $order, $host);
+
+            if ($this->handlePaymentResponse($response, $order, $host, $fields)) {
+                return;
+            }
+        } catch (Exception $ex) {
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
+        }
+
+        throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later');
     }
 
     protected function createOrFetchCustomer($profileData, $customer)
@@ -276,10 +285,8 @@ class Square extends BasePaymentGateway
     }
 
     /**
-     * @param \Admin\Models\Payment_profiles_model $profile
-     * @param array $profileData
-     * @param array $cardData
-     * @return \Admin\Models\Payment_profiles_model
+     * @param PaymentProfile $profile
+     * @return PaymentProfile
      */
     protected function deletePaymentProfileData($profile)
     {
@@ -336,26 +343,21 @@ class Square extends BasePaymentGateway
         return $fields;
     }
 
-    /**
-     * @param \Square\Http\ApiResponse $response
-     * @param \Admin\Models\Orders_model $order
-     * @param \Admin\Models\Payments_model $host
-     * @return void
-     * @throws \Exception
-     */
-    protected function handlePaymentResponse($response, $order, $host, $fields, $isRefundable = false)
+    protected function handlePaymentResponse(ApiResponse $response, Order $order, Payment $host, array $fields, bool $isRefundable = false): bool
     {
         if ($response->isSuccess()) {
             $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getResult(), $isRefundable);
             $order->updateOrderStatus($host->order_status, ['notify' => false]);
             $order->markAsPaymentProcessed();
-        } else {
-            $errors = $response->getErrors();
-            $errors = $errors[0]->getDetail();
-            $order->logPaymentAttempt('Payment error -> '.$errors, 0, $fields, $response->getResult());
 
-            throw new Exception($errors);
+            return true;
         }
+
+        $errors = $response->getErrors();
+        $errors = $errors[0]->getDetail();
+        $order->logPaymentAttempt('Payment error -> '.$errors, 0, $fields, $response->getResult());
+
+        return false;
     }
 
     protected function handleUpdatePaymentProfile($customer, $data)

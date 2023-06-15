@@ -4,8 +4,9 @@ namespace Igniter\PayRegister\Classes;
 
 use Igniter\Admin\Classes\AdminController;
 use Igniter\Flame\Database\Model;
-use Igniter\Flame\Exception\SystemException;
 use Igniter\Flame\Support\Facades\File;
+use Igniter\Flame\Traits\EventEmitter;
+use Igniter\PayRegister\Concerns\WithApplicableFee;
 use Igniter\System\Actions\ModelAction;
 use Illuminate\Support\Facades\URL;
 
@@ -14,6 +15,9 @@ use Illuminate\Support\Facades\URL;
  */
 class BasePaymentGateway extends ModelAction
 {
+    use WithApplicableFee;
+    use EventEmitter;
+
     /**
      * @var \Igniter\PayRegister\Models\Payment|Model Reference to the controller associated to this action
      */
@@ -147,53 +151,17 @@ class BasePaymentGateway extends ModelAction
     }
 
     /**
-     * Returns true if the payment type is applicable for a specified order amount
-     *
-     * @param float $total Specifies an order amount
-     * @param $host Model object to add fields to
-     *
-     * @return bool
-     */
-    public function isApplicable($total, $host)
-    {
-        return true;
-    }
-
-    /**
-     * Returns true if the payment type has additional fee
-     *
-     * @param $host Model object to add fields to
-     * @return bool
-     */
-    public function hasApplicableFee($host = null)
-    {
-        $host = is_null($host) ? $this->model : $host;
-
-        return ($host->order_fee ?? 0) > 0;
-    }
-
-    /**
-     * Returns the payment type additional fee
-     *
-     * @param $host Model object to add fields to
-     * @return string
-     */
-    public function getFormattedApplicableFee($host = null)
-    {
-        $host = is_null($host) ? $this->model : $host;
-
-        return ((int)$host->order_fee_type === 2)
-            ? $host->order_fee.'%'
-            : currency_format($host->order_fee);
-    }
-
-    /**
      * This method should return TRUE if the gateway completes the payment on the client's browsers.
      * Allows the system to take extra steps during checkout before  completing the payment
      */
     public function completesPaymentOnClient()
     {
         return false;
+    }
+
+    protected function validatePaymentMethod($order, $host)
+    {
+        $this->validateApplicableFee($order, $host);
     }
 
     /**
@@ -220,58 +188,6 @@ class BasePaymentGateway extends ModelAction
     public function getHostObject()
     {
         return $this->model;
-    }
-
-    //
-    // Payment Profiles
-    //
-
-    /**
-     * This method should return TRUE if the gateway supports user payment profiles.
-     * The payment gateway must implement the updatePaymentProfile(), deletePaymentProfile() and payFromPaymentProfile() methods if this method returns true.
-     */
-    public function supportsPaymentProfiles()
-    {
-        return false;
-    }
-
-    /**
-     * Creates a customer profile on the payment gateway or update if the profile already exists.
-     * @param \Igniter\User\Models\Customer $customer Customer model to create a profile for
-     * @param array $data Posted payment form data
-     * @return \Igniter\PayRegister\Models\PaymentProfile|object Returns the customer payment profile model
-     */
-    public function updatePaymentProfile($customer, $data)
-    {
-        throw new SystemException(lang('igniter.payregister::default.alert_update_payment_profile'));
-    }
-
-    /**
-     * Deletes a customer payment profile from the payment gateway.
-     * @param \Igniter\User\Models\Customer $customer Customer model
-     * @param \Igniter\PayRegister\Models\PaymentProfile $profile Payment profile model
-     */
-    public function deletePaymentProfile($customer, $profile)
-    {
-        throw new SystemException(lang('igniter.payregister::default.alert_delete_payment_profile'));
-    }
-
-    /**
-     * Creates a payment transaction from an existing payment profile.
-     * @param \Igniter\Cart\Models\Order $order An order object to pay
-     * @param array $data
-     */
-    public function payFromPaymentProfile($order, $data = [])
-    {
-        throw new SystemException(lang('igniter.payregister::default.alert_pay_from_payment_profile'));
-    }
-
-    //
-    // Payment Refunds
-    //
-
-    public function processRefundForm($data, $order, $paymentLog)
-    {
     }
 
     /**

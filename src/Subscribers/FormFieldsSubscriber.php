@@ -58,7 +58,7 @@ class FormFieldsSubscriber
                 'type' => 'paymentattempts',
                 'useAjax' => true,
                 'defaultSort' => ['payment_log_id', 'desc'],
-                'form' => 'igniter.payregister::/models/config/paymentlog',
+                'form' => 'igniter.payregister::/models/paymentlog',
                 'columns' => [
                     'date_added_since' => [
                         'title' => 'lang:igniter.cart::default.orders.column_time_date',
