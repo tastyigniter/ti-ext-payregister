@@ -150,6 +150,7 @@ class AuthorizeNetAim extends BasePaymentGateway
             $paymentLog->markAsRefundProcessed();
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Refund failed -> '.$ex->getMessage(), 0, $fields, []);
+
             throw new Exception('Refund failed');
         }
     }

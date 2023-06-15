@@ -11,24 +11,27 @@ use net\authorize\api\controller\CreateTransactionController;
 class AuthorizeNetClient
 {
     protected ?MerchantAuthenticationType $authentication = null;
+
     protected ?CreateTransactionRequest $transactionRequest = null;
 
-    public function __construct(protected bool $sandbox = FALSE)
+    public function __construct(protected bool $sandbox = false)
     {
     }
 
     public function authentication()
     {
-        if ($this->authentication)
+        if ($this->authentication) {
             return $this->authentication;
+        }
 
         return $this->authentication = new MerchantAuthenticationType();
     }
 
     public function createTransactionRequest(): CreateTransactionRequest
     {
-        if ($this->transactionRequest)
+        if ($this->transactionRequest) {
             return $this->transactionRequest;
+        }
 
         $request = new CreateTransactionRequest();
         $request->setMerchantAuthentication($this->authentication());
@@ -49,7 +52,7 @@ class AuthorizeNetClient
         $transactionResponse = $response->getTransactionResponse();
 
         throw_unless(
-            $response->getMessages()->getResultCode() == "Ok",
+            $response->getMessages()->getResultCode() == 'Ok',
             new ApplicationException($this->getErrorMessageFromResponse($response, $transactionResponse))
         );
 
