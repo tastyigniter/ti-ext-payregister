@@ -4,7 +4,7 @@ return [
     'fields' => [
         'setup' => [
             'type' => 'partial',
-            'path' => __DIR__.'/info.blade.php',
+            'path' => 'igniter.payregister::stripe.info',
         ],
         'transaction_mode' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_transaction_mode',
@@ -115,6 +115,12 @@ return [
             'type' => 'currency',
             'span' => 'left',
             'comment' => 'lang:igniter.payregister::default.help_order_total',
+        ],
+        'capture_status' => [
+            'label' => 'lang:igniter.payregister::default.label_capture_status',
+            'type' => 'select',
+            'options' => [\Igniter\Admin\Models\Status::class, 'getDropdownOptionsForOrder'],
+            'comment' => 'lang:igniter.payregister::default.help_capture_status',
         ],
         'order_status' => [
             'label' => 'lang:igniter.payregister::default.label_order_status',

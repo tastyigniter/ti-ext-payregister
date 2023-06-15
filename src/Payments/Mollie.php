@@ -4,17 +4,20 @@ namespace Igniter\PayRegister\Payments;
 
 use Exception;
 use Igniter\Flame\Exception\ApplicationException;
-use Igniter\Flame\Traits\EventEmitter;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
-use Igniter\PayRegister\Traits\PaymentHelpers;
+use Igniter\PayRegister\Concerns\WithPaymentRefund;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Response;
-use Omnipay\Omnipay;
+use Mollie\Api\MollieApiClient;
 
 class Mollie extends BasePaymentGateway
 {
-    use EventEmitter;
-    use PaymentHelpers;
+    use WithPaymentRefund;
+
+    public function defineFieldsConfig()
+    {
+        return 'igniter.payregister::/models/mollie';
+    }
 
     public function registerEntryPoints()
     {
@@ -32,11 +35,6 @@ class Mollie extends BasePaymentGateway
     public function getApiKey()
     {
         return $this->isTestMode() ? $this->model->test_api_key : $this->model->live_api_key;
-    }
-
-    public function isApplicable($total, $host)
-    {
-        return $host->order_total <= $total;
     }
 
     /**
@@ -57,18 +55,24 @@ class Mollie extends BasePaymentGateway
 
         if ($order->customer) {
             $profile = $this->updatePaymentProfile($order->customer, $data);
-            $fields['customerReference'] = array_get($profile->profile_data, 'customer_id');
+            $fields['customerId'] = array_get($profile->profile_data, 'customer_id');
         }
 
         try {
-            $gateway = $this->createGateway();
-            $response = $gateway->purchase($fields)->send();
+            $payment = $this->createClient()->payments->create($fields);
 
-            if ($response->isRedirect()) {
-                return Redirect::to($response->getRedirectUrl());
+            session()->put('mollie.payment_id', $payment->id);
+
+            if ($payment->isOpen()) {
+                return Redirect::to($payment->getCheckoutUrl());
             }
 
-            $this->handlePaymentResponse($response, $order, $host, $fields);
+            $order->logPaymentAttempt('Payment error -> '.$payment->getMessage(), 0, $fields, [
+                'id' => $payment->id,
+                'status' => $payment->status,
+                'method' => $payment->method,
+                'amount' => $payment->amount,
+            ]);
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
 
@@ -85,25 +89,31 @@ class Mollie extends BasePaymentGateway
         $order = $this->createOrderModel()->whereHash($hash)->first();
 
         try {
-            if (!$hash || !$order instanceof Order) {
-                throw new ApplicationException('No order found');
-            }
+            throw_unless($order, new ApplicationException('No order found'));
+            throw_unless(strlen($redirectPage), new ApplicationException('No redirect page found'));
+            throw_unless(strlen($cancelPage), new ApplicationException('No cancel page found'));
 
-            if (!strlen($redirectPage)) {
-                throw new ApplicationException('No redirect page found');
-            }
+            throw_if(
+                !($paymentMethod = $order->payment_method) || $paymentMethod->getGatewayClass() != static::class,
+                new ApplicationException('No valid payment method found')
+            );
 
-            if (!strlen($cancelPage)) {
-                throw new ApplicationException('No cancel page found');
-            }
+            throw_unless(
+                $payment = $this->createClient()->payments->get(session()->get('mollie.payment_id')),
+                new ApplicationException('Missing payment id in query parameters')
+            );
 
-            $paymentMethod = $order->payment_method;
-            if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class) {
-                throw new ApplicationException('No valid payment method found');
-            }
+            throw_if($order->isPaymentProcessed(), new ApplicationException('Payment has already been processed'));
 
-            if (!$order->isPaymentProcessed()) {
-                throw new ApplicationException('Sorry, your payment was not successful. Please contact your bank or try again later.');
+            if ($payment->isPaid() && data_get($payment->metadata, 'order_id') == $order->order_id) {
+                $order->logPaymentAttempt('Payment successful', 1, [], [
+                    'id' => $payment->id,
+                    'status' => $payment->status,
+                    'method' => $payment->method,
+                    'amount' => $payment->amount,
+                ], true);
+                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
+                $order->markAsPaymentProcessed();
             }
 
             return Redirect::to(page_url($redirectPage, [
@@ -111,7 +121,7 @@ class Mollie extends BasePaymentGateway
                 'hash' => $order->hash,
             ]));
         } catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], []);
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], request()->input());
             flash()->warning($ex->getMessage())->important();
         }
 
@@ -122,31 +132,78 @@ class Mollie extends BasePaymentGateway
     {
         $hash = $params[0] ?? null;
         $order = $this->createOrderModel()->whereHash($hash)->first();
-        if (!$hash || !$order instanceof Order) {
-            return Response::json(['error' => 'No order found']);
-        }
 
-        $paymentMethod = $order->payment_method;
-        if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class) {
-            return Response::json(['error' => 'No valid payment method found']);
-        }
+        throw_unless($order, new ApplicationException('No order found'));
 
-        $gateway = $this->createGateway();
-        $fields = $this->getPaymentFormFields($order);
-        $response = $gateway->completePurchase($fields)->send();
+        throw_if(
+            !($paymentMethod = $order->payment_method) || $paymentMethod->getGatewayClass() != static::class,
+            new ApplicationException('No valid payment method found')
+        );
+
+        throw_unless(
+            $payment = $this->createClient()->payments->get(request()->input('id', '')),
+            new ApplicationException('Missing payment id in query parameters')
+        );
+
+        $response = [
+            'id' => $payment->id,
+            'status' => $payment->status,
+            'method' => $payment->method,
+            'amount' => $payment->amount,
+        ];
 
         if (!$order->isPaymentProcessed()) {
-            if ($response->isPaid()) {
-                $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getData());
+            if ($payment->isPaid()) {
+                $order->logPaymentAttempt('Payment successful', 1, request()->input(), $response, true);
                 $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
                 $order->markAsPaymentProcessed();
             } else {
-                $order->logPaymentAttempt('Payment unsuccessful', 0, $fields, $response->getData());
+                $order->logPaymentAttempt('Payment unsuccessful', 0, request()->input(), $response);
                 $order->updateOrderStatus(setting('canceled_order_status'), ['notify' => false]);
             }
         }
 
         return Response::json(['success' => true]);
+    }
+
+    public function processRefundForm($data, $order, $paymentLog)
+    {
+        throw_if(
+            !is_null($paymentLog->refunded_at) || !is_array($paymentLog->response),
+            new ApplicationException('Nothing to refund')
+        );
+
+        throw_if(
+            array_get($paymentLog->response, 'status') !== 'paid',
+            new ApplicationException('No charge to refund')
+        );
+
+        $paymentId = array_get($paymentLog->response, 'id');
+        $fields = $this->getPaymentRefundFields($order, $data);
+
+        throw_if(
+            $fields['amount']['value'] > $order->order_total,
+            new ApplicationException('Refund amount should be be less than or equal to the order total')
+        );
+
+        try {
+            $payment = $this->createClient()->payments->get($paymentId);
+            $response = $payment->refund($fields);
+
+            $message = sprintf('Payment %s refund processed -> (%s: %s)',
+                $paymentId, currency_format($fields['amount']['value']), $response->id
+            );
+
+            $order->logPaymentAttempt($message, 1, $fields, [
+                'id' => $response->id,
+                'status' => $response->status,
+                'amount' => $response->amount,
+            ]);
+            $paymentLog->markAsRefundProcessed();
+        } catch (Exception $ex) {
+            $order->logPaymentAttempt('Refund failed -> '.$ex->getMessage(), 0, $fields, []);
+            throw new Exception('Refund failed');
+        }
     }
 
     //
@@ -180,27 +237,23 @@ class Mollie extends BasePaymentGateway
     {
         $response = false;
         $newCustomerRequired = !array_get($profileData, 'customer_id');
-        $gateway = $this->createGateway();
+        $client = $this->createClient();
 
         if (!$newCustomerRequired) {
-            $response = $gateway->fetchCustomer([
-                'customerReference' => array_get($profileData, 'customer_id'),
-            ])->send();
-
-            if (!$response->isSuccessful()) {
+            if (!$response = $client->customers->get(array_get($profileData, 'customer_id'))) {
                 $newCustomerRequired = true;
             }
         }
 
         if ($newCustomerRequired) {
-            $response = $gateway->createCustomer([
+            $fields = [
                 'firstName' => $customer->first_name,
                 'lastName' => $customer->last_name,
                 'email' => $customer->email,
-            ])->send();
+            ];
 
-            if (!$response->isSuccessful()) {
-                throw new ApplicationException($response->getMessage());
+            if (!$response = $client->customers->create($fields)) {
+                throw new ApplicationException('Unable to create customer');
             }
         }
 
@@ -211,18 +264,14 @@ class Mollie extends BasePaymentGateway
     //
     //
 
-    /**
-     * @return \Omnipay\Common\GatewayInterface|\Omnipay\Mollie\Gateway
-     */
-    protected function createGateway()
+    protected function createClient(): MollieApiClient
     {
-        $gateway = Omnipay::create('Mollie');
+        $client = new MollieApiClient();
+        $client->setApiKey($this->getApiKey());
 
-        $gateway->setApiKey($this->getApiKey());
+        $this->fireSystemEvent('payregister.mollie.extendGateway', [$client]);
 
-        $this->fireSystemEvent('payregister.mollie.extendGateway', [$gateway]);
-
-        return $gateway;
+        return $client;
     }
 
     protected function getPaymentFormFields($order, $data = [])
@@ -232,17 +281,42 @@ class Mollie extends BasePaymentGateway
         $returnUrl .= '?redirect='.array_get($data, 'successPage').'&cancel='.array_get($data, 'cancelPage');
 
         $fields = [
-            'amount' => number_format($order->order_total, 2, '.', ''),
-            'currency' => currency()->getUserCurrency(),
+            'amount' => [
+                'currency' => currency()->getUserCurrency(),
+                'value' => number_format($order->order_total, 2, '.', '')
+            ],
             'description' => 'Payment for Order '.$order->order_id,
             'metadata' => [
                 'order_id' => $order->order_id,
             ],
-            'returnUrl' => $returnUrl,
-            'notifyUrl' => $notifyUrl,
+            'redirectUrl' => $returnUrl,
+            'webhookUrl' => $notifyUrl,
         ];
 
         $this->fireSystemEvent('payregister.mollie.extendFields', [&$fields, $order, $data]);
+
+        return $fields;
+    }
+
+    protected function getPaymentRefundFields($order, $data)
+    {
+        $refundAmount = array_get($data, 'refund_type') == 'full'
+            ? $order->order_total : array_get($data, 'refund_amount');
+
+        $fields = [
+            'amount' => [
+                'currency' => currency()->getUserCurrency(),
+                'value' => number_format($refundAmount, 2, '.', '')
+            ],
+            'metadata' => [
+                'order_id' => $order->getKey(),
+            ],
+        ];
+
+        $eventResult = $this->fireSystemEvent('payregister.mollie.extendRefundFields', [$fields, $order, $data], false);
+        if (is_array($eventResult) && array_filter($eventResult)) {
+            $fields = array_merge($fields, ...$eventResult);
+        }
 
         return $fields;
     }

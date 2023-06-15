@@ -3,8 +3,8 @@
 namespace Igniter\PayRegister\Models;
 
 use Carbon\Carbon;
-use Igniter\Admin\Models\OrderBeforeRefundProcessedEvent;
-use Igniter\Admin\Models\OrderRefundProcessedEvent;
+use Igniter\Cart\Events\OrderBeforeRefundProcessedEvent;
+use Igniter\Cart\Events\OrderRefundProcessedEvent;
 use Igniter\Flame\Database\Model;
 use Igniter\Flame\Database\Traits\Validation;
 

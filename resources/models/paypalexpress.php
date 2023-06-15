@@ -4,7 +4,7 @@ return [
     'fields' => [
         'setup' => [
             'type' => 'partial',
-            'path' => __DIR__.'/info.blade.php',
+            'path' => 'igniter.payregister::paypalexpress.info',
         ],
         'api_mode' => [
             'label' => 'lang:igniter.payregister::default.paypal.label_api_mode',
@@ -46,15 +46,6 @@ return [
                 'condition' => 'value[live]',
             ],
         ],
-        'api_signature' => [
-            'label' => 'lang:igniter.payregister::default.paypal.label_api_signature',
-            'type' => 'text',
-            'trigger' => [
-                'action' => 'show',
-                'field' => 'api_mode',
-                'condition' => 'value[live]',
-            ],
-        ],
         'api_sandbox_user' => [
             'label' => 'lang:igniter.payregister::default.paypal.label_api_sandbox_user',
             'type' => 'text',
@@ -69,15 +60,6 @@ return [
             'label' => 'lang:igniter.payregister::default.paypal.label_api_sandbox_pass',
             'type' => 'text',
             'span' => 'right',
-            'trigger' => [
-                'action' => 'show',
-                'field' => 'api_mode',
-                'condition' => 'value[sandbox]',
-            ],
-        ],
-        'api_sandbox_signature' => [
-            'label' => 'lang:igniter.payregister::default.paypal.label_api_sandbox_signature',
-            'type' => 'text',
             'trigger' => [
                 'action' => 'show',
                 'field' => 'api_mode',

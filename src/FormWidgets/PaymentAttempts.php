@@ -7,6 +7,7 @@ use Igniter\Admin\Classes\FormField;
 use Igniter\Admin\Traits\FormModelWidget;
 use Igniter\Admin\Traits\ValidatesForm;
 use Igniter\Admin\Widgets\Form;
+use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Models\PaymentLog;
 
@@ -65,7 +66,7 @@ class PaymentAttempts extends BaseFormWidget
 
         $formTitle = sprintf(lang($this->formTitle), currency_format($model->order->order_total));
 
-        return $this->makePartial('~/app/admin/formwidgets/recordeditor/form', [
+        return $this->makePartial('recordeditor/form', [
             'formRecordId' => $paymentLogId,
             'formTitle' => $formTitle,
             'formWidget' => $this->makeRefundFormWidget($model),
@@ -74,11 +75,14 @@ class PaymentAttempts extends BaseFormWidget
 
     public function onSaveRecord()
     {
-        $paymentLogId = post('recordId');
-
-        $paymentLog = PaymentLog::find($paymentLogId);
+        $paymentLog = PaymentLog::find(post('recordId'));
 
         $paymentMethod = $this->model->payment_method;
+
+        throw_unless(
+            $paymentLog && $paymentMethod->canRefundPayment($paymentLog),
+            new ApplicationException('No successful payment to refund')
+        );
 
         $widget = $this->makeRefundFormWidget($paymentLog);
         $data = $widget->getSaveData();
