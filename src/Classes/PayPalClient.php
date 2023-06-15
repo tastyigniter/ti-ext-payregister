@@ -11,9 +11,8 @@ class PayPalClient
     public function __construct(
         protected string $clientId,
         protected string $clientSecret,
-        protected bool   $sandbox
-    )
-    {
+        protected bool $sandbox
+    ) {
     }
 
     public function getOrder($orderId)
@@ -67,8 +66,9 @@ class PayPalClient
                     'grant_type' => 'client_credentials',
                 ]);
 
-            if (!$response->json('access_token'))
+            if (!$response->json('access_token')) {
                 throw new ApplicationException('Failed to generate access token');
+            }
 
             cache()->put('payregister_paypal_access_token', $response->json('access_token'), $response->json('expires_in') - 60);
         }
@@ -96,6 +96,7 @@ class PayPalClient
     public function setTestMode(bool $isSandboxMode)
     {
         $this->config['sandbox'] = $isSandboxMode;
+
         return $this;
     }
 

@@ -6,43 +6,43 @@ use Exception;
 
 trait PaymentHelpers
 {
-//
-//    protected function handleUpdatePaymentProfile($customer, $data)
-//    {
-//        $profile = $this->model->findPaymentProfile($customer);
-//        $profileData = $profile ? (array)$profile->profile_data : [];
-//
-//        $response = $this->createOrFetchCustomer($profileData, $customer);
-//        $customerId = $response->getCustomerReference();
-//
-//        $response = $this->createOrFetchCard($customerId, $profileData, $data);
-//        $cardData = $response->getData();
-//        $cardId = $response->getCardReference();
-//
-//        if (!$profile) {
-//            $profile = $this->model->initPaymentProfile($customer);
-//        }
-//
-//        $this->updatePaymentProfileData($profile, [
-//            'customer_id' => $customerId,
-//            'card_id' => $cardId,
-//        ], $cardData);
-//
-//        return $profile;
-//    }
-//
-//    protected function handleDeletePaymentProfile($customer, $profile)
-//    {
-//        if (!isset($profile->profile_data['customer_id'])) {
-//            return;
-//        }
-//
-//        $this->createGateway()->deleteCustomer([
-//            'customerReference' => $profile->profile_data['customer_id'],
-//        ])->send();
-//
-//        $this->updatePaymentProfileData($profile);
-//    }
+    //
+    //    protected function handleUpdatePaymentProfile($customer, $data)
+    //    {
+    //        $profile = $this->model->findPaymentProfile($customer);
+    //        $profileData = $profile ? (array)$profile->profile_data : [];
+    //
+    //        $response = $this->createOrFetchCustomer($profileData, $customer);
+    //        $customerId = $response->getCustomerReference();
+    //
+    //        $response = $this->createOrFetchCard($customerId, $profileData, $data);
+    //        $cardData = $response->getData();
+    //        $cardId = $response->getCardReference();
+    //
+    //        if (!$profile) {
+    //            $profile = $this->model->initPaymentProfile($customer);
+    //        }
+    //
+    //        $this->updatePaymentProfileData($profile, [
+    //            'customer_id' => $customerId,
+    //            'card_id' => $cardId,
+    //        ], $cardData);
+    //
+    //        return $profile;
+    //    }
+    //
+    //    protected function handleDeletePaymentProfile($customer, $profile)
+    //    {
+    //        if (!isset($profile->profile_data['customer_id'])) {
+    //            return;
+    //        }
+    //
+    //        $this->createGateway()->deleteCustomer([
+    //            'customerReference' => $profile->profile_data['customer_id'],
+    //        ])->send();
+    //
+    //        $this->updatePaymentProfileData($profile);
+    //    }
 
     /**
      * @param \Omnipay\Common\Message\ResponseInterface $response

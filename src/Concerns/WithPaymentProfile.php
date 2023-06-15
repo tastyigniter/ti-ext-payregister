@@ -41,5 +41,4 @@ trait WithPaymentProfile
     {
         throw new SystemException('Please implement the payFromPaymentProfile method on your custom payment class.');
     }
-
 }

@@ -202,6 +202,7 @@ class Mollie extends BasePaymentGateway
             $paymentLog->markAsRefundProcessed();
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Refund failed -> '.$ex->getMessage(), 0, $fields, []);
+
             throw new Exception('Refund failed');
         }
     }
@@ -283,7 +284,7 @@ class Mollie extends BasePaymentGateway
         $fields = [
             'amount' => [
                 'currency' => currency()->getUserCurrency(),
-                'value' => number_format($order->order_total, 2, '.', '')
+                'value' => number_format($order->order_total, 2, '.', ''),
             ],
             'description' => 'Payment for Order '.$order->order_id,
             'metadata' => [
@@ -306,7 +307,7 @@ class Mollie extends BasePaymentGateway
         $fields = [
             'amount' => [
                 'currency' => currency()->getUserCurrency(),
-                'value' => number_format($refundAmount, 2, '.', '')
+                'value' => number_format($refundAmount, 2, '.', ''),
             ],
             'metadata' => [
                 'order_id' => $order->getKey(),

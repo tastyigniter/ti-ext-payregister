@@ -25,8 +25,9 @@ class CaptureAuthorizedPayment
             return;
         }
 
-        if (!$paymentMethod->shouldCapturePayment($order))
+        if (!$paymentMethod->shouldCapturePayment($order)) {
             return;
+        }
 
         $paymentMethod->captureAuthorizedPayment($order);
     }

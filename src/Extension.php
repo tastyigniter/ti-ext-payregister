@@ -19,8 +19,8 @@ class Extension extends BaseExtension
             UpdatePaymentIntentSessionOnCheckout::class,
         ],
         'admin.statusHistory.added' => [
-            CaptureAuthorizedPayment::class
-        ]
+            CaptureAuthorizedPayment::class,
+        ],
     ];
 
     protected $observers = [
