@@ -113,7 +113,7 @@ class Stripe extends BasePaymentGateway
                 return;
             }
 
-            $this->validatePaymentMethod($order, $this->model);
+            $this->validateApplicableFee($order, $this->model);
 
             $response = $this->updatePaymentIntentSession($order);
 
@@ -143,7 +143,7 @@ class Stripe extends BasePaymentGateway
      */
     public function processPaymentForm($data, $host, $order)
     {
-        $this->validatePaymentMethod($order, $host);
+        $this->validateApplicableFee($order, $host);
 
         try {
             if (!$intentId = Session::get($this->sessionKey)) {

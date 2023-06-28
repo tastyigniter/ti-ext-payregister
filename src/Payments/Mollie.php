@@ -49,7 +49,7 @@ class Mollie extends BasePaymentGateway
      */
     public function processPaymentForm($data, $host, $order)
     {
-        $this->validatePaymentMethod($order, $host);
+        $this->validateApplicableFee($order, $host);
 
         $fields = $this->getPaymentFormFields($order, $data);
 
