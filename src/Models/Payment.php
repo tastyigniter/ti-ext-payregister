@@ -9,7 +9,6 @@ use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Classes\PaymentGateways;
 use Igniter\System\Models\Concerns\Defaultable;
 use Igniter\System\Models\Concerns\Switchable;
-use Illuminate\Support\Facades\Lang;
 
 /**
  * Payment Model Class
@@ -187,8 +186,8 @@ class Payment extends Model
 
             $model = self::make([
                 'code' => $code,
-                'name' => Lang::get($gateway['name']),
-                'description' => Lang::get($gateway['description']),
+                'name' => lang($gateway['name']),
+                'description' => lang($gateway['description']),
                 'class_name' => $gateway['class'],
                 'status' => $code === 'cod',
                 'is_default' => $code === 'cod',
