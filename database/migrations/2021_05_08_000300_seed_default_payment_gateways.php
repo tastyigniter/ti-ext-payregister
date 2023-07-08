@@ -6,7 +6,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up()
     {
         if (!Schema::hasTable('payments') || DB::table('payments')->count()) {
@@ -17,6 +18,6 @@ return new class extends Migration {
             return;
         }
 
-        rescue(fn() => Payment::syncAll());
+        rescue(fn () => Payment::syncAll());
     }
 };
