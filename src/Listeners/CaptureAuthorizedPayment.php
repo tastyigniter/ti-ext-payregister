@@ -10,7 +10,7 @@ use Igniter\PayRegister\Concerns\WithAuthorizedPayment;
 
 class CaptureAuthorizedPayment
 {
-    public function handle(StatusHistory $statusHistory, Model $order, int $statusId, int|null $previousStatus = null)
+    public function handle(Model $order, StatusHistory $statusHistory)
     {
         if (!$order instanceof Order) {
             return;
