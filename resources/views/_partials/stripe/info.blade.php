@@ -1,4 +1,4 @@
-<div class="mt-3 p-3 border rounded">
+<div class="bg-light mt-3 p-3 border rounded">
     <h5>Configure Webhook</h5>
     <div>
         You can configure the webhook url <code>
