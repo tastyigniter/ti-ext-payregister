@@ -119,6 +119,7 @@ return [
         'capture_status' => [
             'label' => 'lang:igniter.payregister::default.label_capture_status',
             'type' => 'select',
+            'span' => 'left',
             'options' => [\Igniter\Admin\Models\Status::class, 'getDropdownOptionsForOrder'],
             'comment' => 'lang:igniter.payregister::default.help_capture_status',
         ],
