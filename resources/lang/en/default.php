@@ -44,6 +44,7 @@ return [
     'help_order_total' => 'The total amount the order must reach before this payment gateway becomes active',
     'help_order_fee' => 'Extra charge to the order total when this payment gateway becomes active',
     'help_order_status' => 'Default order status when this payment method is used.',
+    'help_capture_status' => 'Default order status when payment is captured.',
 
     'help_permission' => 'Manage payment gateways',
     'help_payments' => 'Select the payment(s) available at this location. Leave blank to use all enabled payments',
