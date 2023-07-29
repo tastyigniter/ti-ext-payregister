@@ -35,6 +35,8 @@ class BasePaymentGateway extends ModelAction
 
     protected $configRules = [];
 
+    public static ?string $paymentFormView = null;
+
     /**
      * Class constructor
      *
