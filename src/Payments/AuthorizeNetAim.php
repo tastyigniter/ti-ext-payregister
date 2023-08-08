@@ -259,11 +259,6 @@ class AuthorizeNetAim extends BasePaymentGateway
         return $client->createTransaction($request);
     }
 
-    protected function createCapturePayment()
-    {
-
-    }
-
     protected function createRefundPayment(mixed $fields, Order $order)
     {
         $transactionRequestType = new TransactionRequestType();

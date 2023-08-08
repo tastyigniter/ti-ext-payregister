@@ -3,8 +3,8 @@
 return [
     'fields' => [
         'setup' => [
-            'type' => 'section',
-            'comment' => 'lang:igniter.payregister::default.square.help_square',
+            'type' => 'partial',
+            'path' => 'igniter.payregister::square.info',
         ],
         'transaction_mode' => [
             'label' => 'lang:igniter.payregister::default.square.label_transaction_mode',
