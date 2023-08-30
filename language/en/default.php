@@ -9,7 +9,7 @@ return [
 
     'label_order_fee_type' => 'Additional Fee Type',
     'label_order_fee' => 'Additional Fee',
-    'label_order_total' => 'Minimum Total',
+    'label_order_total' => 'Minimum Order Total Amount',
     'label_order_status' => 'Order Status',
     'label_refund_type' => 'Refund Type',
     'label_refund_amount' => 'Refund Partial Amount',
