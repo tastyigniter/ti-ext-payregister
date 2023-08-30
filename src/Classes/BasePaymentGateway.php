@@ -15,8 +15,8 @@ use Illuminate\Support\Facades\URL;
  */
 class BasePaymentGateway extends ModelAction
 {
-    use WithApplicableFee;
     use EventEmitter;
+    use WithApplicableFee;
 
     /**
      * @var \Igniter\PayRegister\Models\Payment|Model Reference to the controller associated to this action

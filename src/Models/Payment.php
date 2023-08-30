@@ -15,10 +15,10 @@ use Igniter\System\Models\Concerns\Switchable;
  */
 class Payment extends Model
 {
-    use Sortable;
-    use Purgeable;
-    use Switchable;
     use Defaultable;
+    use Purgeable;
+    use Sortable;
+    use Switchable;
 
     const SORT_ORDER = 'priority';
 
