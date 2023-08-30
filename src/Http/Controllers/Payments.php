@@ -212,6 +212,6 @@ class Payments extends \Igniter\Admin\Classes\AdminController
             }
         }
 
-        return $this->validatePasses($form->getSaveData(), $rules, $messages, $attributes);
+        return $this->validate($form->getSaveData(), $rules, $messages, $attributes);
     }
 }
