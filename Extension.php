@@ -34,6 +34,11 @@ class Extension extends BaseExtension
                 'name' => 'lang:igniter.payregister::default.stripe.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.stripe.text_payment_desc',
             ],
+            \Igniter\PayRegister\Payments\StripeCheckout::class => [
+                'code' => 'stripecheckout',
+                'name' => 'lang:igniter.payregister::default.stripecheckout.text_payment_title',
+                'description' => 'lang:igniter.payregister::default.stripecheckout.text_payment_desc',
+            ],
             \Igniter\PayRegister\Payments\Mollie::class => [
                 'code' => 'mollie',
                 'name' => 'lang:igniter.payregister::default.mollie.text_payment_title',
