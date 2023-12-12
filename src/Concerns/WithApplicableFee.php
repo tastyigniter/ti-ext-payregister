@@ -8,7 +8,7 @@ use Igniter\PayRegister\Models\Payment;
 
 trait WithApplicableFee
 {
-    protected function validateApplicableFee(Order $order, Payment $host = null)
+    protected function validateApplicableFee(Order $order, ?Payment $host = null)
     {
         $host = is_null($host) ? $this->model : $host;
 
@@ -28,7 +28,7 @@ trait WithApplicableFee
     /**
      * Returns true if the payment type is applicable for a specified order amount
      */
-    public function isApplicable(float $total, Payment $host = null): bool
+    public function isApplicable(float $total, ?Payment $host = null): bool
     {
         $host = is_null($host) ? $this->model : $host;
 
@@ -38,7 +38,7 @@ trait WithApplicableFee
     /**
      * Returns true if the payment type has additional fee
      */
-    public function hasApplicableFee(Payment $host = null): bool
+    public function hasApplicableFee(?Payment $host = null): bool
     {
         $host = is_null($host) ? $this->model : $host;
 
@@ -48,7 +48,7 @@ trait WithApplicableFee
     /**
      * Returns the payment type additional fee
      */
-    public function getFormattedApplicableFee(Payment $host = null): string
+    public function getFormattedApplicableFee(?Payment $host = null): string
     {
         $host = is_null($host) ? $this->model : $host;
 

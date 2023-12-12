@@ -76,18 +76,8 @@ parameters:
 			path: src/Classes/PayPalClient.php
 
 		-
-			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:exists\\(\\)\\.$#"
+			message: "#^Call to an undefined method Illuminate\\\\Contracts\\\\View\\\\Factory\\|Illuminate\\\\Contracts\\\\View\\\\View\\:\\:getFinder\\(\\)\\.$#"
 			count: 1
-			path: src/Classes/PaymentGateways.php
-
-		-
-			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:fromClass\\(\\)\\.$#"
-			count: 1
-			path: src/Classes/PaymentGateways.php
-
-		-
-			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:get\\(\\)\\.$#"
-			count: 2
 			path: src/Classes/PaymentGateways.php
 
 		-
