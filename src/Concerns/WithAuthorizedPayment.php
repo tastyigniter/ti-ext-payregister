@@ -3,13 +3,12 @@
 namespace Igniter\PayRegister\Concerns;
 
 use Igniter\Cart\Models\Order;
-use Igniter\Flame\Exception\SystemException;
 
 trait WithAuthorizedPayment
 {
     public function shouldAuthorizePayment()
     {
-        throw new SystemException('Please implement the shouldAuthorizePayment method on your custom payment class.');
+        throw new \LogicException('Please implement the shouldAuthorizePayment method on your custom payment class.');
     }
 
     public function shouldCapturePayment(Order $order): bool
@@ -19,6 +18,6 @@ trait WithAuthorizedPayment
 
     public function captureAuthorizedPayment(Order $order)
     {
-        throw new SystemException('Please implement the captureAuthorizedPayment method on your custom payment class.');
+        throw new \LogicException('Please implement the captureAuthorizedPayment method on your custom payment class.');
     }
 }

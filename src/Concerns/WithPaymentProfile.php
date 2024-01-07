@@ -3,7 +3,6 @@
 namespace Igniter\PayRegister\Concerns;
 
 use Igniter\Cart\Models\Order;
-use Igniter\Flame\Exception\SystemException;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\User\Models\Customer;
 
@@ -23,7 +22,7 @@ trait WithPaymentProfile
      */
     public function updatePaymentProfile(Customer $customer, array $data = []): PaymentProfile
     {
-        throw new SystemException('Please implement the captureAuthorizedPayment method on your custom payment class.');
+        throw new \LogicException('Please implement the captureAuthorizedPayment method on your custom payment class.');
     }
 
     /**
@@ -31,7 +30,7 @@ trait WithPaymentProfile
      */
     public function deletePaymentProfile($customer, PaymentProfile $profile)
     {
-        throw new SystemException('Please implement the deletePaymentProfile method on your custom payment class.');
+        throw new \LogicException('Please implement the deletePaymentProfile method on your custom payment class.');
     }
 
     /**
@@ -39,6 +38,6 @@ trait WithPaymentProfile
      */
     public function payFromPaymentProfile(Order $order, array $data = [])
     {
-        throw new SystemException('Please implement the payFromPaymentProfile method on your custom payment class.');
+        throw new \LogicException('Please implement the payFromPaymentProfile method on your custom payment class.');
     }
 }

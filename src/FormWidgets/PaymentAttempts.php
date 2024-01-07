@@ -8,7 +8,7 @@ use Igniter\Admin\Traits\FormModelWidget;
 use Igniter\Admin\Traits\ValidatesForm;
 use Igniter\Admin\Widgets\Form;
 use Igniter\Cart\Models\Order;
-use Igniter\Flame\Exception\ApplicationException;
+use Igniter\Flame\Exception\FlashException;
 use Igniter\PayRegister\Models\PaymentLog;
 
 class PaymentAttempts extends BaseFormWidget
@@ -58,11 +58,9 @@ class PaymentAttempts extends BaseFormWidget
     {
         $paymentLogId = post('recordId');
 
-        $model = PaymentLog::find($paymentLogId);
-
-        if (!$model) {
-            throw new ApplicationException('Record not found');
-        }
+        throw_unless($model = PaymentLog::find($paymentLogId),
+            FlashException::error('Record not found')
+        );
 
         $formTitle = sprintf(lang($this->formTitle), currency_format($model->order->order_total));
 
@@ -81,7 +79,7 @@ class PaymentAttempts extends BaseFormWidget
 
         throw_unless(
             $paymentLog && $paymentMethod->canRefundPayment($paymentLog),
-            new ApplicationException('No successful payment to refund')
+            FlashException::error('No successful payment to refund')
         );
 
         $widget = $this->makeRefundFormWidget($paymentLog);

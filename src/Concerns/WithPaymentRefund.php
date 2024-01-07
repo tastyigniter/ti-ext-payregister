@@ -3,7 +3,6 @@
 namespace Igniter\PayRegister\Concerns;
 
 use Igniter\Cart\Models\Order;
-use Igniter\Flame\Exception\SystemException;
 use Igniter\PayRegister\Models\PaymentLog;
 
 trait WithPaymentRefund
@@ -15,6 +14,6 @@ trait WithPaymentRefund
 
     public function processRefundForm(array $data, Order $order, PaymentLog $paymentLog)
     {
-        throw new SystemException('Please implement the processRefundForm method on your custom payment class.');
+        throw new \LogicException('Please implement the processRefundForm method on your custom payment class.');
     }
 }
