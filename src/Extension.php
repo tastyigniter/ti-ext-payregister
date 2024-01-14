@@ -31,7 +31,7 @@ class Extension extends BaseExtension
         PaymentGateways::class,
     ];
 
-    public function registerPaymentGateways()
+    public function registerPaymentGateways(): array
     {
         return [
             \Igniter\PayRegister\Payments\Cod::class => [
@@ -67,7 +67,7 @@ class Extension extends BaseExtension
         ];
     }
 
-    public function registerFormWidgets()
+    public function registerFormWidgets(): array
     {
         return [
             \Igniter\PayRegister\FormWidgets\PaymentAttempts::class => [
@@ -77,7 +77,7 @@ class Extension extends BaseExtension
         ];
     }
 
-    public function registerNavigation()
+    public function registerNavigation(): array
     {
         return [
             'sales' => [
@@ -94,7 +94,7 @@ class Extension extends BaseExtension
         ];
     }
 
-    public function registerPermissions()
+    public function registerPermissions(): array
     {
         return [
             'Admin.Payments' => [
