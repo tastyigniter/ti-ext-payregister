@@ -12,12 +12,12 @@ use Illuminate\Support\Arr;
 
 class Payments extends \Igniter\Admin\Classes\AdminController
 {
-    public $implement = [
+    public array $implement = [
         \Igniter\Admin\Http\Actions\ListController::class,
         \Igniter\Admin\Http\Actions\FormController::class,
     ];
 
-    public $listConfig = [
+    public array $listConfig = [
         'list' => [
             'model' => \Igniter\PayRegister\Models\Payment::class,
             'title' => 'lang:igniter.payregister::default.text_title',
@@ -27,7 +27,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
         ],
     ];
 
-    public $formConfig = [
+    public array $formConfig = [
         'name' => 'lang:igniter.payregister::default.text_form_name',
         'model' => \Igniter\PayRegister\Models\Payment::class,
         'create' => [
@@ -48,7 +48,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
         'configFile' => 'payment',
     ];
 
-    protected $requiredPermissions = 'Admin.Payments';
+    protected null|string|array $requiredPermissions = 'Admin.Payments';
 
     protected $gateway;
 

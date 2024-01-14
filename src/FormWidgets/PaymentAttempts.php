@@ -10,6 +10,7 @@ use Igniter\Admin\Widgets\Form;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\FlashException;
 use Igniter\PayRegister\Models\PaymentLog;
+use Illuminate\Database\Eloquent\Model;
 
 class PaymentAttempts extends BaseFormWidget
 {
@@ -19,7 +20,7 @@ class PaymentAttempts extends BaseFormWidget
     /**
      * @var Order Form model object.
      */
-    public $model;
+    public ?Model $model = null;
 
     public $form;
 
@@ -49,7 +50,7 @@ class PaymentAttempts extends BaseFormWidget
         return $this->makePartial('paymentattempts/paymentattempts');
     }
 
-    public function getSaveValue($value)
+    public function getSaveValue(mixed $value): int
     {
         return FormField::NO_SAVE_DATA;
     }
