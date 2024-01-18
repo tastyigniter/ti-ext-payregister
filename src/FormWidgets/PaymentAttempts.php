@@ -60,7 +60,7 @@ class PaymentAttempts extends BaseFormWidget
         $paymentLogId = post('recordId');
 
         throw_unless($model = PaymentLog::find($paymentLogId),
-            FlashException::error('Record not found')
+            new FlashException('Record not found')
         );
 
         $formTitle = sprintf(lang($this->formTitle), currency_format($model->order->order_total));
@@ -80,7 +80,7 @@ class PaymentAttempts extends BaseFormWidget
 
         throw_unless(
             $paymentLog && $paymentMethod->canRefundPayment($paymentLog),
-            FlashException::error('No successful payment to refund')
+            new FlashException('No successful payment to refund')
         );
 
         $widget = $this->makeRefundFormWidget($paymentLog);

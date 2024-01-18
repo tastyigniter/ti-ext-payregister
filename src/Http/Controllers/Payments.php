@@ -99,7 +99,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
     public function formFindModelObject($paymentCode = null)
     {
         throw_unless(strlen($paymentCode),
-            FlashException::error(lang('igniter.payregister::default.alert_setting_missing_id'))
+            new FlashException(lang('igniter.payregister::default.alert_setting_missing_id'))
         );
 
         $model = $this->formCreateModelObject();
@@ -110,7 +110,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
         $this->formExtendQuery($query);
 
         throw_unless($result = $query->whereCode($paymentCode)->first(),
-            FlashException::error(lang('igniter::admin.form.not_found'))
+            new FlashException(lang('igniter::admin.form.not_found'))
         );
 
         return $this->formExtendModel($result) ?: $result;
@@ -123,7 +123,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
         }
 
         throw_unless($gateway = resolve(PaymentGateways::class)->findGateway($code),
-            FlashException::error(sprintf(lang('igniter.payregister::default.alert_code_not_found'), $code))
+            new FlashException(sprintf(lang('igniter.payregister::default.alert_code_not_found'), $code))
         );
 
         return $this->gateway = $gateway;
@@ -153,7 +153,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
     public function formBeforeCreate($model)
     {
         throw_unless(strlen($code = post('Payment.payment')),
-            FlashException::error(lang('igniter.payregister::default.alert_invalid_code'))
+            new FlashException(lang('igniter.payregister::default.alert_invalid_code'))
         );
 
         $paymentGateway = resolve(PaymentGateways::class)->findGateway($code);
