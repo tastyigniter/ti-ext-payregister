@@ -18,10 +18,7 @@ class BasePaymentGateway extends ModelAction
     use EventEmitter;
     use WithApplicableFee;
 
-    /**
-     * @var \Igniter\PayRegister\Models\Payment|Model Reference to the controller associated to this action
-     */
-    protected $model;
+    protected Model $model;
 
     protected $orderModel = \Igniter\Cart\Models\Order::class;
 
@@ -48,7 +45,7 @@ class BasePaymentGateway extends ModelAction
         parent::__construct($model);
 
         $reflector = new \ReflectionClass($calledClass = get_called_class());
-        $this->configPath = dirname($reflector->getFileName()).'/'.basename(File::normalizePath(strtolower($calledClass)));
+        $this->configPath[] = dirname($reflector->getFileName()).'/'.basename(File::normalizePath(strtolower($calledClass)));
 
         $formConfig = $this->loadConfig($this->defineFieldsConfig(), ['fields']);
         $this->configFields = array_get($formConfig, 'fields');
