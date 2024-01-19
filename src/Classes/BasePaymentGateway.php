@@ -18,8 +18,6 @@ class BasePaymentGateway extends ModelAction
     use EventEmitter;
     use WithApplicableFee;
 
-    protected Model $model;
-
     protected $orderModel = \Igniter\Cart\Models\Order::class;
 
     protected $orderStatusModel = \Igniter\Admin\Models\Status::class;
