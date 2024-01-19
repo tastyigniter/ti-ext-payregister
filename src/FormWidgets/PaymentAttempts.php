@@ -17,11 +17,6 @@ class PaymentAttempts extends BaseFormWidget
     use FormModelWidget;
     use ValidatesForm;
 
-    /**
-     * @var Order Form model object.
-     */
-    public ?Model $model = null;
-
     public $form;
 
     public $columns;

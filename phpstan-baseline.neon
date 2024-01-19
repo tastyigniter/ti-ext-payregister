@@ -106,7 +106,7 @@ parameters:
 			path: src/FormWidgets/PaymentAttempts.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$payment_method\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$payment_method\\.$#"
 			count: 1
 			path: src/FormWidgets/PaymentAttempts.php
 
