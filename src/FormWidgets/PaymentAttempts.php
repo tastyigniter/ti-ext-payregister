@@ -7,10 +7,8 @@ use Igniter\Admin\Classes\FormField;
 use Igniter\Admin\Traits\FormModelWidget;
 use Igniter\Admin\Traits\ValidatesForm;
 use Igniter\Admin\Widgets\Form;
-use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\FlashException;
 use Igniter\PayRegister\Models\PaymentLog;
-use Illuminate\Database\Eloquent\Model;
 
 class PaymentAttempts extends BaseFormWidget
 {
