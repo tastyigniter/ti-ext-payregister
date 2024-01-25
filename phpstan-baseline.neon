@@ -61,16 +61,6 @@ parameters:
 			path: src/Classes/BasePaymentGateway.php
 
 		-
-			message: "#^PHPDoc tag @param references unknown parameter\\: \\$controller$#"
-			count: 1
-			path: src/Classes/BasePaymentGateway.php
-
-		-
-			message: "#^PHPDoc tag @param references unknown parameter\\: \\$params$#"
-			count: 1
-			path: src/Classes/BasePaymentGateway.php
-
-		-
 			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Classes\\\\PayPalClient\\:\\:\\$config\\.$#"
 			count: 1
 			path: src/Classes/PayPalClient.php
