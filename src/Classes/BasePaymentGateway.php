@@ -2,7 +2,6 @@
 
 namespace Igniter\PayRegister\Classes;
 
-use Igniter\Admin\Classes\AdminController;
 use Igniter\Flame\Database\Model;
 use Igniter\Flame\Support\Facades\File;
 use Igniter\Flame\Traits\EventEmitter;
@@ -32,13 +31,7 @@ class BasePaymentGateway extends ModelAction
 
     public static ?string $paymentFormView = null;
 
-    /**
-     * Class constructor
-     *
-     * @param AdminController $controller
-     * @param array $params
-     */
-    public function __construct($model = null)
+    public function __construct(?Model $model = null)
     {
         parent::__construct($model);
 
