@@ -20,7 +20,7 @@ return [
     'label_priority' => 'Priority',
     'label_order_fee_type' => 'Additional Fee Type',
     'label_order_fee' => 'Additional Fee',
-    'label_order_total' => 'Minimum Total',
+    'label_order_total' => 'Minimum Order Total Amount',
     'label_order_status' => 'Order Status',
     'label_capture_status' => 'Capture Payment Order Status',
     'label_refund_type' => 'Refund Type',
