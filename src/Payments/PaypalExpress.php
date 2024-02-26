@@ -14,6 +14,8 @@ class PaypalExpress extends BasePaymentGateway
 {
     use WithPaymentRefund;
 
+    public static ?string $paymentFormView = 'igniter.payregister::_partials.paypalexpress.payment_form';
+
     public function defineFieldsConfig()
     {
         return 'igniter.payregister::/models/paypalexpress';

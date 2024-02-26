@@ -9,10 +9,12 @@ use Illuminate\Support\Str;
 class PayPalClient
 {
     public function __construct(
-        protected string $clientId,
-        protected string $clientSecret,
+        protected ?string $clientId,
+        protected ?string $clientSecret,
         protected bool $sandbox
     ) {
+        throw_unless($this->clientId, ApplicationException::class, 'PayPal client ID is not configured');
+        throw_unless($this->clientSecret, ApplicationException::class, 'PayPal client secret is not configured');
     }
 
     public function getOrder($orderId)

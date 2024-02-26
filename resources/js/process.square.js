@@ -5,15 +5,17 @@
         this.$el = $(element)
         this.options = options || {}
         this.$checkoutForm = this.$el.closest('#checkout-form')
-        this.sqElementID = 'sq-card'
+        this.$paymentInput = this.$checkoutForm.find('[data-checkout-control="payment"]:checked')
         this.card = null
         this.payments = null
 
-        $('[name=payment][value=square]', this.$checkoutForm).on('change', $.proxy(this.init, this))
+        this.init()
     }
 
     ProcessSquare.prototype.init = function () {
-        if (!$('#'+this.sqElementID).length)
+        if (this.$paymentInput.val() !== 'square') return
+
+        if (!$(this.options.cardSelector).length || $(this.options.cardSelector + ' iframe').length)
             return
 
         if (this.options.applicationId === undefined)
@@ -29,12 +31,10 @@
     }
 
     ProcessSquare.prototype.initializeCard = async function (payments) {
-
-        // Customize the CSS for WebPayments SDK elements
         this.card = await payments.card({
             style: this.options.cardFormStyle
         });
-        await this.card.attach('#'+this.sqElementID);
+        await this.card.attach(this.options.cardSelector);
     }
 
     ProcessSquare.prototype.submitFormHandler = async function (event) {
@@ -96,6 +96,7 @@
         locationId: undefined,
         orderTotal: undefined,
         currencyCode: undefined,
+        cardSelector: '#square-card-element',
         errorSelector: '#square-card-errors',
         cardFormStyle: {
             input: {

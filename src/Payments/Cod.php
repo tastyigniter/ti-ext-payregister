@@ -6,6 +6,8 @@ use Igniter\PayRegister\Classes\BasePaymentGateway;
 
 class Cod extends BasePaymentGateway
 {
+    public static ?string $paymentFormView = 'igniter.payregister::_partials.cod.payment_form';
+
     public function defineFieldsConfig()
     {
         return 'igniter.payregister::/models/cod';

@@ -19,6 +19,8 @@ class Square extends BasePaymentGateway
 {
     use WithPaymentProfile;
 
+    public static ?string $paymentFormView = 'igniter.payregister::_partials.square.payment_form';
+
     public function defineFieldsConfig()
     {
         return 'igniter.payregister::/models/square';
@@ -60,7 +62,7 @@ class Square extends BasePaymentGateway
     {
         $endpoint = $this->isTestMode() ? 'sandbox.' : '';
         $controller->addJs('https://'.$endpoint.'web.squarecdn.com/v1/square.js', 'square-js');
-        $controller->addJs('igniter.payregister:://assets/process.square.js', 'process-square-js');
+        $controller->addJs('igniter.payregister::/js/process.square.js', 'process-square-js');
     }
 
     public function completesPaymentOnClient()

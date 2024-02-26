@@ -5,18 +5,22 @@
         this.$el = $(element)
         this.options = options || {}
         this.$checkoutForm = this.$el.closest('#checkout-form')
+        this.$paymentInput = this.$checkoutForm.find('[data-checkout-control="payment"]:checked')
         this.stripe = null
-        this.card = null
+        this.elements = null
+        this.paymentElement = null
 
-        $('[name=payment][value=stripe]', this.$checkoutForm).on('change', $.proxy(this.init, this))
+        this.init()
     }
 
     ProcessStripe.prototype.init = function () {
-        if (this.stripe !== null || !$(this.options.cardSelector).length)
+        if (this.$paymentInput.val() !== 'stripe') return
+
+        if (!$(this.options.cardSelector).length || $(this.options.cardSelector + ' iframe').length)
             return
 
-        if (this.options.publishableKey === undefined)
-            throw new Error('Missing stripe publishable key')
+        if (this.options.publishableKey === undefined || !this.options.publishableKey)
+            throw new Error('Missing stripe publishable key, configure publishableKey in the payment method settings.')
 
         // Create a Stripe client.
         this.stripe = Stripe(this.options.publishableKey, this.options.stripeOptions)
@@ -29,59 +33,52 @@
         });
 
         // Create an instance of the card Element.
-        this.card = this.stripe.elements().create('card')
+        this.elements = this.stripe.elements({
+            clientSecret: this.options.paymentIntentSecret,
+        })
+
+        this.paymentElement = this.elements.create('payment', {
+            theme: 'flat',
+            layout: 'tabs',
+        })
 
         // Add an instance of the card Element into the `card-element` <div>.
-        this.card.mount(this.options.cardSelector);
+        this.paymentElement.mount(this.options.cardSelector);
 
         // Handle real-time validation errors from the card Element.
-        this.card.addEventListener('change', $.proxy(this.validationErrorHandler, this))
-
-        this.$checkoutForm.on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
+        this.paymentElement.addEventListener('change', $.proxy(this.validationErrorHandler, this))
 
         var self = this
-        this.$checkoutForm.on('submit', function () {
-            if (self.$checkoutForm.find('input[name="payment"]:checked').val() !== 'stripe')
-                return
+        this.$checkoutForm
+            .on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
+            .on('submit', function () {
+                if (self.$checkoutForm.find('input[name="form.payment"]:checked').val() !== 'stripe')
+                    return
 
-            self.card.update({disabled: true});
-        })
-
-        this.$checkoutForm.on('ajaxFail', function () {
-            self.card.update({disabled: false});
-        })
+                self.paymentElement.update({disabled: true});
+            })
+            .on('ajaxFail', function () {
+                self.paymentElement.update({disabled: false});
+            })
     }
 
     ProcessStripe.prototype.validationErrorHandler = function (event) {
-        var $el = this.$checkoutForm.find(this.options.errorSelector)
-        if (event.error) {
-            $el.html(event.error.message);
-        } else {
-            $el.empty();
-        }
-
-        $('.checkout-btn').prop('disabled', false)
-        this.card.update({disabled: false});
+        $('[data-checkout-control="submit"]').prop('disabled', false)
+        this.paymentElement.update({disabled: false});
     }
 
     ProcessStripe.prototype.submitFormHandler = function (event) {
         var self = this,
-            $form = this.$checkoutForm,
-            $paymentInput = $form.find('input[name="payment"]:checked')
+            $form = this.$checkoutForm
 
-        if ($paymentInput.val() !== 'stripe') return
+        if (this.$paymentInput.val() !== 'stripe') return
 
         // Prevent the form from submitting with the default action
         event.preventDefault()
 
-        this.stripe.confirmCardPayment(this.options.paymentIntentSecret, {
-            payment_method: {
-                card: this.card,
-                billing_details: {
-                    name: $form.find('input[name="first_name"]').val()+' '+$form.find('input[name="last_name"]').val()
-                }
-            },
-            receipt_email: $form.find('input[name="email"]').val(),
+        this.stripe.confirmPayment({
+            elements: this.elements,
+            redirect: 'if_required',
         }).then(function (result) {
             var paymentIntentStatus = (result.error && result.error.payment_intent)
                 ? result.error.payment_intent.status : null
@@ -102,7 +99,6 @@
         stripeOptions: undefined,
         partnerId: 'pp_partner_JZyCCGR3cOwj9S',
         cardSelector: '#stripe-card-element',
-        errorSelector: '#stripe-card-errors',
     }
 
     // PLUGIN DEFINITION

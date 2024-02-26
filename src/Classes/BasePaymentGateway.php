@@ -5,6 +5,7 @@ namespace Igniter\PayRegister\Classes;
 use Igniter\Flame\Database\Model;
 use Igniter\Flame\Support\Facades\File;
 use Igniter\Flame\Traits\EventEmitter;
+use Igniter\Main\Classes\ThemeManager;
 use Igniter\PayRegister\Concerns\WithApplicableFee;
 use Igniter\System\Actions\ModelAction;
 use Illuminate\Support\Facades\URL;
@@ -170,6 +171,21 @@ class BasePaymentGateway extends ModelAction
      */
     public function beforeRenderPaymentForm($host, $controller)
     {
+    }
+
+    public function getPaymentFormViewName()
+    {
+        $themeCode = resolve(ThemeManager::class)->getActiveThemeCode();
+        if (view()->exists($viewName = $themeCode.'::_partials.payregister.'.$this->model->code)) {
+            return $viewName;
+        }
+
+        if (!$viewName = static::$paymentFormView) {
+            $viewName = strtolower(str_before($this->model->class_name, '\\').'.'.str_before(str_after($this->model->class_name, '\\'), '\\'));
+            $viewName .= '::'.$this->model->code.'.payment_form';
+        }
+
+        return view()->exists($viewName) ? $viewName : null;
     }
 
     /**
