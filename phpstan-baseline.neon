@@ -26,8 +26,13 @@ parameters:
 			path: src/Classes/BasePaymentGateway.php
 
 		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$class_name\\.$#"
+			count: 2
+			path: src/Classes/BasePaymentGateway.php
+
+		-
 			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$code\\.$#"
-			count: 1
+			count: 3
 			path: src/Classes/BasePaymentGateway.php
 
 		-
@@ -147,11 +152,16 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$class_name\\.$#"
-			count: 5
+			count: 4
 			path: src/Models/Payment.php
 
 		-
 			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$gatewayManager\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$model\\.$#"
 			count: 1
 			path: src/Models/Payment.php
 
@@ -182,6 +192,11 @@ parameters:
 
 		-
 			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:getConfigFields\\(\\)\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:getPaymentFormViewName\\(\\)\\.$#"
 			count: 1
 			path: src/Models/Payment.php
 
@@ -601,6 +616,11 @@ parameters:
 			path: src/Payments/Stripe.php
 
 		-
+			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$transaction_type\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
 			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
 			count: 2
 			path: src/Payments/Stripe.php
@@ -653,9 +673,4 @@ parameters:
 		-
 			message: "#^Method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:processPaymentForm\\(\\) should return bool\\|Illuminate\\\\Http\\\\RedirectResponse but return statement is missing\\.$#"
 			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Variable \\$response might not be defined\\.$#"
-			count: 2
 			path: src/Payments/Stripe.php

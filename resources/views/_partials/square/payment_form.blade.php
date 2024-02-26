@@ -1,6 +1,6 @@
 <div
     id="squarePaymentForm"
-    class="payment-form"
+    class="payment-form ms-2 mt-3"
     data-application-id="{{ $paymentMethod->getAppId() }}"
     data-location-id="{{ $paymentMethod->getLocationId() }}"
     data-order-total="{{ Cart::total() }}"
@@ -27,7 +27,7 @@
             </div>
         @else
             <div class="square-ccbox">
-                <div id="sq-card"></div>
+                <div id="square-card-element"></div>
                 @if ($paymentMethod->supportsPaymentProfiles() && $order->customer)
                     <div class="form-check mt-2">
                         <input

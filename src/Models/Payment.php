@@ -129,14 +129,13 @@ class Payment extends Model
         return !is_null($class);
     }
 
-    public function renderPaymentForm($controller)
+    public function renderPaymentForm()
     {
-        $this->beforeRenderPaymentForm($this, $controller);
+        $this->beforeRenderPaymentForm($this, controller());
 
-        $paymentMethodFile = strtolower(class_basename($this->class_name));
-        $partialName = 'payregister/'.$paymentMethodFile;
+        $viewName = $this->getPaymentFormViewName($this);
 
-        return $controller->renderPartial($partialName, ['paymentMethod' => $this]);
+        return view($viewName, ['paymentMethod' => $this->model]);
     }
 
     public function getGatewayClass()

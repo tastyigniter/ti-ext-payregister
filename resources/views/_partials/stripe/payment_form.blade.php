@@ -1,8 +1,9 @@
 <div
     id="stripePaymentForm"
-    class="payment-form w-100"
+    class="payment-form ms-2 mt-3"
     data-publishable-key="{{ $paymentMethod->getPublishableKey() }}"
     data-payment-intent-secret="{{ $paymentMethod->createOrFetchIntent($order) }}"
+    data-return-url="{{ $paymentMethod->createOrFetchIntent($order) }}"
     data-stripe-options='@json($paymentMethod->getStripeJsOptions($order))'
     data-card-selector="#stripe-card-element"
     data-error-selector="#stripe-card-errors"
@@ -26,18 +27,7 @@
                 >@lang('igniter.payregister::default.button_delete_card')</a>
             </div>
         @else
-            <label
-                for="stripe-card-element"
-            >@lang('igniter.payregister::default.stripe.text_credit_or_debit')</label>
-            <div id="stripe-card-element">
-                <!-- A Stripe Element will be inserted here. -->
-            </div>
-
-            <div id="stripe-payment-request-button">
-                <!-- A Stripe Payment Request Button will be inserted here. -->
-            </div>
-
-            <!-- Used to display form errors. -->
+            <div id="stripe-card-element"></div>
             <div id="stripe-card-errors" class="text-danger" role="alert"></div>
 
             @if ($paymentMethod->supportsPaymentProfiles() && $order->customer)

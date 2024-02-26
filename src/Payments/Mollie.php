@@ -14,6 +14,8 @@ class Mollie extends BasePaymentGateway
 {
     use WithPaymentRefund;
 
+    public static ?string $paymentFormView = 'igniter.payregister::_partials.mollie.payment_form';
+
     public function defineFieldsConfig()
     {
         return 'igniter.payregister::/models/mollie';
