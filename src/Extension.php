@@ -27,7 +27,7 @@ class Extension extends BaseExtension
         Payment::class => PaymentObserver::class,
     ];
 
-    public $singletons = [
+    public array $singletons = [
         PaymentGateways::class,
     ];
 
