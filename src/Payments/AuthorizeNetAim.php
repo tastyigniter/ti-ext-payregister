@@ -177,7 +177,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         $request->setRefId($order->hash);
         $request->setTransactionRequest($transactionRequestType);
 
-        $this->fireSystemEvent('payregister.paypalexpress.extendCaptureRequest', [$request], false);
+        $this->fireSystemEvent('payregister.authorizenetaim.extendCaptureRequest', [$request], false);
 
         $response = $client->createTransaction($request);
         $responseData = $this->convertResponseToArray($response);
@@ -254,7 +254,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         $request->setRefId($order->hash);
         $request->setTransactionRequest($transactionRequestType);
 
-        $this->fireSystemEvent('payregister.paypalexpress.extendAcceptRequest', [$request], false);
+        $this->fireSystemEvent('payregister.authorizenetaim.extendAcceptRequest', [$request], false);
 
         return $client->createTransaction($request);
     }
@@ -272,7 +272,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         $request->setRefId($order->hash);
         $request->setTransactionRequest($transactionRequestType);
 
-        $this->fireSystemEvent('payregister.paypalexpress.extendRefundRequest', [$request], false);
+        $this->fireSystemEvent('payregister.authorizenetaim.extendRefundRequest', [$request], false);
 
         return $client->createTransaction($request);
     }
