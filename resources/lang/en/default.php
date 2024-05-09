@@ -13,6 +13,7 @@ return [
     'text_refund_full' => 'Full Refund',
     'text_refund_partial' => 'Partial Refund',
     'text_payment_logs' => 'Payment Attempts',
+    'text_permission_group' => 'Payment',
 
     'label_payments' => 'Payment Gateways',
     'label_code' => 'Unique Code',

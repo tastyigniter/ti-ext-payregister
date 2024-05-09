@@ -99,7 +99,7 @@ class Extension extends BaseExtension
         return [
             'Admin.Payments' => [
                 'label' => 'igniter.payregister::default.help_permission',
-                'group' => 'order',
+                'group' => 'igniter.payregister::default.text_permission_group',
             ],
         ];
     }
