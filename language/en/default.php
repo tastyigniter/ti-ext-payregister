@@ -125,6 +125,35 @@ return [
         'help_locale_code' => 'See <a href="https://stripe.com/docs/js/appendix/supported_locales">Stripe.js supported locales</a',
     ],
 
+    'stripecheckout' => [
+        'text_tab_general' => 'General',
+        'text_payment_title' => 'Stripe Checkout',
+        'text_payment_desc' => 'Accept credit card, Apple Pay, Google Pay using Stripe builtin Checkout page',
+        'text_credit_or_debit' => 'Credit or debit card',
+
+        'text_auth_only' => 'Authorization Only',
+        'text_auth_capture' => 'Authorization & Capture',
+        'text_description' => 'Pay by Credit Card using Stripe',
+        'text_live' => 'Live',
+        'text_test' => 'Test',
+        'text_stripe_charge_description' => '%s Charge for %s',
+        'text_payment_status' => 'Payment %s (%s)',
+
+        'label_title' => 'Title',
+        'label_description' => 'Description',
+        'label_transaction_mode' => 'Transaction Mode',
+        'label_transaction_type' => 'Transaction Type',
+        'label_test_secret_key' => 'Test Secret Key',
+        'label_test_publishable_key' => 'Test Publishable Key',
+        'label_live_secret_key' => 'Live Secret Key',
+        'label_live_publishable_key' => 'Live Publishable Key',
+        'label_locale_code' => 'Locale Code',
+        'label_priority' => 'Priority',
+        'label_status' => 'Status',
+
+        'help_locale_code' => 'See <a href="https://stripe.com/docs/js/appendix/supported_locales">Stripe.js supported locales</a',
+    ],
+
     'mollie' => [
         'text_payment_title' => 'Mollie Payment',
         'text_payment_desc' => 'Accept credit card payments using Mollie API',
