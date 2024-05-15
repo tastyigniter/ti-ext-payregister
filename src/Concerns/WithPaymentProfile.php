@@ -22,7 +22,7 @@ trait WithPaymentProfile
      */
     public function updatePaymentProfile(Customer $customer, array $data = []): PaymentProfile
     {
-        throw new \LogicException('Please implement the captureAuthorizedPayment method on your custom payment class.');
+        throw new \LogicException('Method updatePaymentProfile must be implemented on your custom payment class.');
     }
 
     /**
@@ -30,7 +30,7 @@ trait WithPaymentProfile
      */
     public function deletePaymentProfile($customer, PaymentProfile $profile)
     {
-        throw new \LogicException('Please implement the deletePaymentProfile method on your custom payment class.');
+        throw new \LogicException('Method deletePaymentProfile must be implemented on your custom payment class.');
     }
 
     /**
@@ -38,6 +38,6 @@ trait WithPaymentProfile
      */
     public function payFromPaymentProfile(Order $order, array $data = [])
     {
-        throw new \LogicException('Please implement the payFromPaymentProfile method on your custom payment class.');
+        throw new \LogicException('Method payFromPaymentProfile must be implemented on your custom payment class.');
     }
 }
