@@ -8,7 +8,7 @@ trait WithAuthorizedPayment
 {
     public function shouldAuthorizePayment()
     {
-        throw new \LogicException('Please implement the shouldAuthorizePayment method on your custom payment class.');
+        throw new \LogicException('Method shouldAuthorizePayment must be implemented on your custom payment class.');
     }
 
     public function shouldCapturePayment(Order $order): bool
@@ -18,6 +18,6 @@ trait WithAuthorizedPayment
 
     public function captureAuthorizedPayment(Order $order)
     {
-        throw new \LogicException('Please implement the captureAuthorizedPayment method on your custom payment class.');
+        throw new \LogicException('Method captureAuthorizedPayment must be implemented on your custom payment class.');
     }
 }
