@@ -73,7 +73,11 @@ class Payments extends \Igniter\Admin\Classes\AdminController
 
     public function index_onSetDefault($context = null)
     {
-        if (Payment::updateDefault(post('default'))) {
+        $data = $this->validate(post(), [
+            'default' => 'required|integer|exists:'.Payment::class.',payment_id',
+        ]);
+
+        if (Payment::updateDefault($data['default'])) {
             flash()->success(sprintf(lang('igniter::admin.alert_success'), lang('igniter.payregister::default.alert_set_default')));
         }
 
