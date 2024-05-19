@@ -221,7 +221,7 @@ class PaypalExpress extends BasePaymentGateway
         $fields['purchase_units'][] = [
             'reference_id' => $order->hash,
             'custom_id' => $order->getKey(),
-            'items' => $order->getOrderMenus()->map(function (OrderMenu $orderMenu) use ($currencyCode) {
+            'items' => $order->getOrderMenus()->map(function(OrderMenu $orderMenu) use ($currencyCode) {
                 return [
                     'name' => $orderMenu->name,
                     'quantity' => $orderMenu->quantity,

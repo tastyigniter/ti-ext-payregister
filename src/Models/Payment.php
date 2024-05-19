@@ -51,7 +51,7 @@ class Payment extends Model
     public static function listDropdownOptions()
     {
         $all = self::select('code', 'name', 'description')->whereIsEnabled()->get();
-        $collection = $all->keyBy('code')->map(function ($model) {
+        $collection = $all->keyBy('code')->map(function($model) {
             return [$model->name, $model->description];
         });
 
@@ -168,7 +168,7 @@ class Payment extends Model
      */
     public static function listPayments()
     {
-        return self::whereIsEnabled()->get()->filter(function ($model) {
+        return self::whereIsEnabled()->get()->filter(function($model) {
             return strlen($model->class_name) > 0;
         });
     }

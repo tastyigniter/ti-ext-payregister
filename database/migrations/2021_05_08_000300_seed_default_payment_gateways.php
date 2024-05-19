@@ -18,6 +18,6 @@ return new class extends Migration
             return;
         }
 
-        rescue(fn () => Payment::syncAll());
+        rescue(fn() => Payment::syncAll());
     }
 };

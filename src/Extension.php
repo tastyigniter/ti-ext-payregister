@@ -122,7 +122,7 @@ class Extension extends BaseExtension
     {
         Event::subscribe(FormFieldsSubscriber::class);
 
-        Event::listen('main.theme.activated', function () {
+        Event::listen('main.theme.activated', function() {
             Payment::syncAll();
         });
 
