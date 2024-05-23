@@ -183,7 +183,7 @@ public function processPaymentForm($data, $host, $order): mixed
 }
 ```
 
-If you have defined the `order_total` and `order_fee` fields, you must validate the applicable fee before processing the payment. The `validateApplicableFee` method checks if the order total is above the minimum order total specified in the payment gateway settings form. If the order total is below the specified minimum order total, an exception is thrown. 
+If you have defined the `order_total` and `order_fee` fields, you must validate the applicable fee before processing the payment. The `validateApplicableFee` method checks if the order total is above the minimum order total specified in the payment gateway settings form. If the order total is below the specified minimum order total, an exception is thrown.
 
 > It is recommended to call the `updateOrderStatus` and `markAsPaymentProcessed` method on the order model to update the order status to the order status specified in the payment gateway settings form and mark the order as payment processed.
 
@@ -296,7 +296,7 @@ public function processPaymentForm($data, $host, $order): mixed
 
 ### Handling off-site payment response
 
-To handle the payment response from the payment gateway, you can define the payment return URL and redirect the customer to the payment gateway. 
+To handle the payment response from the payment gateway, you can define the payment return URL and redirect the customer to the payment gateway.
 
 ```php
 public function registerEntryPoints(): array
@@ -382,7 +382,7 @@ class MyPayment extends BasePaymentGateway
 
 #### Saving payment profile
 
-When payment profiles are enabled, the customer can save their payment information during checkout by overriding `updatePaymentProfile` method on the payment gateway class. 
+When payment profiles are enabled, the customer can save their payment information during checkout by overriding `updatePaymentProfile` method on the payment gateway class.
 
 Here is an example updating the payment profile when processing the checkout payment form. The `getPaymentFormFields` method is used to get the payment parameters to be sent to the payment gateway, and the `create_payment_profile` field is used to determine if the customer wants to save their payment information.
 
