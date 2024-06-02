@@ -2,6 +2,7 @@
 
 namespace Igniter\PayRegister\Models;
 
+use Igniter\Flame\Database\Factories\HasFactory;
 use Igniter\Flame\Database\Model;
 use Igniter\Flame\Database\Traits\Purgeable;
 use Igniter\Flame\Database\Traits\Sortable;
@@ -16,6 +17,7 @@ use Igniter\System\Models\Concerns\Switchable;
 class Payment extends Model
 {
     use Defaultable;
+    use HasFactory;
     use Purgeable;
     use Sortable;
     use Switchable;
