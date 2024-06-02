@@ -6,7 +6,6 @@ use Igniter\Flame\Database\Factories\Factory;
 
 class PaymentFactory extends Factory
 {
-
     protected $model = \Igniter\PayRegister\Models\Payment::class;
 
     public function definition(): array
