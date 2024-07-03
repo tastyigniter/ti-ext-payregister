@@ -611,7 +611,7 @@ class Stripe extends BasePaymentGateway
 
         $event = \Stripe\Webhook::constructEvent(
             request()->getContent(),
-            request()->header('HTTP_STRIPE_SIGNATURE'),
+            request()->header('stripe-signature'),
             $webhookSecret
         );
 
