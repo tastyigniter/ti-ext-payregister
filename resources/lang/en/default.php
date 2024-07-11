@@ -2,7 +2,7 @@
 
 return [
     'text_title' => 'Payments',
-    'text_side_menu' => 'Payments',
+    'text_side_menu' => 'Payment Gateways',
     'text_form_name' => 'Payment',
     'text_tab_config' => 'Config',
     'text_filter_search' => 'Search by name or description.',

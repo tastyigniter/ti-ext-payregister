@@ -24,6 +24,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
             'emptyMessage' => 'lang:igniter.payregister::default.text_empty',
             'defaultSort' => ['updated_at', 'DESC'],
             'configFile' => 'payment',
+            'back' => 'settings',
         ],
     ];
 
