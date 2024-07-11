@@ -77,19 +77,16 @@ class Extension extends BaseExtension
         ];
     }
 
-    public function registerNavigation(): array
+    public function registerSettings(): array
     {
         return [
-            'sales' => [
-                'child' => [
-                    'payments' => [
-                        'priority' => 50,
-                        'class' => 'payments',
-                        'href' => admin_url('payments'),
-                        'title' => lang('igniter.payregister::default.text_side_menu'),
-                        'permission' => 'Admin.Payments',
-                    ],
-                ],
+            'settings' => [
+                'label' => lang('igniter.payregister::default.text_side_menu'),
+                'description' => 'Manage payment gateways and settings',
+                'icon' => 'fa fa-cash-register',
+                'priority' => -1,
+                'permissions' => ['Admin.Payments'],
+                'url' => admin_url('payments'),
             ],
         ];
     }
