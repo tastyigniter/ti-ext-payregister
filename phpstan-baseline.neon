@@ -71,7 +71,7 @@ parameters:
 			path: src/Classes/PayPalClient.php
 
 		-
-			message: "#^Call to an undefined method Illuminate\\\\Contracts\\\\View\\\\Factory\\|Illuminate\\\\Contracts\\\\View\\\\View\\:\\:getFinder\\(\\)\\.$#"
+			message: "#^Call to an undefined method Illuminate\\\\Contracts\\\\View\\\\Factory\\:\\:getFinder\\(\\)\\.$#"
 			count: 1
 			path: src/Classes/PaymentGateways.php
 
@@ -642,6 +642,11 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$profile_data\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Support\\\\Optional\\:\\:\\$client_secret\\.$#"
 			count: 1
 			path: src/Payments/Stripe.php
 
