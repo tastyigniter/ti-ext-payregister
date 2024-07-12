@@ -14,9 +14,7 @@ class AuthorizeNetClient
 
     protected ?CreateTransactionRequest $transactionRequest = null;
 
-    public function __construct(protected bool $sandbox = false)
-    {
-    }
+    public function __construct(protected bool $sandbox = false) {}
 
     public function authentication()
     {

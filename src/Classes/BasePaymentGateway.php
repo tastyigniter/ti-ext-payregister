@@ -70,9 +70,7 @@ class BasePaymentGateway extends ModelAction
      *
      * @param Model $host
      */
-    public function initConfigData($host)
-    {
-    }
+    public function initConfigData($host) {}
 
     /**
      * Extra field configuration for the payment type.
@@ -162,16 +160,12 @@ class BasePaymentGateway extends ModelAction
      * @param Model $host Type model object containing configuration fields values.
      * @param Model $order Order model object.
      */
-    public function processPaymentForm($data, $host, $order)
-    {
-    }
+    public function processPaymentForm($data, $host, $order) {}
 
     /**
      * Executed when this gateway is rendered on the checkout page.
      */
-    public function beforeRenderPaymentForm($host, $controller)
-    {
-    }
+    public function beforeRenderPaymentForm($host, $controller) {}
 
     public function getPaymentFormViewName()
     {
