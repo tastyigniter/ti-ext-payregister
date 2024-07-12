@@ -102,7 +102,5 @@ class PayPalClient
         return $this;
     }
 
-    public function setBrandName(mixed $setting)
-    {
-    }
+    public function setBrandName(mixed $setting) {}
 }
