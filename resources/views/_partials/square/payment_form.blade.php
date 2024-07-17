@@ -14,8 +14,8 @@
     <div class="form-group">
         @if ($paymentProfile = $paymentMethod->findPaymentProfile($order->customer))
             <input type="hidden" name="pay_from_profile" value="1">
-            <div>
-                <i class="fab fa-fw fa-cc-{{ $paymentProfile->card_brand }}"></i>&nbsp;&nbsp;
+            <div class="d-flex align-items-center">
+                <i class="fab fa-fw fa-2x fa-cc-{{ $paymentProfile->card_brand }}"></i>&nbsp;&nbsp;
                 <b>&bull;&bull;&bull;&bull;&nbsp;&bull;&bull;&bull;&bull;&nbsp;&bull;&bull;&bull;&bull;&nbsp;{{ $paymentProfile->card_last4 }}</b>
                 &nbsp;&nbsp;-&nbsp;&nbsp;
                 <a

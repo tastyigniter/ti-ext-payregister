@@ -4,8 +4,7 @@
     var ProcessSquare = function (element, options) {
         this.$el = $(element)
         this.options = options || {}
-        this.$checkoutForm = this.$el.closest('#checkout-form')
-        this.$paymentInput = this.$checkoutForm.find('[data-checkout-control="payment"]:checked')
+        this.$checkoutForm = this.$el.closest('[data-control="checkout"]')
         this.card = null
         this.payments = null
 
@@ -13,9 +12,10 @@
     }
 
     ProcessSquare.prototype.init = function () {
-        if (this.$paymentInput.val() !== 'square') return
+        console.log(this.$checkoutForm.checkout('selectedPaymentInput').val())
+        if (this.$checkoutForm.checkout('selectedPaymentInput').val() !== 'square') return
 
-        if (!$(this.options.cardSelector).length || $(this.options.cardSelector + ' iframe').length)
+        if (!$(this.options.cardSelector).length || $(this.options.cardSelector+' iframe').length)
             return
 
         if (this.options.applicationId === undefined)
@@ -38,10 +38,7 @@
     }
 
     ProcessSquare.prototype.submitFormHandler = async function (event) {
-        var $form = this.$checkoutForm,
-            $paymentInput = $form.find('input[name="payment"]:checked')
-
-        if ($paymentInput.val() !== 'square') return
+        if (this.$checkoutForm.checkout('selectedPaymentInput').val() !== 'square') return
 
         // Prevent the form from submitting with the default action
         event.preventDefault()
@@ -79,7 +76,6 @@
 
         // Switch back to default to submit form
         $form.unbind('submitCheckoutForm').submit()
-
     }
 
     ProcessSquare.prototype.verifyBuyerHelper = async function (paymentToken, verificationDetails) {

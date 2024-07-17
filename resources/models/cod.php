@@ -33,8 +33,8 @@ return [
     ],
     'rules' => [
         ['order_fee_type', 'lang:igniter.payregister::default.label_order_fee_type', 'integer'],
-        ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'numeric'],
-        ['order_total', 'lang:igniter.payregister::default.label_order_total', 'numeric'],
-        ['order_status', 'lang:igniter.payregister::default.label_order_status', 'integer'],
+        ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'nullable|numeric'],
+        ['order_total', 'lang:igniter.payregister::default.label_order_total', 'nullable|numeric'],
+        ['order_status', 'lang:igniter.payregister::default.label_order_status', 'nullable|integer'],
     ],
 ];

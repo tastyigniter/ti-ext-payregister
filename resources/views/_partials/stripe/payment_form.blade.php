@@ -1,22 +1,22 @@
+@php($paymentProfile = $paymentMethod->paymentProfileExists($order->customer) ? $paymentMethod->findPaymentProfile($order->customer) : null)
 <div
     id="stripePaymentForm"
     class="payment-form ms-2 mt-3"
     data-publishable-key="{{ $paymentMethod->getPublishableKey() }}"
-    data-payment-intent-secret="{{ $paymentMethod->createOrFetchIntent($order) }}"
-    data-return-url="{{ $paymentMethod->createOrFetchIntent($order) }}"
+    data-payment-intent-secret="{{ $paymentProfile ? '' : $paymentMethod->createOrFetchIntent($order) }}"
     data-stripe-options='@json($paymentMethod->getStripeJsOptions($order))'
     data-card-selector="#stripe-card-element"
     data-error-selector="#stripe-card-errors"
 >
-    @foreach ($paymentMethod->getHiddenFields() as $name => $value)
+    @foreach($paymentMethod->getHiddenFields() as $name => $value)
         <input type="hidden" name="{{ $name }}" value="{{ $value }}"/>
     @endforeach
 
     <div class="form-group">
-        @if ($paymentProfile = $paymentMethod->findPaymentProfile($order->customer))
+        @if($paymentProfile)
             <input type="hidden" name="pay_from_profile" value="1">
-            <div>
-                <i class="fab fa-fw fa-cc-{{ $paymentProfile->card_brand }}"></i>&nbsp;&nbsp;
+            <div class="d-flex align-items-center">
+                <i class="fab fa-2x fa-fw fa-cc-{{ $paymentProfile->card_brand }}"></i>&nbsp;&nbsp;
                 <b>&bull;&bull;&bull;&bull;&nbsp;&bull;&bull;&bull;&bull;&nbsp;&bull;&bull;&bull;&bull;&nbsp;{{ $paymentProfile->card_last4 }}</b>
                 &nbsp;&nbsp;-&nbsp;&nbsp;
                 <a
@@ -30,7 +30,7 @@
             <div id="stripe-card-element"></div>
             <div id="stripe-card-errors" class="text-danger" role="alert"></div>
 
-            @if ($paymentMethod->supportsPaymentProfiles() && $order->customer)
+            @if($paymentMethod->supportsPaymentProfiles() && $order->customer)
                 <div class="form-check mt-2">
                     <input
                         id="save-customer-profile"

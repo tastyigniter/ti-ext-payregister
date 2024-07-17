@@ -183,17 +183,12 @@ class Mollie extends BasePaymentGateway
         $paymentId = array_get($paymentLog->response, 'id');
         $fields = $this->getPaymentRefundFields($order, $data);
 
-        throw_if(
-            $fields['amount']['value'] > $order->order_total,
-            new ApplicationException('Refund amount should be be less than or equal to the order total')
-        );
-
         try {
             $payment = $this->createClient()->payments->get($paymentId);
             $response = $payment->refund($fields);
 
             $message = sprintf('Payment %s refund processed -> (%s: %s)',
-                $paymentId, currency_format($fields['amount']['value']), $response->id
+                $paymentId, array_get($data, 'refund_type'), $response->id
             );
 
             $order->logPaymentAttempt($message, 1, $fields, [
@@ -222,7 +217,7 @@ class Mollie extends BasePaymentGateway
         $profileData = $profile ? (array)$profile->profile_data : [];
 
         $response = $this->createOrFetchCustomer($profileData, $customer);
-        $customerId = $response->getCustomerReference();
+        $customerId = $response->id;
 
         if (!$profile) {
             $profile = $this->model->initPaymentProfile($customer);
@@ -250,8 +245,7 @@ class Mollie extends BasePaymentGateway
 
         if ($newCustomerRequired) {
             $fields = [
-                'firstName' => $customer->first_name,
-                'lastName' => $customer->last_name,
+                'name' => $customer->full_name,
                 'email' => $customer->email,
             ];
 
@@ -306,7 +300,12 @@ class Mollie extends BasePaymentGateway
         $refundAmount = array_get($data, 'refund_type') == 'full'
             ? $order->order_total : array_get($data, 'refund_amount');
 
+        throw_if($refundAmount > $order->order_total, new ApplicationException(
+            'Refund amount should be be less than or equal to the order total'
+        ));
+
         $fields = [
+            'description' => array_get($data, 'refund_reason'),
             'amount' => [
                 'currency' => currency()->getUserCurrency(),
                 'value' => number_format($refundAmount, 2, '.', ''),

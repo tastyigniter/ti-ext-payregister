@@ -1,6 +1,5 @@
 <?php
 
-use Igniter\Main\Classes\ThemeManager;
 use Igniter\PayRegister\Models\Payment;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
@@ -11,10 +10,6 @@ return new class extends Migration
     public function up()
     {
         if (!Schema::hasTable('payments') || DB::table('payments')->count()) {
-            return;
-        }
-
-        if (!resolve(ThemeManager::class)->getActiveTheme()) {
             return;
         }
 

@@ -3,6 +3,7 @@
 namespace Igniter\PayRegister\Classes;
 
 use Igniter\Flame\Exception\ApplicationException;
+use net\authorize\api\contract\v1\ANetApiResponseType;
 use net\authorize\api\contract\v1\CreateTransactionRequest;
 use net\authorize\api\contract\v1\MerchantAuthenticationType;
 use net\authorize\api\contract\v1\TransactionResponseType;
@@ -34,14 +35,14 @@ class AuthorizeNetClient
         $request = new CreateTransactionRequest();
         $request->setMerchantAuthentication($this->authentication());
 
-        return $this->transactionRequest = new CreateTransactionRequest();
+        return $this->transactionRequest = $request;
     }
 
     public function createTransaction(?CreateTransactionRequest $request): TransactionResponseType
     {
         $controller = new CreateTransactionController($request);
 
-        $response = $controller->executeWithApiResponse($this->isTestMode()
+        $response = $controller->executeWithApiResponse($this->sandbox
             ? \net\authorize\api\constants\ANetEnvironment::SANDBOX
             : \net\authorize\api\constants\ANetEnvironment::PRODUCTION);
 
@@ -60,5 +61,21 @@ class AuthorizeNetClient
         );
 
         return $transactionResponse;
+    }
+
+    protected function getErrorMessageFromResponse(?AnetApiResponseType $response, ?TransactionResponseType $transactionResponse): string
+    {
+        $message = "Transaction Failed \n Error Code  : %s \n Error Message : %s \n";
+        if ($transactionResponse != null && $transactionResponse->getErrors() != null) {
+            return sprintf($message,
+                $transactionResponse->getErrors()[0]->getErrorCode(),
+                $transactionResponse->getErrors()[0]->getErrorText()
+            );
+        }
+
+        return sprintf($message,
+            $response->getMessages()->getMessage()[0]->getCode(),
+            $response->getMessages()->getMessage()[0]->getText()
+        );
     }
 }

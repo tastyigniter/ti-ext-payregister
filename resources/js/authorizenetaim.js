@@ -9,12 +9,14 @@
     var AuthorizeNetAim = function (element, options) {
         this.$el = $(element)
         this.options = options || {}
-        this.$checkoutForm = this.$el.closest('#checkout-form')
+        this.$checkoutForm = this.$el.closest('[data-control="checkout"]')
 
-        $('[name=payment][value=authorizenetaim]', this.$checkoutForm).on('change', $.proxy(this.init, this))
+        this.init()
     }
 
     AuthorizeNetAim.prototype.init = function () {
+        if (this.$checkoutForm.checkout('selectedPaymentInput').val() !== 'authorizenetaim') return
+
         this.$acceptButton = this.$checkoutForm.find(this.options.btnSelector)
 
         if (this.$acceptButton.length < 1) return
@@ -40,9 +42,8 @@
     }
 
     AuthorizeNetAim.prototype.showForm = function (event) {
-        var $paymentInput = this.$checkoutForm.find('input[name="payment"]:checked')
-
-        if ($paymentInput.val() !== 'authorizenetaim') return
+        console.log(this.$checkoutForm.checkout('selectedPaymentInput').val())
+        if (this.$checkoutForm.checkout('selectedPaymentInput').val() !== 'authorizenetaim') return
 
         // Prevent the form from submitting with the default action
         event.preventDefault()
@@ -58,10 +59,10 @@
 
     AuthorizeNetAim.prototype.responseHandler = function (event, response) {
         var $form = this.$checkoutForm,
-            $paymentInput = $form.find('input[name="payment"]:checked'),
             $errorSelector = $form.find(this.options.errorSelector)
 
-        if ($paymentInput.val() !== 'authorizenetaim') return
+        console.log(this.$checkoutForm.checkout('selectedPaymentInput').val())
+        if (this.$checkoutForm.checkout('selectedPaymentInput').val() !== 'authorizenetaim') return
 
         if (response.messages.resultCode === "Error") {
             var i = 0;

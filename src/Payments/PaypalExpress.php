@@ -3,7 +3,6 @@
 namespace Igniter\PayRegister\Payments;
 
 use Exception;
-use Igniter\Cart\Models\OrderMenu;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Classes\PayPalClient;
@@ -44,11 +43,6 @@ class PaypalExpress extends BasePaymentGateway
         return $this->isSandboxMode() ? $this->model->api_sandbox_pass : $this->model->api_pass;
     }
 
-    public function getApiSignature()
-    {
-        return $this->isSandboxMode() ? $this->model->api_sandbox_signature : $this->model->api_signature;
-    }
-
     /**
      * @param array $data
      * @param \Igniter\PayRegister\Models\Payment $host
@@ -72,7 +66,8 @@ class PaypalExpress extends BasePaymentGateway
 
             $order->logPaymentAttempt('Payment error -> '.$response->json('message'), 0, $fields, $response->json());
         } catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
+            logger()->error($ex);
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, $ex->getTrace());
         }
 
         throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
@@ -101,22 +96,36 @@ class PaypalExpress extends BasePaymentGateway
                 new ApplicationException('Missing valid token in response')
             );
 
-            $response = $this->createClient()->captureOrder($token);
+            $response = $this->createClient()->getOrder($token);
+            throw_if(
+                array_get($response, 'status') !== 'APPROVED',
+                new ApplicationException('Payment is not approved')
+            );
 
-            if ($response->json('purchase_units.0.payments.captures.0.status') === 'COMPLETED') {
-                $order->logPaymentAttempt('Payment successful', 1, request()->input(), $response->json(), true);
-                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
-                $order->markAsPaymentProcessed();
+            if (array_get($response, 'intent') === 'CAPTURE') {
+                $response = $this->createClient()->captureOrder($token);
 
-                return Redirect::to(page_url($redirectPage, [
-                    'id' => $order->getKey(),
-                    'hash' => $order->hash,
-                ]));
+                if ($response->json('purchase_units.0.payments.captures.0.status') === 'COMPLETED') {
+                    $order->logPaymentAttempt('Payment successful', 1, request()->input(), $response->json(), true);
+                    $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
+                    $order->markAsPaymentProcessed();
+                }
+            } elseif (array_get($response, 'intent') === 'AUTHORIZE') {
+                $response = $this->createClient()->authorizeOrder($token);
+
+                if ($response->json('purchase_units.0.payments.authorizations.0.status') === 'CREATED') {
+                    $order->logPaymentAttempt('Payment authorized', 1, request()->input(), $response->json());
+                    $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
+                    $order->markAsPaymentProcessed();
+                }
             }
 
-            $order->logPaymentAttempt('Payment error -> '.$response->json('message'), 0, [], $response->json());
+            return Redirect::to(page_url($redirectPage, [
+                'id' => $order->getKey(),
+                'hash' => $order->hash,
+            ]));
         } catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], []);
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], $ex->getTrace());
             flash()->warning($ex->getMessage())->important();
         }
 
@@ -161,16 +170,11 @@ class PaypalExpress extends BasePaymentGateway
         $paymentId = array_get($paymentLog->response, 'purchase_units.0.payments.captures.0.id');
         $fields = $this->getPaymentRefundFields($order, $data);
 
-        throw_if(
-            $fields['amount']['value'] > $order->order_total,
-            new ApplicationException('Refund amount should be be less than or equal to the order total')
-        );
-
         try {
             $response = $this->createClient()->refundPayment($paymentId, $fields);
 
-            $message = sprintf('Payment intent %s refunded successfully -> (%s: %s)',
-                $paymentId, currency_format($fields['amount']['value']), $response->json('refunds.data.0.id')
+            $message = sprintf('Payment %s refunded successfully -> (%s: %s)',
+                $paymentId, array_get($data, 'refund_type'), $response->json('id')
             );
 
             $order->logPaymentAttempt($message, 1, $fields, $response->json());
@@ -221,26 +225,20 @@ class PaypalExpress extends BasePaymentGateway
         $fields['purchase_units'][] = [
             'reference_id' => $order->hash,
             'custom_id' => $order->getKey(),
-            'items' => $order->getOrderMenus()->map(function(OrderMenu $orderMenu) use ($currencyCode) {
-                return [
-                    'name' => $orderMenu->name,
-                    'quantity' => $orderMenu->quantity,
-                    'unit_amount' => [
-                        'currency_code' => $currencyCode,
-                        'value' => number_format($orderMenu->price, 2, '.', ''),
-                    ],
-                    'category' => 'PHYSICAL_GOODS',
-                ];
-            })->all(),
+//            'items' => $order->getOrderMenus()->map(function(OrderMenu $orderMenu) use ($currencyCode) {
+//                return [
+//                    'name' => $orderMenu->name,
+//                    'quantity' => $orderMenu->quantity,
+//                    'unit_amount' => [
+//                        'currency_code' => $currencyCode,
+//                        'value' => number_format($orderMenu->price, 2, '.', ''),
+//                    ],
+//                    'category' => 'PHYSICAL_GOODS',
+//                ];
+//            })->all(),
             'amount' => [
                 'currency_code' => $currencyCode,
                 'value' => number_format($order->order_total, 2, '.', ''),
-                'breakdown' => [
-                    'item_total' => [
-                        'currency_code' => $currencyCode,
-                        'value' => number_format($order->order_total, 2, '.', ''),
-                    ],
-                ],
             ],
         ];
 
@@ -251,10 +249,15 @@ class PaypalExpress extends BasePaymentGateway
 
     protected function getPaymentRefundFields($order, $data)
     {
-        $refundAmount = array_get($data, 'refund_type') == 'full'
-            ? $order->order_total : array_get($data, 'refund_amount');
+        $refundAmount = array_get($data, 'refund_type') !== 'full'
+            ? array_get($data, 'refund_amount') : $order->order_total;
+
+        throw_if($refundAmount > $order->order_total, new ApplicationException(
+            'Refund amount should be be less than or equal to the order total'
+        ));
 
         $fields = [
+            'note_to_payer' => array_get($data, 'refund_reason'),
             'invoice_id' => $order->getKey(),
             'amount' => [
                 'currency_code' => currency()->getUserCurrency(),

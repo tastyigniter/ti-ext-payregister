@@ -34,7 +34,7 @@ class Payment extends Model
      */
     protected $primaryKey = 'payment_id';
 
-    protected $fillable = ['name', 'code', 'class_name', 'description', 'data', 'priority'];
+    protected $fillable = ['name', 'code', 'class_name', 'description', 'data', 'priority', 'status', 'is_default'];
 
     public $timestamps = true;
 
@@ -238,6 +238,11 @@ class Payment extends Model
 
     public function paymentProfileExists($customer)
     {
+        $gatewayObj = $this->getGatewayObject();
+        if (!is_null($result = $gatewayObj->paymentProfileExists($customer))) {
+            return $result;
+        }
+
         return (bool)$this->findPaymentProfile($customer);
     }
 
