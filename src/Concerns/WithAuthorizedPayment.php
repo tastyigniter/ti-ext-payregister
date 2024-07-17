@@ -20,4 +20,9 @@ trait WithAuthorizedPayment
     {
         throw new \LogicException('Method captureAuthorizedPayment must be implemented on your custom payment class.');
     }
+
+    public function cancelAuthorizedPayment(Order $order)
+    {
+        throw new \LogicException('Method cancelAuthorizedPayment must be implemented on your custom payment class.');
+    }
 }

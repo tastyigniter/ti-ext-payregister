@@ -17,6 +17,11 @@ trait WithPaymentProfile
         return false;
     }
 
+    public function paymentProfileExists(Customer $customer): ?bool
+    {
+        return null;
+    }
+
     /**
      * Creates a customer profile on the payment gateway or update if the profile already exists.
      */

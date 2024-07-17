@@ -4,8 +4,7 @@
     var ProcessStripe = function (element, options) {
         this.$el = $(element)
         this.options = options || {}
-        this.$checkoutForm = this.$el.closest('#checkout-form')
-        this.$paymentInput = this.$checkoutForm.find('[data-checkout-control="payment"]:checked')
+        this.$checkoutForm = this.$el.closest('[data-control="checkout"]')
         this.stripe = null
         this.elements = null
         this.paymentElement = null
@@ -13,14 +12,39 @@
         this.init()
     }
 
-    ProcessStripe.prototype.init = function () {
-        if (this.$paymentInput.val() !== 'stripe') return
+    ProcessStripe.prototype.dispose = function () {
+        this.stripe = null
+        this.elements = null
+    }
 
-        if (!$(this.options.cardSelector).length || $(this.options.cardSelector + ' iframe').length)
+    ProcessStripe.prototype.init = function () {
+        if (this.$checkoutForm.checkout('selectedPaymentInput').val() !== 'stripe') return
+
+        if (!$(this.options.cardSelector).length || $(this.options.cardSelector+' iframe').length)
             return
 
         if (this.options.publishableKey === undefined || !this.options.publishableKey)
             throw new Error('Missing stripe publishable key, configure publishableKey in the payment method settings.')
+
+        var self = this
+
+        this.initStripe()
+
+        this.$checkoutForm
+            .on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
+            .on('submit', function () {
+                if (self.$checkoutForm.find('input[name="form.payment"]:checked').val() !== 'stripe')
+                    return
+
+                self.paymentElement?.update({disabled: true});
+            })
+            .on('ajaxFail', function () {
+                self.paymentElement?.update({disabled: false});
+            })
+    }
+
+    ProcessStripe.prototype.initStripe = function () {
+        if (!this.options.paymentIntentSecret) return;
 
         // Create a Stripe client.
         this.stripe = Stripe(this.options.publishableKey, this.options.stripeOptions)
@@ -47,19 +71,6 @@
 
         // Handle real-time validation errors from the card Element.
         this.paymentElement.addEventListener('change', $.proxy(this.validationErrorHandler, this))
-
-        var self = this
-        this.$checkoutForm
-            .on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
-            .on('submit', function () {
-                if (self.$checkoutForm.find('input[name="form.payment"]:checked').val() !== 'stripe')
-                    return
-
-                self.paymentElement.update({disabled: true});
-            })
-            .on('ajaxFail', function () {
-                self.paymentElement.update({disabled: false});
-            })
     }
 
     ProcessStripe.prototype.validationErrorHandler = function (event) {
@@ -71,7 +82,7 @@
         var self = this,
             $form = this.$checkoutForm
 
-        if (this.$paymentInput.val() !== 'stripe') return
+        if (this.$checkoutForm.checkout('selectedPaymentInput').val() !== 'stripe') return
 
         // Prevent the form from submitting with the default action
         event.preventDefault()

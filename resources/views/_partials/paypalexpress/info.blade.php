@@ -1,22 +1,13 @@
 <div class="bg-light mt-3 p-3 border rounded">
     <h5>To obtain your Live API credentials.</h5>
     <ol class="pl-3">
-        <li>From your PayPal business account.</li>
+        <li>Log into your <a href="https://developer.paypal.com">Developer Dashboard</a></li>
         <li>
-            You can obtain an API Access credential in one of two ways:
-            <ol type="a">
-                <li>Select API Access from the Activity menu at the top of the screen,</li>
-                <li>or from Account preferences > API Access.</li>
-            </ol>
+            Click on "My Apps and Credentials" then on "Create App"
         </li>
-        <li>Scroll down and choose Manage API credentials under NVP/SOAP API Integration
-            (Classic).
+        <li>After the app is created, copy and paste the Client ID and Secret Key into the form fields below
         </li>
-        <li>If you haven't previously, create keys. Otherwise, duplicate the API Username, API
-            Password, and Signature.
-        </li>
-        <li>Paste the API Username, API Password, and Signature into the plugin's corresponding
-            fields.
+        <li>Switch between Live and Sandbox as Sandbox and Live have different Client IDs and Secret Keys.
         </li>
     </ol>
 </div>

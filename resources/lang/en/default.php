@@ -26,6 +26,7 @@ return [
     'label_capture_status' => 'Capture Payment Order Status',
     'label_refund_type' => 'Refund Type',
     'label_refund_amount' => 'Refund Partial Amount',
+    'label_refund_reason' => 'Refund Reason',
 
     'onboarding_payments' => 'Configure your payment gateways',
     'help_onboarding_payments' => 'Enable and configure a default payment method for your customers.',
@@ -41,11 +42,12 @@ return [
     'alert_setting_missing_id' => 'Extension setting code has not been specified.',
     'alert_invalid_code' => 'Invalid payment gateway code selected.',
     'alert_code_not_found' => 'Unable to find payment gateway with code %s',
+    'alert_refund_success' => 'Payment refunded successfully',
 
     'help_order_total' => 'The total amount the order must reach before this payment gateway becomes active',
     'help_order_fee' => 'Extra charge to the order total when this payment gateway becomes active',
-    'help_order_status' => 'Default order status when this payment method is used.',
-    'help_capture_status' => 'Default order status when payment is captured.',
+    'help_order_status' => 'Default order status when this payment method is used. Leave blank to use the default order status set in the order settings (Manage > Settings > Order).',
+    'help_capture_status' => 'The order status that captures an authorized payment.',
 
     'help_permission' => 'Manage payment gateways',
     'help_payments' => 'Select the payment(s) available at this location. Leave blank to use all enabled payments',
@@ -105,7 +107,6 @@ return [
         'label_transaction_key' => 'Transaction Key',
         'label_transaction_mode' => 'Transaction Mode',
         'label_transaction_type' => 'Transaction Type',
-        'label_accepted_cards' => 'Accepted Cards',
         'label_priority' => 'Priority',
         'label_status' => 'Status',
 

@@ -127,15 +127,16 @@ class Stripe extends BasePaymentGateway
                 $fields = $this->getPaymentFormFields($order);
                 $stripeOptions = $this->getStripeOptions();
                 $response = $this->createGateway()->paymentIntents->create(
-                    array_only($fields, ['amount', 'currency', 'capture_method']), $stripeOptions
+                    array_only($fields, ['amount', 'currency', 'capture_method', 'setup_future_usage', 'customer']), $stripeOptions
                 );
 
                 Session::put($this->intentSessionKey, $response->id);
             }
 
-            return optional($response)->client_secret;
+            return $response?->client_secret;
         } catch (Exception $ex) {
-            logger('Creating checkout session failed: '.$ex->getMessage());
+            logger()->error($ex);
+            $order->logPaymentAttempt('Creating checkout session failed: '.$ex->getMessage(), 0, [], []);
             flash()->warning($ex->getMessage())->important()->now();
         }
     }
@@ -167,27 +168,31 @@ class Stripe extends BasePaymentGateway
 
             $gateway = $this->createGateway();
             $stripeOptions = $this->getStripeOptions();
-            $paymentIntent = $gateway->paymentIntents->retrieve($intentId, [], $stripeOptions);
+            $paymentIntent = $gateway->paymentIntents->retrieve($intentId, [
+                'expand' => ['payment_method']
+            ], $stripeOptions);
 
             // At this stage the PaymentIntent status should either
-            // be succeeded or requires_capture, we will only attach
-            // the PaymentIntent to a customer since updating the amount
-            // of a PaymentIntent with a succeeded status is not allowed
+            // be succeeded or requires_capture, we will only update
+            // the customer profile data
             if (!in_array($paymentIntent->status, ['requires_capture', 'succeeded'])) {
                 return true;
             }
 
-            $fields = $this->getPaymentFormFields($order, $data, true);
-
             if (array_get($data, 'create_payment_profile', 0) == 1 && $order->customer) {
-                $data['stripe_payment_method'] = $paymentIntent->payment_method;
-                $profile = $this->updatePaymentProfile($order->customer, $data);
-                $fields['customer'] = array_get($profile->profile_data, 'customer_id');
+                $this->updatePaymentProfile($order->customer, [
+                    'card_id' => $paymentIntent->payment_method->id,
+                    'card' => array_only($paymentIntent->payment_method->card->toArray(), [
+                        'brand',
+                        'country',
+                        'display_brand',
+                        'exp_month',
+                        'exp_year',
+                        'last4',
+                        'three_d_secure_usage'
+                    ]),
+                ]);
             }
-
-            $gateway->paymentIntents->update($paymentIntent->id, array_except($fields, [
-                'amount', 'currency', 'capture_method', 'setup_future_usage',
-            ]), $stripeOptions);
 
             if ($paymentIntent->status === 'requires_capture') {
                 $order->logPaymentAttempt('Payment authorized', 1, $data, $paymentIntent->toArray());
@@ -200,32 +205,29 @@ class Stripe extends BasePaymentGateway
 
             Session::forget($this->intentSessionKey);
         } catch (Exception $ex) {
+            logger()->error($ex);
             $order->logPaymentAttempt('Payment error: '.$ex->getMessage(), 0, $data, $paymentIntent ?? []);
 
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
 
-    public function captureAuthorizedPayment(Order $order)
+    public function captureAuthorizedPayment(Order $order, $data = [])
     {
         throw_unless(
             $paymentLog = $order->payment_logs()->firstWhere('is_success', true),
-            new ApplicationException('No successful payment to capture')
+            new ApplicationException('No successful authorized payment to capture')
         );
 
         throw_unless(
             $paymentIntentId = array_get($paymentLog->response, 'id'),
-            new ApplicationException('Missing payment intent ID in successful payment response')
+            new ApplicationException('Missing payment intent ID in successful authorized payment response')
         );
 
-        return $this->capturePaymentIntent($paymentIntentId, $order);
-    }
-
-    public function capturePaymentIntent($paymentIntentId, $order, $data = [])
-    {
-        if ($order->payment !== $this->model->code) {
-            return;
-        }
+        throw_if(
+            $order->payment !== $this->model->code,
+            new ApplicationException(sprintf('Invalid payment class for order: %s', $order->id))
+        );
 
         try {
             $response = $this->createGateway()->paymentIntents->capture(
@@ -235,24 +237,41 @@ class Stripe extends BasePaymentGateway
             );
 
             if ($response->status == 'succeeded') {
-                $order->logPaymentAttempt('Payment captured successfully', 1, $data, $response);
+                $order->logPaymentAttempt('Payment successful', 1, $data, $response);
             } else {
-                $order->logPaymentAttempt('Payment captured failed', 0, $data, $response);
+                $order->logPaymentAttempt('Payment failed', 0, $data, $response);
             }
 
             return $response;
         } catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment capture failed: '.$ex->getMessage(), 0, $data, []);
+            logger()->error($ex);
+            $order->logPaymentAttempt('Payment capture failed: '.$ex->getMessage(), 0, $data);
         }
     }
 
-    public function cancelPaymentIntent($paymentIntentId, $order, $data = [])
+    public function cancelAuthorizedPayment(Order $order, $data = [])
     {
-        if ($order->payment !== $this->model->code) {
-            return;
-        }
+        throw_unless(
+            $paymentLog = $order->payment_logs()->firstWhere('is_success', true),
+            new ApplicationException('No successful authorized payment to cancel')
+        );
+
+        throw_unless(
+            $paymentIntentId = array_get($paymentLog->response, 'id'),
+            new ApplicationException('Missing payment intent ID in successful authorized payment response')
+        );
+
+        throw_if(
+            $order->payment !== $this->model->code,
+            new ApplicationException(sprintf('Invalid payment class for order: %s', $order->id))
+        );
 
         try {
+            $eventResult = $this->fireSystemEvent('payregister.stripe.extendCancelFields', [$data, $order], false);
+            if (is_array($eventResult) && array_filter($eventResult)) {
+                $data = array_merge($data, ...$eventResult);
+            }
+
             $response = $this->createGateway()->paymentIntents->cancel(
                 $paymentIntentId, $data, $this->getStripeOptions()
             );
@@ -260,12 +279,13 @@ class Stripe extends BasePaymentGateway
             if ($response->status == 'canceled') {
                 $order->logPaymentAttempt('Payment canceled successfully', 1, $data, $response);
             } else {
-                $order->logPaymentAttempt('Payment canceled failed', 0, $data, $response);
+                $order->logPaymentAttempt('Canceling payment failed', 0, $data, $response);
             }
 
             return $response;
         } catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment canceled failed: '.$ex->getMessage(), 0, $data, []);
+            logger()->error($ex);
+            $order->logPaymentAttempt('Payment canceled failed: '.$ex->getMessage(), 0, $data);
         }
     }
 
@@ -283,16 +303,14 @@ class Stripe extends BasePaymentGateway
                 }
 
                 $fields = $this->getPaymentFormFields($order, [], true);
-                $paymentIntent = $gateway->paymentIntents->update($paymentIntent->id, array_except($fields, [
-                    'capture_method', 'setup_future_usage',
+                return $gateway->paymentIntents->update($paymentIntent->id, array_except($fields, [
+                    'capture_method', 'setup_future_usage', 'customer'
                 ]), $stripeOptions);
-
-                $order->logPaymentAttempt('Checkout session updated', 1, $fields, $paymentIntent->toArray());
-
-                return $paymentIntent;
             }
         } catch (Exception $ex) {
-            $order->logPaymentAttempt('Updated checkout session failed', 1, [], []);
+            logger()->error($ex);
+            $order->logPaymentAttempt('Updating checkout session failed: '.$ex->getMessage(), 1, [], array_slice($ex->getTrace(), 20));
+            flash()->warning($ex->getMessage())->important()->now();
 
             return false;
         }
@@ -309,24 +327,19 @@ class Stripe extends BasePaymentGateway
 
     public function updatePaymentProfile(Customer $customer, array $data = []): PaymentProfile
     {
-        $profile = $this->model->findPaymentProfile($customer);
-        $profileData = $profile ? (array)$profile->profile_data : [];
+        if (!$profile = $this->model->findPaymentProfile($customer)) {
+            $profile = $this->model->initPaymentProfile($customer);
+        }
 
-        $response = $this->createOrFetchCustomer($profileData, $customer);
-        $customerId = $response->id;
-
-        $response = $this->createOrFetchCard($customerId, $profileData, $data);
-        $cardData = $response->toArray();
-        $cardId = $response->id;
+        $profileData = array_merge((array)$profile->profile_data, $data);
 
         if (!$profile) {
             $profile = $this->model->initPaymentProfile($customer);
         }
 
-        $this->updatePaymentProfileData($profile, [
-            'customer_id' => $customerId,
-            'card_id' => $cardId,
-        ], $cardData);
+        $profile->card_brand = strtolower(array_get($data, 'card.brand'));
+        $profile->card_last4 = array_get($data, 'card.last4');
+        $profile->setProfileData($profileData);
 
         return $profile;
     }
@@ -337,20 +350,14 @@ class Stripe extends BasePaymentGateway
             return;
         }
 
-        $gateway = $this->createGateway();
-        $stripeOptions = $this->getStripeOptions();
-        $gateway->customers->delete($profile->profile_data['customer_id'], [], $stripeOptions);
-
-        $this->updatePaymentProfileData($profile);
+        $this->createGateway()->customers->delete($profile->profile_data['customer_id'], [], $this->getStripeOptions());
     }
 
     public function payFromPaymentProfile(Order $order, array $data = [])
     {
         $host = $this->getHostObject();
-        $profile = $host->findPaymentProfile($order->customer);
-
-        if (!$profile || !$profile->hasProfileData()) {
-            throw new ApplicationException('Payment profile not found');
+        if (!$order->customer || !$this->paymentProfileExists($order->customer)) {
+            throw new ApplicationException('Payment profile not found or customer not logged in');
         }
 
         $gateway = $this->createGateway();
@@ -358,8 +365,6 @@ class Stripe extends BasePaymentGateway
 
         try {
             $fields = $this->getPaymentFormFields($order);
-            $fields['customer'] = array_get($profile->profile_data, 'customer_id');
-            $fields['payment_method'] = array_get($profile->profile_data, 'card_id');
             $fields['off_session'] = true;
             $fields['confirm'] = true;
 
@@ -376,24 +381,33 @@ class Stripe extends BasePaymentGateway
             $order->updateOrderStatus($host->order_status, ['notify' => false]);
             $order->markAsPaymentProcessed();
         } catch (Exception $e) {
+            logger()->error($e);
             $order->logPaymentAttempt('Payment error: '.$e->getMessage(), 0, $data, $intent ?? []);
 
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
     }
 
-    protected function createOrFetchCustomer($profileData, $customer)
+    public function paymentProfileExists(Customer $customer): ?bool
     {
+        $profile = $this->model->findPaymentProfile($customer);
+
+        return $profile && array_get((array)$profile->profile_data, 'card_id');
+    }
+
+    protected function createOrFetchProfileData($customer): array
+    {
+        if (!$profile = $this->model->findPaymentProfile($customer)) {
+            $profile = $this->model->initPaymentProfile($customer);
+        }
+
+        $profileData = (array)$profile->profile_data;
         $customerId = array_get($profileData, 'customer_id');
 
-        $response = false;
-        $gateway = $this->createGateway();
-        $stripeOptions = $this->getStripeOptions();
         $newCustomerRequired = !$customerId;
-
         if (!$newCustomerRequired) {
             try {
-                $response = $gateway->customers->retrieve($customerId, [], $stripeOptions);
+                $response = $this->createGateway()->customers->retrieve($customerId, [], $this->getStripeOptions());
 
                 if (isset($response->deleted)) {
                     $newCustomerRequired = true;
@@ -405,66 +419,19 @@ class Stripe extends BasePaymentGateway
 
         try {
             if ($newCustomerRequired) {
-                $response = $gateway->customers->create([
+                $response = $this->createGateway()->customers->create([
                     'name' => $customer->full_name,
                     'email' => $customer->email,
-                ], $stripeOptions);
+                ], $this->getStripeOptions());
+
+                $profileData['customer_id'] = $response->id;
+                $profile->setProfileData($profileData);
             }
         } catch (Exception $ex) {
             throw new ApplicationException($ex->getMessage());
         }
 
-        return $response;
-    }
-
-    protected function createOrFetchCard($customerId, $profileData, $data)
-    {
-        $cardId = array_get($profileData, 'card_id');
-        $token = array_get($data, 'stripe_payment_method');
-
-        $response = false;
-        $gateway = $this->createGateway();
-        $stripeOptions = $this->getStripeOptions();
-        $newCardRequired = !$cardId;
-
-        if (!$newCardRequired) {
-            try {
-                $response = $gateway->paymentMethods->retrieve($cardId, [], $stripeOptions);
-
-                if ($response->customer != $customerId) {
-                    $newCardRequired = true;
-                }
-            } catch (Exception $e) {
-                $newCardRequired = true;
-            }
-        }
-
-        if ($newCardRequired) {
-            try {
-                $response = $gateway->paymentMethods->attach($token, [
-                    'customer' => $customerId,
-                ], $stripeOptions);
-            } catch (Exception $ex) {
-                throw new ApplicationException($ex->getMessage());
-            }
-        }
-
-        return $response;
-    }
-
-    /**
-     * @param \Igniter\PayRegister\Models\PaymentProfile $profile
-     * @param array $profileData
-     * @param array $cardData
-     * @return \Igniter\PayRegister\Models\PaymentProfile
-     */
-    protected function updatePaymentProfileData($profile, $profileData = [], $cardData = [])
-    {
-        $profile->card_brand = strtolower(array_get($cardData, 'card.brand'));
-        $profile->card_last4 = array_get($cardData, 'card.last4');
-        $profile->setProfileData($profileData);
-
-        return $profile;
+        return $profileData;
     }
 
     //
@@ -477,18 +444,14 @@ class Stripe extends BasePaymentGateway
             throw new ApplicationException('Nothing to refund');
         }
 
-        if (!array_get($paymentLog->response, 'status') === 'succeeded'
-            || !array_get($paymentLog->response, 'object') === 'payment_intent'
+        if (array_get($paymentLog->response, 'status') !== 'succeeded'
+            || array_get($paymentLog->response, 'object') !== 'payment_intent'
         ) {
             throw new ApplicationException('No charge to refund');
         }
 
         $paymentChargeId = array_get($paymentLog->response, 'id');
         $fields = $this->getPaymentRefundFields($order, $data);
-
-        if ($fields['amount'] > $order->order_total) {
-            throw new ApplicationException('Refund amount should be be less than or equal to the order total');
-        }
 
         try {
             $gateway = $this->createGateway();
@@ -502,13 +465,14 @@ class Stripe extends BasePaymentGateway
 
             $message = sprintf('Payment intent %s refunded successfully -> (%s: %s)',
                 $paymentChargeId,
-                currency_format($fields['amount']),
-                array_get($response->toArray(), 'refunds.data.0.id')
+                array_get($data, 'refund_type'),
+                array_get($response->toArray(), 'id')
             );
 
             $order->logPaymentAttempt($message, 1, $fields, $response->toArray());
             $paymentLog->markAsRefundProcessed();
         } catch (Exception $e) {
+            logger()->error($e);
             $order->logPaymentAttempt('Refund failed: '.$e->getMessage(), 0, $fields, []);
         }
     }
@@ -526,6 +490,13 @@ class Stripe extends BasePaymentGateway
 
         if ($this->supportsPaymentProfiles() && $order->customer) {
             $fields['setup_future_usage'] = 'off_session';
+
+            if ($profileData = $this->createOrFetchProfileData($order->customer)) {
+                $fields['customer'] = array_get($profileData, 'customer_id');
+                if ($paymentId = array_get($profileData, 'card_id')) {
+                    $fields['payment_method'] = $paymentId;
+                }
+            }
         }
 
         $this->fireSystemEvent('payregister.stripe.extendFields', [&$fields, $order, $data, $updatingIntent]);
@@ -545,8 +516,12 @@ class Stripe extends BasePaymentGateway
 
     protected function getPaymentRefundFields($order, $data)
     {
-        $refundAmount = array_get($data, 'refund_type') == 'full'
-            ? $order->order_total : array_get($data, 'refund_amount');
+        $refundAmount = array_get($data, 'refund_type') !== 'full'
+            ? array_get($data, 'refund_amount') : $order->order_total;
+
+        throw_if($refundAmount > $order->order_total, new ApplicationException(
+            'Refund amount should be be less than or equal to the order total'
+        ));
 
         $fields = [
             'amount' => number_format($refundAmount, 2, '', ''),

@@ -82,6 +82,10 @@ class PaymentAttempts extends BaseFormWidget
         $this->validate($data, $widget->config['rules']);
 
         $paymentMethod->processRefundForm($data, $this->model, $paymentLog);
+
+        flash()->success(lang('igniter.payregister::default.alert_refund_success'));
+
+        return $this->reload();
     }
 
     public function loadAssets()

@@ -23,11 +23,16 @@ return [
                     'condition' => 'value[partial]',
                 ],
             ],
+            'refund_reason' => [
+                'label' => 'igniter.payregister::default.label_refund_reason',
+                'type' => 'textarea',
+            ],
         ],
         'rules' => [
             ['payment_log_id', 'admin::lang.column_id', 'required|integer|exists:payment_logs'],
             ['refund_type', 'igniter.payregister::default.label_refund_type', 'string|in:full,partial'],
             ['refund_amount', 'igniter.payregister::default.label_refund_amount', 'required|numeric'],
+            ['refund_reason', 'igniter.payregister::default.label_refund_reason', 'nullable|string|max:250'],
         ],
     ],
 ];

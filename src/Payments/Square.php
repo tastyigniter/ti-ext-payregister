@@ -7,6 +7,7 @@ use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithPaymentProfile;
+use Igniter\PayRegister\Concerns\WithPaymentRefund;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\User\Models\Customer;
@@ -18,6 +19,7 @@ use Square\SquareClient;
 class Square extends BasePaymentGateway
 {
     use WithPaymentProfile;
+    use WithPaymentRefund;
 
     public static ?string $paymentFormView = 'igniter.payregister::_partials.square.payment_form';
 
@@ -70,7 +72,7 @@ class Square extends BasePaymentGateway
         return true;
     }
 
-    public function createPayment($fields, $order, $host)
+    protected function createPayment($fields, $order, $host)
     {
         $client = $this->createClient();
         $paymentsApi = $client->getPaymentsApi();
@@ -81,7 +83,8 @@ class Square extends BasePaymentGateway
         $amountMoney->setAmount($fields['amount'] * 100);
         $amountMoney->setCurrency($fields['currency']);
 
-        $body = new Models\CreatePaymentRequest($fields['sourceId'], $idempotencyKey, $amountMoney);
+        $body = new Models\CreatePaymentRequest($fields['sourceId'], $idempotencyKey);
+        $body->setAmountMoney($amountMoney);
 
         if (isset($fields['tip'])) {
             $tipMoney = new Models\Money();
@@ -135,7 +138,7 @@ class Square extends BasePaymentGateway
         try {
             $response = $this->createPayment($fields, $order, $host);
 
-            if ($this->handlePaymentResponse($response, $order, $host, $fields)) {
+            if ($this->handlePaymentResponse($response, $order, $host, $fields, true)) {
                 return;
             }
         } catch (Exception $ex) {
@@ -295,6 +298,77 @@ class Square extends BasePaymentGateway
         $profile->setProfileData([]);
 
         return $profile;
+    }
+
+    //
+    //
+    //
+
+    public function processRefundForm($data, $order, $paymentLog)
+    {
+        if (!is_null($paymentLog->refunded_at) || !is_array($paymentLog->response)) {
+            throw new ApplicationException('Nothing to refund');
+        }
+
+        if (array_get($paymentLog->response, 'payment.status') !== 'COMPLETED') {
+            throw new ApplicationException('No charge to refund');
+        }
+
+        $paymentChargeId = array_get($paymentLog->response, 'payment.id');
+        $fields = $this->getPaymentRefundFields($order, $data);
+
+        try {
+            $idempotencyKey = str_random();
+            $amountMoney = new \Square\Models\Money();
+            $amountMoney->setAmount($fields['amount']);
+            $amountMoney->setCurrency($fields['currency']);
+
+            $body = new \Square\Models\RefundPaymentRequest($idempotencyKey, $amountMoney);
+            $body->setPaymentId($paymentChargeId);
+            $body->setReason($fields['reason']);
+
+            $client = $this->createClient();
+            $response = $client->getRefundsApi()->refundPayment($body);
+
+            if (!$response->isSuccess()) {
+                throw new Exception('Refund failed');
+            }
+
+            $message = sprintf('Payment %s refunded successfully -> (%s: %s)',
+                $paymentChargeId,
+                array_get($data, 'refund_type'),
+                array_get($response->getResult(), 'id')
+            );
+
+            $order->logPaymentAttempt($message, 1, $fields, $response->getResult());
+            $paymentLog->markAsRefundProcessed();
+        } catch (Exception $e) {
+            logger()->error($e);
+            $order->logPaymentAttempt('Refund failed: '.$e->getMessage(), 0, $fields, []);
+        }
+    }
+
+    protected function getPaymentRefundFields($order, $data)
+    {
+        $refundAmount = array_get($data, 'refund_type') !== 'full'
+            ? array_get($data, 'refund_amount') : $order->order_total;
+
+        throw_if($refundAmount > $order->order_total, new ApplicationException(
+            'Refund amount should be be less than or equal to the order total'
+        ));
+
+        $fields = [
+            'amount' => number_format($refundAmount, 2, '', ''),
+            'currency' => currency()->getUserCurrency(),
+            'reason' => array_get($data, 'refund_reason')
+        ];
+
+        $eventResult = $this->fireSystemEvent('payregister.square.extendRefundFields', [$fields, $order, $data], false);
+        if (is_array($eventResult) && array_filter($eventResult)) {
+            $fields = array_merge($fields, ...$eventResult);
+        }
+
+        return $fields;
     }
 
     //
