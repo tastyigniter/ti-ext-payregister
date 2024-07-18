@@ -1,16 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Classes\\\\AuthorizeNetClient\\:\\:getErrorMessageFromResponse\\(\\)\\.$#"
-			count: 2
-			path: src/Classes/AuthorizeNetClient.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Classes\\\\AuthorizeNetClient\\:\\:isTestMode\\(\\)\\.$#"
-			count: 1
-			path: src/Classes/AuthorizeNetClient.php
-
-		-
 			message: "#^Call to an undefined method net\\\\authorize\\\\api\\\\contract\\\\v1\\\\ANetApiResponseType\\:\\:getTransactionResponse\\(\\)\\.$#"
 			count: 1
 			path: src/Classes/AuthorizeNetClient.php
@@ -307,7 +297,7 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$hash\\.$#"
-			count: 3
+			count: 2
 			path: src/Payments/AuthorizeNetAim.php
 
 		-
@@ -357,7 +347,7 @@ parameters:
 
 		-
 			message: "#^Call to an undefined method Igniter\\\\Cart\\\\Models\\\\Order\\:\\:payment_logs\\(\\)\\.$#"
-			count: 1
+			count: 2
 			path: src/Payments/AuthorizeNetAim.php
 
 		-
@@ -411,21 +401,6 @@ parameters:
 			path: src/Payments/Mollie.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\OrderMenu\\:\\:\\$name\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\OrderMenu\\:\\:\\$price\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\OrderMenu\\:\\:\\$quantity\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
 			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_action\\.$#"
 			count: 1
 			path: src/Payments/PaypalExpress.php
@@ -446,17 +421,7 @@ parameters:
 			path: src/Payments/PaypalExpress.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_sandbox_signature\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
 			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_sandbox_user\\.$#"
-			count: 1
-			path: src/Payments/PaypalExpress.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_signature\\.$#"
 			count: 1
 			path: src/Payments/PaypalExpress.php
 
@@ -516,6 +481,11 @@ parameters:
 			path: src/Payments/Square.php
 
 		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$is_refundable\\.$#"
+			count: 1
+			path: src/Payments/Square.php
+
+		-
 			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$card_brand\\.$#"
 			count: 1
 			path: src/Payments/Square.php
@@ -551,12 +521,17 @@ parameters:
 			path: src/Payments/Square.php
 
 		-
-			message: "#^Class Square\\\\Models\\\\CreatePaymentRequest constructor invoked with 3 parameters, 2 required\\.$#"
-			count: 1
-			path: src/Payments/Square.php
+			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$customer\\.$#"
+			count: 2
+			path: src/Payments/Stripe.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$customer\\.$#"
+			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$id\\.$#"
+			count: 2
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\Cart\\\\Models\\\\Order\\:\\:\\$payment\\.$#"
 			count: 2
 			path: src/Payments/Stripe.php
 
@@ -631,38 +606,18 @@ parameters:
 			path: src/Payments/Stripe.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$card_brand\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$card_last4\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$profile_data\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Access to an undefined property Illuminate\\\\Support\\\\Optional\\:\\:\\$client_secret\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
 			message: "#^Call to an undefined method Igniter\\\\Cart\\\\Models\\\\Order\\:\\:payment_logs\\(\\)\\.$#"
-			count: 1
+			count: 2
 			path: src/Payments/Stripe.php
 
 		-
 			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:findPaymentProfile\\(\\)\\.$#"
-			count: 1
+			count: 3
 			path: src/Payments/Stripe.php
 
 		-
 			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:initPaymentProfile\\(\\)\\.$#"
-			count: 1
+			count: 3
 			path: src/Payments/Stripe.php
 
 		-
