@@ -169,7 +169,7 @@ class Stripe extends BasePaymentGateway
             $gateway = $this->createGateway();
             $stripeOptions = $this->getStripeOptions();
             $paymentIntent = $gateway->paymentIntents->retrieve($intentId, [
-                'expand' => ['payment_method']
+                'expand' => ['payment_method'],
             ], $stripeOptions);
 
             // At this stage the PaymentIntent status should either
@@ -189,7 +189,7 @@ class Stripe extends BasePaymentGateway
                         'exp_month',
                         'exp_year',
                         'last4',
-                        'three_d_secure_usage'
+                        'three_d_secure_usage',
                     ]),
                 ]);
             }
@@ -303,8 +303,9 @@ class Stripe extends BasePaymentGateway
                 }
 
                 $fields = $this->getPaymentFormFields($order, [], true);
+
                 return $gateway->paymentIntents->update($paymentIntent->id, array_except($fields, [
-                    'capture_method', 'setup_future_usage', 'customer'
+                    'capture_method', 'setup_future_usage', 'customer',
                 ]), $stripeOptions);
             }
         } catch (Exception $ex) {

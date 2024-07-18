@@ -225,17 +225,17 @@ class PaypalExpress extends BasePaymentGateway
         $fields['purchase_units'][] = [
             'reference_id' => $order->hash,
             'custom_id' => $order->getKey(),
-//            'items' => $order->getOrderMenus()->map(function(OrderMenu $orderMenu) use ($currencyCode) {
-//                return [
-//                    'name' => $orderMenu->name,
-//                    'quantity' => $orderMenu->quantity,
-//                    'unit_amount' => [
-//                        'currency_code' => $currencyCode,
-//                        'value' => number_format($orderMenu->price, 2, '.', ''),
-//                    ],
-//                    'category' => 'PHYSICAL_GOODS',
-//                ];
-//            })->all(),
+            //            'items' => $order->getOrderMenus()->map(function(OrderMenu $orderMenu) use ($currencyCode) {
+            //                return [
+            //                    'name' => $orderMenu->name,
+            //                    'quantity' => $orderMenu->quantity,
+            //                    'unit_amount' => [
+            //                        'currency_code' => $currencyCode,
+            //                        'value' => number_format($orderMenu->price, 2, '.', ''),
+            //                    ],
+            //                    'category' => 'PHYSICAL_GOODS',
+            //                ];
+            //            })->all(),
             'amount' => [
                 'currency_code' => $currencyCode,
                 'value' => number_format($order->order_total, 2, '.', ''),
