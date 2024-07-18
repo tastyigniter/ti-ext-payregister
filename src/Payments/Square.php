@@ -360,7 +360,7 @@ class Square extends BasePaymentGateway
         $fields = [
             'amount' => number_format($refundAmount, 2, '', ''),
             'currency' => currency()->getUserCurrency(),
-            'reason' => array_get($data, 'refund_reason')
+            'reason' => array_get($data, 'refund_reason'),
         ];
 
         $eventResult = $this->fireSystemEvent('payregister.square.extendRefundFields', [$fields, $order, $data], false);
