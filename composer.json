@@ -20,7 +20,7 @@
     "mollie"
   ],
   "require": {
-    "tastyigniter/core": "dev-master",
+    "tastyigniter/core": "^v4.0@beta",
     "php-http/guzzle7-adapter": "~1.0",
     "authorizenet/authorizenet": "2.0.2",
     "stripe/stripe-php": "~7.93.0",
@@ -69,5 +69,6 @@
     },
     "sort-packages": true
   },
-  "minimum-stability": "dev"
+  "minimum-stability": "beta",
+  "prefer-stable": true
 }
