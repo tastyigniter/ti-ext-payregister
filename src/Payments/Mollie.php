@@ -263,7 +263,7 @@ class Mollie extends BasePaymentGateway
 
     protected function createClient(): MollieApiClient
     {
-        $client = new MollieApiClient();
+        $client = new MollieApiClient;
         $client->setApiKey($this->getApiKey());
 
         $this->fireSystemEvent('payregister.mollie.extendGateway', [$client]);

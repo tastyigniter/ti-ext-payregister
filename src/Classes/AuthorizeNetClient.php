@@ -23,7 +23,7 @@ class AuthorizeNetClient
             return $this->authentication;
         }
 
-        return $this->authentication = new MerchantAuthenticationType();
+        return $this->authentication = new MerchantAuthenticationType;
     }
 
     public function createTransactionRequest(): CreateTransactionRequest
@@ -32,7 +32,7 @@ class AuthorizeNetClient
             return $this->transactionRequest;
         }
 
-        $request = new CreateTransactionRequest();
+        $request = new CreateTransactionRequest;
         $request->setMerchantAuthentication($this->authentication());
 
         return $this->transactionRequest = $request;

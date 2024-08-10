@@ -229,7 +229,7 @@ class Payment extends Model
      */
     public function initPaymentProfile($customer)
     {
-        $profile = new PaymentProfile();
+        $profile = new PaymentProfile;
         $profile->customer_id = $customer->customer_id;
         $profile->payment_id = $this->payment_id;
 

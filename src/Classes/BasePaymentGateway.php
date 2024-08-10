@@ -197,7 +197,7 @@ class BasePaymentGateway extends ModelAction
     {
         $class = '\\'.ltrim($this->orderModel, '\\');
 
-        return new $class();
+        return new $class;
     }
 
     /**
@@ -207,6 +207,6 @@ class BasePaymentGateway extends ModelAction
     {
         $class = '\\'.ltrim($this->orderStatusModel, '\\');
 
-        return new $class();
+        return new $class;
     }
 }
