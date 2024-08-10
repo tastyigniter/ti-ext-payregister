@@ -79,7 +79,7 @@ class Square extends BasePaymentGateway
 
         $idempotencyKey = str_random();
 
-        $amountMoney = new Models\Money();
+        $amountMoney = new Models\Money;
         $amountMoney->setAmount($fields['amount'] * 100);
         $amountMoney->setCurrency($fields['currency']);
 
@@ -87,7 +87,7 @@ class Square extends BasePaymentGateway
         $body->setAmountMoney($amountMoney);
 
         if (isset($fields['tip'])) {
-            $tipMoney = new Models\Money();
+            $tipMoney = new Models\Money;
             $tipMoney->setAmount($fields['tip'] * 100);
             $tipMoney->setCurrency($fields['currency']);
             $body->setTipMoney($tipMoney);
@@ -213,7 +213,7 @@ class Square extends BasePaymentGateway
         }
 
         if ($newCustomerRequired) {
-            $body = new Models\CreateCustomerRequest();
+            $body = new Models\CreateCustomerRequest;
             $body->setGivenName($customer->first_name);
             $body->setFamilyName($customer->last_name);
             $body->setEmailAddress($customer->email);
@@ -253,7 +253,7 @@ class Square extends BasePaymentGateway
         }
 
         if ($newCardRequired) {
-            $body_card = new Models\Card();
+            $body_card = new Models\Card;
 
             $body_card->setCardholderName($data['first_name'].' '.$data['last_name']);
             $body_card->setCustomerId($customerId);
@@ -319,7 +319,7 @@ class Square extends BasePaymentGateway
 
         try {
             $idempotencyKey = str_random();
-            $amountMoney = new \Square\Models\Money();
+            $amountMoney = new \Square\Models\Money;
             $amountMoney->setAmount($fields['amount']);
             $amountMoney->setCurrency($fields['currency']);
 

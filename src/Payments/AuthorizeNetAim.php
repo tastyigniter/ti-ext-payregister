@@ -168,7 +168,7 @@ class AuthorizeNetAim extends BasePaymentGateway
             new ApplicationException('Missing payment ID in successful transaction response')
         );
 
-        $transactionRequestType = new TransactionRequestType();
+        $transactionRequestType = new TransactionRequestType;
         $transactionRequestType->setTransactionType('priorAuthCaptureTransaction');
         $transactionRequestType->setRefTransId($paymentId);
 
@@ -204,7 +204,7 @@ class AuthorizeNetAim extends BasePaymentGateway
             new ApplicationException('Missing payment ID in successful transaction response')
         );
 
-        $transactionRequestType = new TransactionRequestType();
+        $transactionRequestType = new TransactionRequestType;
         $transactionRequestType->setTransactionType('voidTransaction');
         $transactionRequestType->setRefTransId($paymentId);
 
@@ -270,17 +270,17 @@ class AuthorizeNetAim extends BasePaymentGateway
 
     protected function createAcceptPayment(mixed $fields, Order $order)
     {
-        $opaqueData = new OpaqueDataType();
+        $opaqueData = new OpaqueDataType;
         $opaqueData->setDataDescriptor($fields['opaqueDataDescriptor']);
         $opaqueData->setDataValue($fields['opaqueDataValue']);
 
-        $transactionRequestType = new TransactionRequestType();
+        $transactionRequestType = new TransactionRequestType;
         $transactionRequestType->setTransactionType(
             $this->shouldAuthorizePayment() ? 'authOnlyTransaction' : 'authCaptureTransaction'
         );
         $transactionRequestType->setAmount($fields['amount']);
 
-        $paymentOne = new PaymentType();
+        $paymentOne = new PaymentType;
         $paymentOne->setOpaqueData($opaqueData);
         $transactionRequestType->setPayment($paymentOne);
 
@@ -297,13 +297,13 @@ class AuthorizeNetAim extends BasePaymentGateway
 
     protected function createRefundPayment(mixed $fields, Order $order)
     {
-        $creditCard = new CreditCardType();
+        $creditCard = new CreditCardType;
         $creditCard->setCardNumber($fields['card']);
         $creditCard->setExpirationDate('XXXX');
-        $paymentOne = new PaymentType();
+        $paymentOne = new PaymentType;
         $paymentOne->setCreditCard($creditCard);
 
-        $transactionRequestType = new TransactionRequestType();
+        $transactionRequestType = new TransactionRequestType;
         $transactionRequestType->setTransactionType('refundTransaction');
         $transactionRequestType->setAmount($fields['amount']);
         $transactionRequestType->setPayment($paymentOne);
