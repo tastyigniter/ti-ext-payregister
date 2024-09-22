@@ -33,7 +33,7 @@
         this.$checkoutForm
             .on('submitCheckoutForm', $.proxy(this.submitFormHandler, this))
             .on('submit', function () {
-                if (self.$checkoutForm.find('input[name="form.payment"]:checked').val() !== 'stripe')
+                if (self.$checkoutForm.find('input[name="fields.payment"]:checked').val() !== 'stripe')
                     return
 
                 self.paymentElement?.update({disabled: true});

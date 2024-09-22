@@ -1,4 +1,7 @@
-@php($paymentProfile = $paymentMethod->paymentProfileExists($order->customer) ? $paymentMethod->findPaymentProfile($order->customer) : null)
+@php($paymentProfile = $order->customer && $paymentMethod->paymentProfileExists($order->customer)
+    ? $paymentMethod->findPaymentProfile($order->customer)
+    : null
+)
 <div
     id="stripePaymentForm"
     class="payment-form ms-2 mt-3"
