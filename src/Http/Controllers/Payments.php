@@ -75,7 +75,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
     public function index_onSetDefault($context = null)
     {
         $data = $this->validate(post(), [
-            'default' => 'required|integer|exists:'.Payment::class.',payment_id',
+            'default' => 'required|alpha_dash|exists:'.Payment::class.',code',
         ]);
 
         if (Payment::updateDefault($data['default'])) {

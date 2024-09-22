@@ -12,7 +12,6 @@
     }
 
     ProcessSquare.prototype.init = function () {
-        console.log(this.$checkoutForm.checkout('selectedPaymentInput').val())
         if (this.$checkoutForm.checkout('selectedPaymentInput').val() !== 'square') return
 
         if (!$(this.options.cardSelector).length || $(this.options.cardSelector+' iframe').length)
