@@ -14,6 +14,7 @@ use net\authorize\api\contract\v1\OpaqueDataType;
 use net\authorize\api\contract\v1\PaymentType;
 use net\authorize\api\contract\v1\TransactionRequestType;
 use net\authorize\api\contract\v1\TransactionResponseType;
+use net\authorize\api\controller\CreateTransactionController;
 
 class AuthorizeNetAim extends BasePaymentGateway
 {
@@ -118,21 +119,21 @@ class AuthorizeNetAim extends BasePaymentGateway
             }
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields);
-        }
 
-        throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+        }
     }
 
     public function processRefundForm($data, $order, $paymentLog)
     {
         throw_if(
             !is_null($paymentLog->refunded_at) || !is_array($paymentLog->response),
-            new ApplicationException('Nothing to refund')
+            new ApplicationException('Nothing to refund'),
         );
 
         throw_if(
             array_get($paymentLog->response, 'status') !== '1',
-            new ApplicationException('No successful transaction to refund')
+            new ApplicationException('No successful transaction to refund'),
         );
 
         $paymentId = array_get($paymentLog->response, 'id');
@@ -145,7 +146,7 @@ class AuthorizeNetAim extends BasePaymentGateway
             $responseData = $this->convertResponseToArray($response);
 
             $order->logPaymentAttempt(sprintf('Payment %s refund processed -> (%s: %s)',
-                $paymentId, array_get($data, 'refund_type'), $responseData['id']
+                $paymentId, array_get($data, 'refund_type'), $responseData['id'],
             ), 1, $fields, $responseData);
 
             $paymentLog->markAsRefundProcessed();
@@ -160,12 +161,12 @@ class AuthorizeNetAim extends BasePaymentGateway
     {
         throw_unless(
             $paymentLog = $order->payment_logs()->firstWhere('is_success', true),
-            new ApplicationException('No successful transaction to capture')
+            new ApplicationException('No successful transaction to capture'),
         );
 
         throw_unless(
             $paymentId = array_get($paymentLog->response, 'id'),
-            new ApplicationException('Missing payment ID in successful transaction response')
+            new ApplicationException('Missing payment ID in successful transaction response'),
         );
 
         $transactionRequestType = new TransactionRequestType;
@@ -180,7 +181,7 @@ class AuthorizeNetAim extends BasePaymentGateway
 
         $this->fireSystemEvent('payregister.authorizenetaim.extendCaptureRequest', [$request], false);
 
-        $response = $client->createTransaction($request);
+        $response = $client->createTransaction(new CreateTransactionController($request));
         $responseData = $this->convertResponseToArray($response);
 
         if ($response->getResponseCode() == '1') {
@@ -196,12 +197,12 @@ class AuthorizeNetAim extends BasePaymentGateway
     {
         throw_unless(
             $paymentLog = $order->payment_logs()->firstWhere('is_success', true),
-            new ApplicationException('No successful transaction to capture')
+            new ApplicationException('No successful transaction to capture'),
         );
 
         throw_unless(
             $paymentId = array_get($paymentLog->response, 'id'),
-            new ApplicationException('Missing payment ID in successful transaction response')
+            new ApplicationException('Missing payment ID in successful transaction response'),
         );
 
         $transactionRequestType = new TransactionRequestType;
@@ -215,7 +216,7 @@ class AuthorizeNetAim extends BasePaymentGateway
 
         $this->fireSystemEvent('payregister.authorizenetaim.extendCancelRequest', [$request], false);
 
-        $response = $client->createTransaction($request);
+        $response = $client->createTransaction(new CreateTransactionController($request));
         $responseData = $this->convertResponseToArray($response);
 
         if ($response->getResponseCode() == '1') {
@@ -259,7 +260,7 @@ class AuthorizeNetAim extends BasePaymentGateway
             ? $order->order_total : array_get($data, 'refund_amount');
 
         throw_if($refundAmount > $order->order_total, new ApplicationException(
-            'Refund amount should be be less than or equal to the order total'
+            'Refund amount should be be less than or equal to the order total',
         ));
 
         return [
@@ -276,7 +277,7 @@ class AuthorizeNetAim extends BasePaymentGateway
 
         $transactionRequestType = new TransactionRequestType;
         $transactionRequestType->setTransactionType(
-            $this->shouldAuthorizePayment() ? 'authOnlyTransaction' : 'authCaptureTransaction'
+            $this->shouldAuthorizePayment() ? 'authOnlyTransaction' : 'authCaptureTransaction',
         );
         $transactionRequestType->setAmount($fields['amount']);
 
@@ -292,7 +293,7 @@ class AuthorizeNetAim extends BasePaymentGateway
 
         $this->fireSystemEvent('payregister.authorizenetaim.extendAcceptRequest', [$request], false);
 
-        return $client->createTransaction($request);
+        return $client->createTransaction(new CreateTransactionController($request));
     }
 
     protected function createRefundPayment(mixed $fields, Order $order)
@@ -317,7 +318,7 @@ class AuthorizeNetAim extends BasePaymentGateway
 
         $this->fireSystemEvent('payregister.authorizenetaim.extendRefundRequest', [$request], false);
 
-        return $client->createTransaction($request);
+        return $client->createTransaction(new CreateTransactionController($request));
     }
 
     protected function convertResponseToArray(TransactionResponseType $response): array

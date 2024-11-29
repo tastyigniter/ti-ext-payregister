@@ -3,6 +3,7 @@
 namespace Igniter\PayRegister\Database\Factories;
 
 use Igniter\Flame\Database\Factories\Factory;
+use Igniter\PayRegister\Tests\Payments\Fixtures\TestPayment;
 
 class PaymentFactory extends Factory
 {
@@ -12,8 +13,8 @@ class PaymentFactory extends Factory
     {
         return [
             'name' => $this->faker->name,
-            'code' => $this->faker->name,
-            'class_name' => $this->faker->name,
+            'code' => $this->faker->word,
+            'class_name' => TestPayment::class,
             'description' => $this->faker->text,
             'data' => [],
             'priority' => $this->faker->randomNumber(),

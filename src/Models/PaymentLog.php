@@ -5,6 +5,7 @@ namespace Igniter\PayRegister\Models;
 use Carbon\Carbon;
 use Igniter\Cart\Events\OrderBeforeRefundProcessedEvent;
 use Igniter\Cart\Events\OrderRefundProcessedEvent;
+use Igniter\Flame\Database\Factories\HasFactory;
 use Igniter\Flame\Database\Model;
 use Igniter\Flame\Database\Traits\Validation;
 
@@ -13,6 +14,7 @@ use Igniter\Flame\Database\Traits\Validation;
  */
 class PaymentLog extends Model
 {
+    use HasFactory;
     use Validation;
 
     /**
@@ -28,8 +30,6 @@ class PaymentLog extends Model
     protected $appends = ['date_added_since'];
 
     public $timestamps = true;
-
-    public $dates = ['refunded_at'];
 
     public $relation = [
         'belongsTo' => [
@@ -55,6 +55,7 @@ class PaymentLog extends Model
         'response' => 'array',
         'is_success' => 'boolean',
         'is_refundable' => 'boolean',
+        'refunded_at' => 'datetime',
     ];
 
     public static function logAttempt($order, $message, $isSuccess, $request = [], $response = [], $isRefundable = false)

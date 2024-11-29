@@ -43,6 +43,11 @@ class PaypalExpress extends BasePaymentGateway
         return $this->isSandboxMode() ? $this->model->api_sandbox_pass : $this->model->api_pass;
     }
 
+    public function getTransactionMode(): string
+    {
+        return $this->model->api_action === 'authorization' ? 'AUTHORIZE' : 'CAPTURE';
+    }
+
     /**
      * @param array $data
      * @param \Igniter\PayRegister\Models\Payment $host
@@ -76,30 +81,28 @@ class PaypalExpress extends BasePaymentGateway
     public function processReturnUrl($params)
     {
         $hash = $params[0] ?? null;
-        $redirectPage = input('redirect');
-        $cancelPage = input('cancel');
+        $redirectPage = input('redirect') ?: 'checkout.checkout';
+        $cancelPage = input('cancel') ?: 'checkout.checkout';
 
         $order = $this->createOrderModel()->whereHash($hash)->first();
 
         try {
             throw_unless($order, new ApplicationException('No order found'));
-            throw_unless(strlen($redirectPage), new ApplicationException('No redirect page found'));
-            throw_unless(strlen($cancelPage), new ApplicationException('No cancel page found'));
 
             throw_if(
-                !($paymentMethod = $order->payment_method) || $paymentMethod->getGatewayClass() != static::class,
-                new ApplicationException('No valid payment method found')
+                !($paymentMethod = $order->payment_method) || !$paymentMethod->getGatewayObject() instanceof PaypalExpress,
+                new ApplicationException('No valid payment method found'),
             );
 
             throw_unless(
                 strlen($token = request()->input('token', '')),
-                new ApplicationException('Missing valid token in response')
+                new ApplicationException('Missing valid token in response'),
             );
 
             $response = $this->createClient()->getOrder($token);
             throw_if(
                 array_get($response, 'status') !== 'APPROVED',
-                new ApplicationException('Payment is not approved')
+                new ApplicationException('Payment is not approved'),
             );
 
             if (array_get($response, 'intent') === 'CAPTURE') {
@@ -125,7 +128,7 @@ class PaypalExpress extends BasePaymentGateway
                 'hash' => $order->hash,
             ]));
         } catch (Exception $ex) {
-            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], $ex->getTrace());
+            $order?->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], $ex->getTrace());
             flash()->warning($ex->getMessage())->important();
         }
 
@@ -135,19 +138,16 @@ class PaypalExpress extends BasePaymentGateway
     public function processCancelUrl($params)
     {
         $hash = $params[0] ?? null;
-        throw_unless(
-            $order = $this->createOrderModel()->whereHash($hash)->first(),
-            new ApplicationException('No order found')
-        );
+        $redirectPage = input('redirect') ?: 'checkout.checkout';
 
         throw_unless(
-            strlen($redirectPage = request()->input('redirect')),
-            new ApplicationException('No redirect page found')
+            $order = $this->createOrderModel()->whereHash($hash)->first(),
+            new ApplicationException('No order found'),
         );
 
         throw_if(
-            !($paymentMethod = $order->payment_method) || $paymentMethod->getGatewayClass() != static::class,
-            new ApplicationException('No valid payment method found')
+            !($paymentMethod = $order->payment_method) || !$paymentMethod->getGatewayObject() instanceof PaypalExpress,
+            new ApplicationException('No valid payment method found'),
         );
 
         $order->logPaymentAttempt('Payment canceled by customer', 0, [], request()->input());
@@ -159,12 +159,12 @@ class PaypalExpress extends BasePaymentGateway
     {
         throw_if(
             !is_null($paymentLog->refunded_at) || !is_array($paymentLog->response),
-            new ApplicationException('Nothing to refund')
+            new ApplicationException('Nothing to refund'),
         );
 
         throw_if(
             array_get($paymentLog->response, 'purchase_units.0.payments.captures.0.status') !== 'COMPLETED',
-            new ApplicationException('No charge to refund')
+            new ApplicationException('No charge to refund'),
         );
 
         $paymentId = array_get($paymentLog->response, 'purchase_units.0.payments.captures.0.id');
@@ -174,7 +174,7 @@ class PaypalExpress extends BasePaymentGateway
             $response = $this->createClient()->refundPayment($paymentId, $fields);
 
             $message = sprintf('Payment %s refunded successfully -> (%s: %s)',
-                $paymentId, array_get($data, 'refund_type'), $response->json('id')
+                $paymentId, array_get($data, 'refund_type'), $response->json('id'),
             );
 
             $order->logPaymentAttempt($message, 1, $fields, $response->json());
@@ -204,7 +204,7 @@ class PaypalExpress extends BasePaymentGateway
         $returnUrl .= '?redirect='.array_get($data, 'successPage').'&cancel='.array_get($data, 'cancelPage');
 
         $fields = [
-            'intent' => $this->model->api_action === 'authorization' ? 'AUTHORIZE' : 'CAPTURE',
+            'intent' => $this->getTransactionMode(),
             'application_context' => [
                 'brand_name' => setting('site_name'),
             ],
@@ -225,17 +225,6 @@ class PaypalExpress extends BasePaymentGateway
         $fields['purchase_units'][] = [
             'reference_id' => $order->hash,
             'custom_id' => $order->getKey(),
-            //            'items' => $order->getOrderMenus()->map(function(OrderMenu $orderMenu) use ($currencyCode) {
-            //                return [
-            //                    'name' => $orderMenu->name,
-            //                    'quantity' => $orderMenu->quantity,
-            //                    'unit_amount' => [
-            //                        'currency_code' => $currencyCode,
-            //                        'value' => number_format($orderMenu->price, 2, '.', ''),
-            //                    ],
-            //                    'category' => 'PHYSICAL_GOODS',
-            //                ];
-            //            })->all(),
             'amount' => [
                 'currency_code' => $currencyCode,
                 'value' => number_format($order->order_total, 2, '.', ''),
@@ -253,7 +242,7 @@ class PaypalExpress extends BasePaymentGateway
             ? array_get($data, 'refund_amount') : $order->order_total;
 
         throw_if($refundAmount > $order->order_total, new ApplicationException(
-            'Refund amount should be be less than or equal to the order total'
+            'Refund amount should be be less than or equal to the order total',
         ));
 
         $fields = [

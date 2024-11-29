@@ -2,10 +2,13 @@
 
 namespace Igniter\PayRegister\Models;
 
+use Igniter\Flame\Database\Factories\HasFactory;
 use Igniter\Flame\Database\Model;
 
 class PaymentProfile extends Model
 {
+    use HasFactory;
+
     public $timestamps = true;
 
     public $table = 'payment_profiles';

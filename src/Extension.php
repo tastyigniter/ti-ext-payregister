@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Event;
 
 class Extension extends BaseExtension
 {
+    protected $subscribe = [
+        FormFieldsSubscriber::class,
+    ];
+
     protected $listen = [
         'igniter.checkout.afterSaveOrder' => [
             UpdatePaymentIntentSessionOnCheckout::class,
@@ -117,8 +121,6 @@ class Extension extends BaseExtension
 
     public function boot()
     {
-        Event::subscribe(FormFieldsSubscriber::class);
-
         Event::listen('main.theme.activated', function() {
             Payment::syncAll();
         });

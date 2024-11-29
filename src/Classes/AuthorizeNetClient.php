@@ -38,10 +38,8 @@ class AuthorizeNetClient
         return $this->transactionRequest = $request;
     }
 
-    public function createTransaction(?CreateTransactionRequest $request): TransactionResponseType
+    public function createTransaction(CreateTransactionController $controller): TransactionResponseType
     {
-        $controller = new CreateTransactionController($request);
-
         $response = $controller->executeWithApiResponse($this->sandbox
             ? \net\authorize\api\constants\ANetEnvironment::SANDBOX
             : \net\authorize\api\constants\ANetEnvironment::PRODUCTION);
@@ -50,15 +48,13 @@ class AuthorizeNetClient
 
         $transactionResponse = $response->getTransactionResponse();
 
-        throw_unless(
-            $response->getMessages()->getResultCode() == 'Ok',
-            new ApplicationException($this->getErrorMessageFromResponse($response, $transactionResponse))
-        );
+        if ($response->getMessages()->getResultCode() !== 'Ok') {
+            throw new ApplicationException($this->getErrorMessageFromResponse($response, $transactionResponse));
+        }
 
-        throw_if(
-            is_null($transactionResponse) || is_null($transactionResponse->getMessages()),
-            new ApplicationException($this->getErrorMessageFromResponse($response, $transactionResponse))
-        );
+        if (is_null($transactionResponse) || is_null($transactionResponse->getMessages())) {
+            throw new ApplicationException($this->getErrorMessageFromResponse($response, $transactionResponse));
+        }
 
         return $transactionResponse;
     }
@@ -69,13 +65,13 @@ class AuthorizeNetClient
         if ($transactionResponse != null && $transactionResponse->getErrors() != null) {
             return sprintf($message,
                 $transactionResponse->getErrors()[0]->getErrorCode(),
-                $transactionResponse->getErrors()[0]->getErrorText()
+                $transactionResponse->getErrors()[0]->getErrorText(),
             );
         }
 
         return sprintf($message,
             $response->getMessages()->getMessage()[0]->getCode(),
-            $response->getMessages()->getMessage()[0]->getText()
+            $response->getMessages()->getMessage()[0]->getText(),
         );
     }
 }

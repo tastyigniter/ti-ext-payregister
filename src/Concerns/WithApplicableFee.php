@@ -20,7 +20,7 @@ trait WithApplicableFee
         if (!$this->isApplicable($order->order_total, $host)) {
             throw new ApplicationException(sprintf(
                 lang('igniter.payregister::default.alert_min_order_total'),
-                currency_format($host->order_total), $host->name
+                currency_format($host->order_total), $host->name,
             ));
         }
     }

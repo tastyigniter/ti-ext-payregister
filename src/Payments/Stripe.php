@@ -10,14 +10,15 @@ use Igniter\PayRegister\Concerns\WithAuthorizedPayment;
 use Igniter\PayRegister\Concerns\WithPaymentProfile;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
 use Igniter\PayRegister\Models\PaymentProfile;
+use Igniter\System\Traits\SessionMaker;
 use Igniter\User\Models\Customer;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Stripe\StripeClient;
 
 class Stripe extends BasePaymentGateway
 {
+    use SessionMaker;
     use WithAuthorizedPayment;
     use WithPaymentProfile;
     use WithPaymentRefund;
@@ -119,7 +120,7 @@ class Stripe extends BasePaymentGateway
                 return;
             }
 
-            $this->validateApplicableFee($order, $this->model);
+            $this->validateApplicableFee($order, $this->getHostObject());
 
             $response = $this->updatePaymentIntentSession($order);
 
@@ -127,10 +128,10 @@ class Stripe extends BasePaymentGateway
                 $fields = $this->getPaymentFormFields($order);
                 $stripeOptions = $this->getStripeOptions();
                 $response = $this->createGateway()->paymentIntents->create(
-                    array_only($fields, ['amount', 'currency', 'capture_method', 'setup_future_usage', 'customer']), $stripeOptions
+                    array_only($fields, ['amount', 'currency', 'capture_method', 'setup_future_usage', 'customer']), $stripeOptions,
                 );
 
-                Session::put($this->intentSessionKey, $response->id);
+                $this->putSession($this->intentSessionKey, $response->id);
             }
 
             return $response?->client_secret;
@@ -156,7 +157,7 @@ class Stripe extends BasePaymentGateway
         $this->validateApplicableFee($order, $host);
 
         try {
-            if (!$intentId = Session::get($this->intentSessionKey)) {
+            if (!$intentId = $this->getSession($this->intentSessionKey)) {
                 throw new Exception('Missing payment intent identifier in session.');
             }
 
@@ -203,7 +204,7 @@ class Stripe extends BasePaymentGateway
             $order->updateOrderStatus($host->order_status, ['notify' => false]);
             $order->markAsPaymentProcessed();
 
-            Session::forget($this->intentSessionKey);
+            $this->forgetSession($this->intentSessionKey);
         } catch (Exception $ex) {
             logger()->error($ex);
             $order->logPaymentAttempt('Payment error: '.$ex->getMessage(), 0, $data, $paymentIntent ?? []);
@@ -216,24 +217,24 @@ class Stripe extends BasePaymentGateway
     {
         throw_unless(
             $paymentLog = $order->payment_logs()->firstWhere('is_success', true),
-            new ApplicationException('No successful authorized payment to capture')
+            new ApplicationException('No successful authorized payment to capture'),
         );
 
         throw_unless(
             $paymentIntentId = array_get($paymentLog->response, 'id'),
-            new ApplicationException('Missing payment intent ID in successful authorized payment response')
+            new ApplicationException('Missing payment intent ID in successful authorized payment response'),
         );
 
         throw_if(
-            $order->payment !== $this->model->code,
-            new ApplicationException(sprintf('Invalid payment class for order: %s', $order->id))
+            $order->payment !== $this->getHostObject()->code,
+            new ApplicationException(sprintf('Invalid payment class for order: %s', $order->id)),
         );
 
         try {
             $response = $this->createGateway()->paymentIntents->capture(
                 $paymentIntentId,
                 $this->getPaymentCaptureFields($order, $data),
-                $this->getStripeOptions()
+                $this->getStripeOptions(),
             );
 
             if ($response->status == 'succeeded') {
@@ -253,17 +254,17 @@ class Stripe extends BasePaymentGateway
     {
         throw_unless(
             $paymentLog = $order->payment_logs()->firstWhere('is_success', true),
-            new ApplicationException('No successful authorized payment to cancel')
+            new ApplicationException('No successful authorized payment to cancel'),
         );
 
         throw_unless(
             $paymentIntentId = array_get($paymentLog->response, 'id'),
-            new ApplicationException('Missing payment intent ID in successful authorized payment response')
+            new ApplicationException('Missing payment intent ID in successful authorized payment response'),
         );
 
         throw_if(
-            $order->payment !== $this->model->code,
-            new ApplicationException(sprintf('Invalid payment class for order: %s', $order->id))
+            $order->payment !== $this->getHostObject()->code,
+            new ApplicationException(sprintf('Invalid payment class for order: %s', $order->id)),
         );
 
         try {
@@ -273,7 +274,7 @@ class Stripe extends BasePaymentGateway
             }
 
             $response = $this->createGateway()->paymentIntents->cancel(
-                $paymentIntentId, $data, $this->getStripeOptions()
+                $paymentIntentId, $data, $this->getStripeOptions(),
             );
 
             if ($response->status == 'canceled') {
@@ -292,7 +293,7 @@ class Stripe extends BasePaymentGateway
     public function updatePaymentIntentSession($order)
     {
         try {
-            if ($intentId = Session::get($this->intentSessionKey)) {
+            if ($intentId = $this->getSession($this->intentSessionKey)) {
                 $gateway = $this->createGateway();
                 $stripeOptions = $this->getStripeOptions();
                 $paymentIntent = $gateway->paymentIntents->retrieve($intentId, [], $stripeOptions);
@@ -371,7 +372,7 @@ class Stripe extends BasePaymentGateway
 
             $intent = $gateway->paymentIntents->create(
                 array_except($fields, ['setup_future_usage']),
-                $stripeOptions
+                $stripeOptions,
             );
 
             if ($intent->status !== 'succeeded') {
@@ -467,7 +468,7 @@ class Stripe extends BasePaymentGateway
             $message = sprintf('Payment intent %s refunded successfully -> (%s: %s)',
                 $paymentChargeId,
                 array_get($data, 'refund_type'),
-                array_get($response->toArray(), 'id')
+                array_get($response->toArray(), 'id'),
             );
 
             $order->logPaymentAttempt($message, 1, $fields, $response->toArray());
@@ -521,7 +522,7 @@ class Stripe extends BasePaymentGateway
             ? array_get($data, 'refund_amount') : $order->order_total;
 
         throw_if($refundAmount > $order->order_total, new ApplicationException(
-            'Refund amount should be be less than or equal to the order total'
+            'Refund amount should be be less than or equal to the order total',
         ));
 
         $fields = [
@@ -542,7 +543,7 @@ class Stripe extends BasePaymentGateway
             'TastyIgniter Stripe',
             '1.0.0',
             'https://tastyigniter.com/marketplace/item/igniter-payregister',
-            'pp_partner_JZyCCGR3cOwj9S' // Used by Stripe to identify this integration
+            'pp_partner_JZyCCGR3cOwj9S', // Used by Stripe to identify this integration
         );
 
         $stripeClient = new StripeClient([
@@ -607,7 +608,7 @@ class Stripe extends BasePaymentGateway
         $event = \Stripe\Webhook::constructEvent(
             request()->getContent(),
             request()->header('stripe-signature'),
-            $webhookSecret
+            $webhookSecret,
         );
 
         return $event->toArray();

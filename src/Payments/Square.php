@@ -337,7 +337,7 @@ class Square extends BasePaymentGateway
             $message = sprintf('Payment %s refunded successfully -> (%s: %s)',
                 $paymentChargeId,
                 array_get($data, 'refund_type'),
-                array_get($response->getResult(), 'id')
+                array_get($response->getResult(), 'id'),
             );
 
             $order->logPaymentAttempt($message, 1, $fields, $response->getResult());
@@ -354,7 +354,7 @@ class Square extends BasePaymentGateway
             ? array_get($data, 'refund_amount') : $order->order_total;
 
         throw_if($refundAmount > $order->order_total, new ApplicationException(
-            'Refund amount should be be less than or equal to the order total'
+            'Refund amount should be be less than or equal to the order total',
         ));
 
         $fields = [
@@ -438,7 +438,7 @@ class Square extends BasePaymentGateway
 
     protected function handleUpdatePaymentProfile($customer, $data)
     {
-        $profile = $this->model->findPaymentProfile($customer);
+        $profile = $this->getHostObject()->findPaymentProfile($customer);
         $profileData = $profile ? (array)$profile->profile_data : [];
 
         $response = $this->createOrFetchCustomer($profileData, $customer);
@@ -452,7 +452,7 @@ class Square extends BasePaymentGateway
         $cardId = $response->getCard()->getId();
 
         if (!$profile) {
-            $profile = $this->model->initPaymentProfile($customer);
+            $profile = $this->getHostObject()->initPaymentProfile($customer);
         }
 
         $this->updatePaymentProfileData($profile, [

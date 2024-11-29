@@ -160,12 +160,18 @@ class BasePaymentGateway extends ModelAction
      * @param Model $host Type model object containing configuration fields values.
      * @param Model $order Order model object.
      */
-    public function processPaymentForm($data, $host, $order) {}
+    public function processPaymentForm($data, $host, $order)
+    {
+        throw new \LogicException('Method processPaymentForm must be implemented on your custom payment class.');
+    }
 
     /**
      * Executed when this gateway is rendered on the checkout page.
      */
-    public function beforeRenderPaymentForm($host, $controller) {}
+    public function beforeRenderPaymentForm($host, $controller)
+    {
+        throw new \LogicException('Method beforeRenderPaymentForm must be implemented on your custom payment class.');
+    }
 
     public function getPaymentFormViewName()
     {

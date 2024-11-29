@@ -50,11 +50,9 @@ class PaymentAttempts extends BaseFormWidget
 
     public function onLoadRecord()
     {
-        $paymentLogId = post('recordId');
+        $paymentLogId = input('recordId');
 
-        throw_unless($model = PaymentLog::find($paymentLogId),
-            new FlashException('Record not found')
-        );
+        throw_unless($model = PaymentLog::find($paymentLogId), new FlashException('Record not found'));
 
         $formTitle = sprintf(lang($this->formTitle), currency_format($model->order->order_total));
 
@@ -67,19 +65,21 @@ class PaymentAttempts extends BaseFormWidget
 
     public function onSaveRecord()
     {
-        $paymentLog = PaymentLog::find(post('recordId'));
+        $paymentLogId = input('recordId');
+
+        throw_unless($paymentLog = PaymentLog::find($paymentLogId), new FlashException('Record not found'));
 
         $paymentMethod = $this->model->payment_method;
 
         throw_unless(
             $paymentLog && $paymentMethod->canRefundPayment($paymentLog),
-            new FlashException('No successful payment to refund')
+            new FlashException('No successful payment to refund'),
         );
 
         $widget = $this->makeRefundFormWidget($paymentLog);
         $data = $widget->getSaveData();
 
-        $this->validate($data, $widget->config['rules']);
+        $this->validate($data, $widget->config['rules'] ?? []);
 
         $paymentMethod->processRefundForm($data, $this->model, $paymentLog);
 
