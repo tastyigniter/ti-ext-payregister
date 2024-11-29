@@ -396,11 +396,6 @@ parameters:
 			path: src/Payments/Mollie.php
 
 		-
-			message: "#^Method Igniter\\\\PayRegister\\\\Payments\\\\Mollie\\:\\:processPaymentForm\\(\\) should return bool\\|Illuminate\\\\Http\\\\RedirectResponse but return statement is missing\\.$#"
-			count: 1
-			path: src/Payments/Mollie.php
-
-		-
 			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$api_action\\.$#"
 			count: 1
 			path: src/Payments/PaypalExpress.php
@@ -501,16 +496,6 @@ parameters:
 			path: src/Payments/Square.php
 
 		-
-			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:findPaymentProfile\\(\\)\\.$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:initPaymentProfile\\(\\)\\.$#"
-			count: 1
-			path: src/Payments/Square.php
-
-		-
 			message: "#^Cannot call method getCardBrand\\(\\) on array\\.$#"
 			count: 1
 			path: src/Payments/Square.php
@@ -543,11 +528,6 @@ parameters:
 		-
 			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$capture_status\\.$#"
 			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\Flame\\\\Database\\\\Model\\:\\:\\$code\\.$#"
-			count: 2
 			path: src/Payments/Stripe.php
 
 		-
@@ -596,6 +576,11 @@ parameters:
 			path: src/Payments/Stripe.php
 
 		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$code\\.$#"
+			count: 2
+			path: src/Payments/Stripe.php
+
+		-
 			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$order_status\\.$#"
 			count: 2
 			path: src/Payments/Stripe.php
@@ -632,5 +617,10 @@ parameters:
 
 		-
 			message: "#^Method Igniter\\\\PayRegister\\\\Payments\\\\Stripe\\:\\:processPaymentForm\\(\\) should return bool\\|Illuminate\\\\Http\\\\RedirectResponse but return statement is missing\\.$#"
+			count: 1
+			path: src/Payments/Stripe.php
+
+		-
+			message: "#^Variable \\$paymentIntent on left side of \\?\\? is never defined\\.$#"
 			count: 1
 			path: src/Payments/Stripe.php
