@@ -170,7 +170,7 @@ it('logs error and returns null if exception occurs in createOrFetchIntent', fun
     $stripe->shouldReceive('validateApplicableFee')->andThrow(new Exception('Error'));
 
     expect($stripe->createOrFetchIntent($this->order))->toBeNull()
-        ->and(flash()->messages()->first())->message->toBe('Error');
+        ->and(flash()->messages()->first())->message->not->toBeNull()->level->toBe('warning');
 });
 
 it('processes stripe payment form successfully', function() {

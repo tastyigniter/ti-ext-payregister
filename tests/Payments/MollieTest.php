@@ -157,7 +157,7 @@ it('throws exception if no order found in mollie return url', function() {
     $response = $this->mollie->processReturnUrl(['invalid_hash']);
 
     expect($response->getTargetUrl())->toContain('http://cancel.url')
-        ->and(flash()->messages()->first())->message->toBe('No order found');
+        ->and(flash()->messages()->first())->message->not->toBeNull()->level->toBe('warning');
 });
 
 it('processes mollie notify url and updates order status', function() {

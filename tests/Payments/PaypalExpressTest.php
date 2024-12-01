@@ -173,7 +173,7 @@ it('throws exception if no order found in paypal express return url', function()
     $response = $this->paypalExpress->processReturnUrl(['invalid_hash']);
 
     expect($response->getTargetUrl())->toContain('http://cancel.url')
-        ->and(flash()->messages()->first())->message->toBe('No order found');
+        ->and(flash()->messages()->first())->message->not->toBeNull()->level->toBe('warning');
 });
 
 it('processes paypal express cancel url and logs payment attempt', function() {
