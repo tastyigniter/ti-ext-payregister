@@ -86,6 +86,21 @@ parameters:
 			path: src/Classes/PaymentGateways.php
 
 		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Events\\\\OrderBeforeRefundProcessedEvent\\:\\:\\$order\\.$#"
+			count: 1
+			path: src/Events/OrderBeforeRefundProcessedEvent.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$order\\.$#"
+			count: 1
+			path: src/Events/OrderBeforeRefundProcessedEvent.php
+
+		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentLog\\:\\:\\$order\\.$#"
+			count: 1
+			path: src/Events/OrderRefundProcessedEvent.php
+
+		-
 			message: "#^Access to an undefined property Igniter\\\\Admin\\\\Classes\\\\BaseWidget\\:\\:\\$previewMode\\.$#"
 			count: 1
 			path: src/FormWidgets/PaymentAttempts.php
