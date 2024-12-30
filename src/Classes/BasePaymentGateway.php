@@ -168,10 +168,7 @@ class BasePaymentGateway extends ModelAction
     /**
      * Executed when this gateway is rendered on the checkout page.
      */
-    public function beforeRenderPaymentForm($host, $controller)
-    {
-        throw new \LogicException('Method beforeRenderPaymentForm must be implemented on your custom payment class.');
-    }
+    public function beforeRenderPaymentForm($host, $controller) {}
 
     public function getPaymentFormViewName()
     {
