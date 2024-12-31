@@ -1,3 +1,10 @@
+<p align="center">
+    <a href="https://github.com/tastyigniter/ti-ext-payregister/actions"><img src="https://github.com/tastyigniter/ti-ext-payregister/actions/workflows/pipeline.yml/badge.svg" alt="Build Status"></a>
+    <a href="https://packagist.org/packages/tastyigniter/ti-ext-payregister"><img src="https://img.shields.io/packagist/dt/tastyigniter/ti-ext-payregister" alt="Total Downloads"></a>
+    <a href="https://packagist.org/packages/tastyigniter/ti-ext-payregister"><img src="https://img.shields.io/packagist/v/tastyigniter/ti-ext-payregister" alt="Latest Stable Version"></a>
+    <a href="https://packagist.org/packages/tastyigniter/ti-ext-payregister"><img src="https://img.shields.io/packagist/l/tastyigniter/ti-ext-payregister" alt="License"></a>
+</p>
+
 ## Introduction
 
 The PayRegister extension provides a robust payment system for TastyIgniter. It allows you to accept credit card payments using various payment gateways supplied by this extension. With no setup or monthly fees.
