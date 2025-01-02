@@ -181,6 +181,7 @@ class Payment extends Model
                 'class_name' => $gateway['class'],
                 'status' => $code === 'cod',
                 'is_default' => $code === 'cod',
+                'data' => [],
             ]);
 
             $model->applyGatewayClass();
