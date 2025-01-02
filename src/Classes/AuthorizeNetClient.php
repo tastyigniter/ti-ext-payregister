@@ -3,19 +3,27 @@
 namespace Igniter\PayRegister\Classes;
 
 use Igniter\Flame\Exception\ApplicationException;
+use net\authorize\api\constants\ANetEnvironment;
 use net\authorize\api\contract\v1\ANetApiResponseType;
-use net\authorize\api\contract\v1\CreateTransactionRequest;
+use net\authorize\api\contract\v1\CreditCardType;
 use net\authorize\api\contract\v1\MerchantAuthenticationType;
+use net\authorize\api\contract\v1\OpaqueDataType;
+use net\authorize\api\contract\v1\PaymentType;
+use net\authorize\api\contract\v1\TransactionRequestType;
 use net\authorize\api\contract\v1\TransactionResponseType;
-use net\authorize\api\controller\CreateTransactionController;
 
 class AuthorizeNetClient
 {
+    protected bool $sandbox = true;
+
     protected ?MerchantAuthenticationType $authentication = null;
 
-    protected ?CreateTransactionRequest $transactionRequest = null;
+    public function setTestMode(bool $sandbox = true)
+    {
+        $this->sandbox = $sandbox;
 
-    public function __construct(protected bool $sandbox = false) {}
+        return $this;
+    }
 
     public function authentication()
     {
@@ -26,23 +34,50 @@ class AuthorizeNetClient
         return $this->authentication = new MerchantAuthenticationType;
     }
 
-    public function createTransactionRequest(): CreateTransactionRequest
+    public function createTransactionRequest(array $fields = []): AuthorizeNetTransactionRequest
     {
-        if ($this->transactionRequest) {
-            return $this->transactionRequest;
+        $paymentOne = new PaymentType;
+        $transactionRequestType = new TransactionRequestType;
+
+        if (array_has($fields, ['opaqueDataDescriptor', 'opaqueDataValue'])) {
+            $opaqueData = new OpaqueDataType;
+            $opaqueData->setDataDescriptor($fields['opaqueDataDescriptor']);
+            $opaqueData->setDataValue($fields['opaqueDataValue']);
+            $paymentOne->setOpaqueData($opaqueData);
         }
 
-        $request = new CreateTransactionRequest;
+        if (array_has($fields, ['cardNumber', 'expirationDate'])) {
+            $creditCard = new CreditCardType;
+            $creditCard->setCardNumber($fields['cardNumber']);
+            $creditCard->setExpirationDate($fields['expirationDate']);
+            $paymentOne = new PaymentType;
+            $paymentOne->setCreditCard($creditCard);
+        }
+
+        $transactionRequestType->setPayment($paymentOne);
+        $transactionRequestType->setTransactionType($fields['transactionType'] ?? '');
+        if ($amount = array_get($fields, 'amount')) {
+            $transactionRequestType->setAmount($amount);
+        }
+
+        if ($transactionId = array_get($fields, 'transactionId')) {
+            $transactionRequestType->setRefTransId($transactionId);
+        }
+
+        $request = new AuthorizeNetTransactionRequest;
         $request->setMerchantAuthentication($this->authentication());
 
-        return $this->transactionRequest = $request;
+        $request->setRefId($fields['refId'] ?? '');
+        $request->setTransactionRequest($transactionRequestType);
+
+        return $request;
     }
 
-    public function createTransaction(CreateTransactionController $controller): TransactionResponseType
+    public function createTransaction(AuthorizeNetTransactionRequest $request): TransactionResponseType
     {
-        $response = $controller->executeWithApiResponse($this->sandbox
-            ? \net\authorize\api\constants\ANetEnvironment::SANDBOX
-            : \net\authorize\api\constants\ANetEnvironment::PRODUCTION);
+        $response = $request->controller()->executeWithApiResponse(
+            $this->sandbox ? ANetEnvironment::SANDBOX : ANetEnvironment::PRODUCTION,
+        );
 
         throw_if(is_null($response), new ApplicationException('No response returned'));
 
@@ -53,7 +88,7 @@ class AuthorizeNetClient
         }
 
         if (is_null($transactionResponse) || is_null($transactionResponse->getMessages())) {
-            throw new ApplicationException($this->getErrorMessageFromResponse($response, $transactionResponse));
+            throw new ApplicationException('Transaction failed with empty message');
         }
 
         return $transactionResponse;
@@ -61,7 +96,7 @@ class AuthorizeNetClient
 
     protected function getErrorMessageFromResponse(?AnetApiResponseType $response, ?TransactionResponseType $transactionResponse): string
     {
-        $message = "Transaction Failed \n Error Code  : %s \n Error Message : %s \n";
+        $message = "Transaction Failed \n Error Code : %s \n Error Message : %s \n";
         if ($transactionResponse != null && $transactionResponse->getErrors() != null) {
             return sprintf($message,
                 $transactionResponse->getErrors()[0]->getErrorCode(),

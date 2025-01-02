@@ -22,13 +22,6 @@ class PaymentProfile extends Model
         'is_primary' => 'boolean',
     ];
 
-    public function afterSave()
-    {
-        if ($this->is_primary && $this->wasChanged('is_primary')) {
-            $this->makePrimary();
-        }
-    }
-
     public function setProfileData($profileData)
     {
         $this->profile_data = $profileData;

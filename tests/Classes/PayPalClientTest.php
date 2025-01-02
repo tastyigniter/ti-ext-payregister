@@ -11,7 +11,10 @@ beforeEach(function() {
     $this->clientId = 'testClientId';
     $this->clientSecret = 'testClientSecret';
     $this->sandbox = true;
-    $this->payPalClient = new PayPalClient($this->clientId, $this->clientSecret, $this->sandbox);
+    $this->payPalClient = new PayPalClient();
+    $this->payPalClient->setClientSecret($this->clientSecret);
+    $this->payPalClient->setClientId($this->clientId);
+    $this->payPalClient->setSandbox($this->sandbox);
 });
 
 function mockGenerateAccessToken()
@@ -32,14 +35,18 @@ it('throws exception if client ID is not configured', function() {
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('PayPal client ID is not configured');
 
-    new PayPalClient(null, $this->clientSecret, $this->sandbox);
+    $paypalClient = new PayPalClient();
+    $paypalClient->setClientSecret('testClientSecret');
+    $paypalClient->getOrder(123);
 });
 
 it('throws exception if client secret is not configured', function() {
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('PayPal client secret is not configured');
 
-    new PayPalClient($this->clientId, null, $this->sandbox);
+    $paypalClient = new PayPalClient();
+    $paypalClient->setClientId('testClientId');
+    $paypalClient->getOrder(123);
 });
 
 it('gets order details successfully', function() {

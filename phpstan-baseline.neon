@@ -51,14 +51,14 @@ parameters:
 			path: src/Classes/BasePaymentGateway.php
 
 		-
-			message: "#^Method Igniter\\\\PayRegister\\\\Classes\\\\BasePaymentGateway\\:\\:initialize\\(\\) should return array but return statement is missing\\.$#"
+			message: "#^Method Igniter\\\\PayRegister\\\\Classes\\\\BasePaymentGateway\\:\\:getPaymentFormViewName\\(\\) invoked with 1 parameter, 0 required\\.$#"
 			count: 1
 			path: src/Classes/BasePaymentGateway.php
 
 		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Classes\\\\PayPalClient\\:\\:\\$config\\.$#"
+			message: "#^Method Igniter\\\\PayRegister\\\\Classes\\\\BasePaymentGateway\\:\\:initialize\\(\\) should return array but return statement is missing\\.$#"
 			count: 1
-			path: src/Classes/PayPalClient.php
+			path: src/Classes/BasePaymentGateway.php
 
 		-
 			message: "#^Call to an undefined method Illuminate\\\\Contracts\\\\View\\\\Factory\\:\\:getFinder\\(\\)\\.$#"
@@ -156,17 +156,17 @@ parameters:
 			path: src/Models/Observers/PaymentObserver.php
 
 		-
+			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$is_primary\\.$#"
+			count: 1
+			path: src/Models/Observers/PaymentProfileObserver.php
+
+		-
 			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$class_name\\.$#"
 			count: 4
 			path: src/Models/Payment.php
 
 		-
 			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$gatewayManager\\.$#"
-			count: 1
-			path: src/Models/Payment.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:\\$model\\.$#"
 			count: 1
 			path: src/Models/Payment.php
 
@@ -191,17 +191,7 @@ parameters:
 			path: src/Models/Payment.php
 
 		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:beforeRenderPaymentForm\\(\\)\\.$#"
-			count: 1
-			path: src/Models/Payment.php
-
-		-
 			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:getConfigFields\\(\\)\\.$#"
-			count: 1
-			path: src/Models/Payment.php
-
-		-
-			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:getPaymentFormViewName\\(\\)\\.$#"
 			count: 1
 			path: src/Models/Payment.php
 
@@ -288,11 +278,6 @@ parameters:
 		-
 			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$customer_id\\.$#"
 			count: 2
-			path: src/Models/PaymentProfile.php
-
-		-
-			message: "#^Access to an undefined property Igniter\\\\PayRegister\\\\Models\\\\PaymentProfile\\:\\:\\$is_primary\\.$#"
-			count: 1
 			path: src/Models/PaymentProfile.php
 
 		-
@@ -617,16 +602,11 @@ parameters:
 
 		-
 			message: "#^Call to an undefined method Igniter\\\\Flame\\\\Database\\\\Model\\:\\:initPaymentProfile\\(\\)\\.$#"
-			count: 3
+			count: 2
 			path: src/Payments/Stripe.php
 
 		-
 			message: "#^Call to an undefined static method Igniter\\\\Cart\\\\Models\\\\Order\\:\\:find\\(\\)\\.$#"
-			count: 1
-			path: src/Payments/Stripe.php
-
-		-
-			message: "#^Call to an undefined static method Illuminate\\\\Support\\\\Facades\\\\Event\\:\\:fire\\(\\)\\.$#"
 			count: 1
 			path: src/Payments/Stripe.php
 

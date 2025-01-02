@@ -5,6 +5,7 @@ namespace Igniter\PayRegister\Tests\Payments;
 use Exception;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
+use Igniter\PayRegister\Classes\PayPalClient;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Payments\PaypalExpress;
@@ -16,9 +17,6 @@ beforeEach(function() {
     $this->payment = Payment::factory()->create([
         'class_name' => PaypalExpress::class,
     ]);
-    $this->paymentLog = Mockery::mock(PaymentLog::class)->makePartial();
-    $this->order = Mockery::mock(Order::class)->makePartial();
-    $this->order->payment_method = $this->payment;
     $this->paypalExpress = new PaypalExpress($this->payment);
 });
 
@@ -91,54 +89,80 @@ it('returns CAPTURE when api_action is not authorization for paypal express', fu
     expect($this->paypalExpress->getTransactionMode())->toBe('CAPTURE');
 });
 
-it('processes paypal express payment form and redirects to payer action url', function() {
-    $this->order->customer = Mockery::mock(Customer::class)->makePartial();
-    $this->order->order_total = 100;
+it('processes payment form and redirects to payer action url', function() {
+    $this->payment->api_action = 'authorization';
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
 
     $response = Mockery::mock(Response::class);
     $response->shouldReceive('ok')->andReturn(true);
     $response->shouldReceive('json')->with('links', [])->andReturn([['rel' => 'payer-action', 'href' => 'http://payer.action.url']]);
-    $paypalExpress = Mockery::mock(PaypalExpress::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $paypalExpress->shouldReceive('getTransactionMode')->andReturn('AUTHORIZE')->once();
-    $paypalExpress->shouldReceive('createClient->createOrder')->andReturn($response);
+    $paypalClient = Mockery::mock(PayPalClient::class)->makePartial();
+    $paypalClient->shouldReceive('createOrder')->andReturn($response);
+    app()->instance(PayPalClient::class, $paypalClient);
 
-    $result = $paypalExpress->processPaymentForm([], $this->payment, $this->order);
+    $result = $this->paypalExpress->processPaymentForm([], $this->payment, $order);
 
     expect($result->getTargetUrl())->toBe('http://payer.action.url');
 });
 
-it('throws exception if paypal express payment creation fails', function() {
-    $this->order->customer = Mockery::mock(Customer::class)->makePartial();
-    $this->order->order_total = 100;
-    $this->order->shouldReceive('logPaymentAttempt')
-        ->with('Payment error -> Payment error', 0, Mockery::any(), Mockery::any())
-        ->once();
+it('throws exception when payment response is not successful', function() {
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
 
-    $paypalExpress = Mockery::mock(PaypalExpress::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $paypalExpress->shouldReceive('validateApplicableFee')->once();
-    $paypalExpress->shouldReceive('getTransactionMode')->andReturn('AUTHORIZE')->once();
-    $paypalExpress->shouldReceive('createClient->createOrder')->andThrow(new Exception('Payment error'));
+    $response = Mockery::mock(Response::class);
+    $response->shouldReceive('ok')->andReturn(false);
+    $response->shouldReceive('json')->withNoArgs()->andReturn([])->once();
+    $response->shouldReceive('json')->with('message')->andReturn('Payment error')->once();
+    $response->shouldReceive('json')->with('links', [])->andReturn([['rel' => 'payer-action', 'href' => 'http://payer.action.url']]);
+    $paypalClient = Mockery::mock(PayPalClient::class)->makePartial();
+    $paypalClient->shouldReceive('createOrder')->andReturn($response);
+    app()->instance(PayPalClient::class, $paypalClient);
 
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('Sorry, there was an error processing your payment. Please try again later.');
 
-    $paypalExpress->processPaymentForm([], $this->payment, $this->order);
+    $this->paypalExpress->processPaymentForm([], $this->payment, $order);
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment error -> Payment error',
+    ]);
+});
+
+it('throws exception when payment request fails', function() {
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+
+    $paypalClient = Mockery::mock(PayPalClient::class)->makePartial();
+    $paypalClient->shouldReceive('createOrder')->andThrow(new Exception('Payment error'));
+    app()->instance(PayPalClient::class, $paypalClient);
+
+    $this->expectException(ApplicationException::class);
+    $this->expectExceptionMessage('Sorry, there was an error processing your payment. Please try again later.');
+
+    $this->paypalExpress->processPaymentForm([], $this->payment, $order);
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment error -> Payment error',
+    ]);
 });
 
 it('processes paypal express return url and updates order status', function(string $transactionMode) {
     request()->merge(['token' => 'test_token']);
 
     $this->payment->applyGatewayClass();
-    $this->order->hash = 'order_hash';
-    $this->order->order_id = 1;
-    $this->order->shouldReceive('logPaymentAttempt')->once();
-    $this->order->shouldReceive('updateOrderStatus')->once();
-    $this->order->shouldReceive('markAsPaymentProcessed')->once();
-    $this->order->shouldReceive('isPaymentProcessed')->andReturn(false);
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
 
     $response = Mockery::mock(Response::class);
     $response->shouldReceive('json')->withNoArgs()->andReturn([]);
@@ -148,15 +172,13 @@ it('processes paypal express return url and updates order status', function(stri
         $response->shouldReceive('json')->with('purchase_units.0.payments.authorizations.0.status')->andReturn('CREATED');
     }
 
-    $paypalExpress = Mockery::mock(PaypalExpress::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $paypalExpress->shouldReceive('createClient->getOrder')->andReturn(['status' => 'APPROVED', 'intent' => $transactionMode]);
-    $paypalExpress->shouldReceive('createClient->captureOrder')->andReturn($response);
-    $paypalExpress->shouldReceive('createClient->authorizeOrder')->andReturn($response);
-    $paypalExpress->shouldReceive('createOrderModel->whereHash->first')->andReturn($this->order);
+    $paypalClient = Mockery::mock(PayPalClient::class)->makePartial();
+    $paypalClient->shouldReceive('getOrder')->andReturn(['status' => 'APPROVED', 'intent' => $transactionMode]);
+    $paypalClient->shouldReceive('captureOrder')->andReturn($response);
+    $paypalClient->shouldReceive('authorizeOrder')->andReturn($response);
+    app()->instance(PayPalClient::class, $paypalClient);
 
-    $result = $paypalExpress->processReturnUrl(['order_hash']);
+    $result = $this->paypalExpress->processReturnUrl([$order->hash]);
 
     expect($result->getTargetUrl())->toContain('http://localhost/checkout');
 })->with([
@@ -164,7 +186,7 @@ it('processes paypal express return url and updates order status', function(stri
     ['AUTHORIZE'],
 ]);
 
-it('throws exception if no order found in paypal express return url', function() {
+it('throws exception when no order found in paypal express return url', function() {
     request()->merge([
         'redirect' => 'http://redirect.url',
         'cancel' => 'http://cancel.url',
@@ -177,18 +199,19 @@ it('throws exception if no order found in paypal express return url', function()
 });
 
 it('processes paypal express cancel url and logs payment attempt', function() {
+    $order = Order::factory()
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
     $this->payment->applyGatewayClass();
-    $this->order->hash = 'order_hash';
-    $this->order->shouldReceive('logPaymentAttempt')->once();
 
-    $paypalExpress = Mockery::mock(PaypalExpress::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $paypalExpress->shouldReceive('createOrderModel->whereHash->first')->andReturn($this->order);
-
-    $result = $paypalExpress->processCancelUrl(['order_hash']);
+    $result = $this->paypalExpress->processCancelUrl([$order->hash]);
 
     expect($result->getTargetUrl())->toContain('http://localhost/checkout');
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment canceled by customer',
+    ]);
 });
 
 it('throws exception if no order found in paypal express cancel url', function() {
@@ -199,29 +222,70 @@ it('throws exception if no order found in paypal express cancel url', function()
 });
 
 it('processes paypal express refund form and logs refund attempt', function() {
-    $this->paymentLog->refunded_at = null;
-    $this->paymentLog->response = ['purchase_units' => [['payments' => ['captures' => [['status' => 'COMPLETED', 'id' => 'payment_id']]]]]];
-    $this->order->order_total = 100;
-    $this->order->shouldReceive('logPaymentAttempt')->once();
-    $this->paymentLog->shouldReceive('markAsRefundProcessed')->once();
+    $order = Order::factory()
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    $paymentLog = PaymentLog::factory()->create([
+        'order_id' => $order->order_id,
+        'response' => ['purchase_units' => [['payments' => ['captures' => [['id' => 'payment_id', 'status' => 'COMPLETED']]]]]],
+    ]);
 
     $response = Mockery::mock(Response::class);
     $response->shouldReceive('json')->with('id')->andReturn('refund_id');
     $response->shouldReceive('json')->withNoArgs()->andReturn([]);
-    $paypalExpress = Mockery::mock(PaypalExpress::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $paypalExpress->shouldReceive('createClient->refundPayment')->andReturn($response);
+    $paypalClient = Mockery::mock(PayPalClient::class)->makePartial();
+    $paypalClient->shouldReceive('refundPayment')->andReturn($response);
+    app()->instance(PayPalClient::class, $paypalClient);
 
-    $paypalExpress->processRefundForm(['refund_type' => 'full'], $this->order, $this->paymentLog);
+    $this->paypalExpress->processRefundForm(['refund_type' => 'full'], $order, $paymentLog);
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => sprintf('Payment %s refund processed -> (%s: %s)', 'payment_id', 'full', 'refund_id'),
+        'is_success' => 1,
+    ]);
+});
+
+it('throws exception when refund payment request fails', function() {
+    $order = Order::factory()
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    $paymentLog = PaymentLog::factory()->create([
+        'order_id' => $order->order_id,
+        'response' => ['purchase_units' => [['payments' => ['captures' => [['status' => 'COMPLETED']]]]]],
+    ]);
+
+    $paypalClient = Mockery::mock(PayPalClient::class)->makePartial();
+    $paypalClient->shouldReceive('refundPayment')->andThrow(new Exception('Refund Error'));
+    app()->instance(PayPalClient::class, $paypalClient);
+    $this->paypalExpress->bindEvent('paypalexpress.extendRefundFields', function($fields, $order, $data) {
+        return [
+            'extra_field' => 'extra_value',
+        ];
+    });
+
+    $this->expectException(ApplicationException::class);
+    $this->expectExceptionMessage('Refund failed');
+
+    $this->paypalExpress->processRefundForm(['refund_type' => 'full'], $order, $paymentLog);
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Refund failed -> Refund Error',
+        'is_success' => 1,
+    ]);
 });
 
 it('throws exception if no paypal express charge to refund', function() {
-    $this->paymentLog->refunded_at = null;
-    $this->paymentLog->response = ['purchase_units' => [['payments' => ['captures' => [['status' => 'not_completed']]]]]];
+    $order = Order::factory()
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    $paymentLog = PaymentLog::factory()->create([
+        'response' => ['purchase_units' => [['payments' => ['captures' => [['status' => 'not_completed']]]]]],
+    ]);
 
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('No charge to refund');
 
-    $this->paypalExpress->processRefundForm(['refund_type' => 'full'], $this->order, $this->paymentLog);
+    $this->paypalExpress->processRefundForm(['refund_type' => 'full'], $order, $paymentLog);
 });

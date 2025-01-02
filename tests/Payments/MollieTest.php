@@ -7,8 +7,11 @@ use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\PayRegister\Payments\Mollie;
 use Igniter\User\Models\Customer;
+use Illuminate\Support\Facades\Mail;
+use Mollie\Api\Endpoints\CustomerEndpoint;
 use Mollie\Api\Endpoints\PaymentEndpoint;
 use Mollie\Api\MollieApiClient;
+use Mollie\Api\Resources\Customer as MollieCustomer;
 use Mollie\Api\Resources\Payment as MolliePayment;
 
 beforeEach(function() {
@@ -16,8 +19,6 @@ beforeEach(function() {
         'class_name' => Mollie::class,
     ]);
     $this->paymentLog = Mockery::mock(PaymentLog::class)->makePartial();
-    $this->order = Mockery::mock(Order::class)->makePartial();
-    $this->order->payment_method = $this->payment;
     $this->mollie = new Mollie($this->payment);
 });
 
@@ -45,72 +46,140 @@ it('returns true if in mollie test mode', function() {
 
 it('returns false if not in mollie test mode', function() {
     $this->payment->transaction_mode = 'live';
+
     expect($this->mollie->isTestMode())->toBeFalse();
 });
 
 it('returns mollie test API key in test mode', function() {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_api_key = 'test_key';
+
     expect($this->mollie->getApiKey())->toBe('test_key');
 });
 
 it('returns mollie live API key in live mode', function() {
     $this->payment->transaction_mode = 'live';
     $this->payment->live_api_key = 'live_key';
+
     expect($this->mollie->getApiKey())->toBe('live_key');
 });
 
 it('processes mollie payment form and redirects to checkout url', function() {
-    $this->order->customer = Mockery::mock(Customer::class)->makePartial();
-    $this->order->order_total = 100;
+    Mail::fake();
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
 
-    $paymentProfile = Mockery::mock(PaymentProfile::class)->makePartial();
-    $paymentProfile->profile_data = ['card_id' => '123', 'customer_id' => '456'];
+    PaymentProfile::factory()->create([
+        'customer_id' => $order->customer_id,
+        'payment_id' => $this->payment->getKey(),
+        'profile_data' => ['card_id' => '123', 'customer_id' => '456'],
+    ]);
 
     $molliePayment = Mockery::mock(MolliePayment::class);
     $molliePayment->shouldReceive('isOpen')->andReturn(true)->once();
     $molliePayment->shouldReceive('getCheckoutUrl')->andReturn('http://checkout.url')->once();
+    $customerEndpoint = Mockery::mock(CustomerEndpoint::class);
+    $customerEndpoint->shouldReceive('get')->andReturnNull();
     $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
     $paymentEndpoint->shouldReceive('create')->andReturn($molliePayment)->once();
+    $customerEndpoint->shouldReceive('create')->andReturn(mock(MollieCustomer::class))->once();
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
-    $mollieClient->setApiKey('test_'.str_random(30));
     $mollieClient->payments = $paymentEndpoint;
+    $mollieClient->customers = $customerEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
 
-    $mollie = Mockery::mock(Mollie::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $mollie->shouldReceive('validateApplicableFee')->once();
-    $mollie->shouldReceive('updatePaymentProfile')->andReturn($paymentProfile)->once();
-    $mollie->shouldReceive('createClient')->andReturn($mollieClient)->once();
+    $response = $this->mollie->processPaymentForm([], $this->payment, $order);
 
-    $response = $mollie->processPaymentForm([], $this->payment, $this->order);
+    expect($response->getTargetUrl())->toBe('http://checkout.url');
+});
+
+it('throws exception when fails to create payment profile', function() {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+
+    PaymentProfile::factory()->create([
+        'customer_id' => $order->customer_id,
+        'payment_id' => $this->payment->getKey(),
+        'profile_data' => ['card_id' => '123', 'customer_id' => '456'],
+    ]);
+
+    $customerEndpoint = Mockery::mock(CustomerEndpoint::class);
+    $customerEndpoint->shouldReceive('get')->andReturnNull();
+    $customerEndpoint->shouldReceive('create')->andReturnNull();
+
+    $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
+    $mollieClient->customers = $customerEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
+
+    $this->expectException(ApplicationException::class);
+    $this->expectExceptionMessage('Unable to create customer');
+
+    $response = $this->mollie->processPaymentForm([], $this->payment, $order);
 
     expect($response->getTargetUrl())->toBe('http://checkout.url');
 });
 
 it('throws exception if mollie payment creation fails', function() {
-    $this->order->shouldReceive('logPaymentAttempt')->with('Payment error -> Payment error', 0, Mockery::any(), Mockery::any())->once();
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
 
     $payment = Mockery::mock(MolliePayment::class);
     $payment->shouldReceive('isOpen')->andReturn(false)->once();
     $payment->shouldReceive('getMessage')->andReturn('Payment error')->once();
+    $customerEndpoint = Mockery::mock(CustomerEndpoint::class);
+    $customerEndpoint->shouldReceive('create')->andReturn((object)['id' => 'customer_id'])->once();
     $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
     $paymentEndpoint->shouldReceive('create')->andReturn($payment)->once();
-
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
-    $mollieClient->setApiKey('test_'.str_random(30));
     $mollieClient->payments = $paymentEndpoint;
-
-    $mollie = Mockery::mock(Mollie::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $mollie->shouldReceive('createClient')->andReturn($mollieClient);
-    $mollie->shouldReceive('validateApplicableFee')->once();
+    $mollieClient->customers = $customerEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
 
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('Sorry, there was an error processing your payment. Please try again later.');
 
-    $mollie->processPaymentForm([], $this->payment, $this->order);
+    $this->mollie->processPaymentForm([], $this->payment, $order);
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment error -> Payment error',
+    ]);
+});
+
+it('throws exception if mollie payment request fails', function() {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $order = Order::factory()
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+
+    $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
+    $paymentEndpoint->shouldReceive('create')->andThrow(new Exception('Payment error'))->once();
+    $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
+    $mollieClient->payments = $paymentEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
+
+    $this->expectException(ApplicationException::class);
+    $this->expectExceptionMessage('Sorry, there was an error processing your payment. Please try again later.');
+
+    $this->mollie->processPaymentForm([], $this->payment, $order);
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment error -> Payment error',
+    ]);
 });
 
 it('processes mollie return url and updates order status', function() {
@@ -119,33 +188,34 @@ it('processes mollie return url and updates order status', function() {
         'cancel' => 'http://cancel.url',
     ]);
 
+    Mail::fake();
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
     $this->payment->applyGatewayClass();
-    $this->order->hash = 'order_hash';
-    $this->order->order_id = 1;
-    $this->order->shouldReceive('logPaymentAttempt')->with('Payment successful', 1, Mockery::any(), Mockery::any(), true)->once();
-    $this->order->shouldReceive('updateOrderStatus')->once();
-    $this->order->shouldReceive('markAsPaymentProcessed')->once();
-    $this->order->shouldReceive('isPaymentProcessed')->andReturn(false);
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
 
     $molliePayment = Mockery::mock(MolliePayment::class);
     $molliePayment->shouldReceive('isPaid')->andReturn(true)->once();
-    $molliePayment->metadata = ['order_id' => 1];
+    $molliePayment->metadata = ['order_id' => $order->getKey()];
     $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
     $paymentEndpoint->shouldReceive('get')->andReturn($molliePayment)->once();
-
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
-    $mollieClient->setApiKey('test_'.str_random(30));
     $mollieClient->payments = $paymentEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
 
-    $mollie = Mockery::mock(Mollie::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $mollie->shouldReceive('createClient')->andReturn($mollieClient);
-    $mollie->shouldReceive('createOrderModel->whereHash->first')->andReturn($this->order);
-
-    $response = $mollie->processReturnUrl(['order_hash']);
+    $response = $this->mollie->processReturnUrl([$order->hash]);
 
     expect($response->getTargetUrl())->toContain('http://redirect.url');
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment successful',
+        'is_success' => 1,
+        'is_refundable' => 1,
+    ]);
 });
 
 it('throws exception if no order found in mollie return url', function() {
@@ -165,13 +235,13 @@ it('processes mollie notify url and updates order status', function() {
         'id' => 'payment_id',
     ]);
 
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
     $this->payment->applyGatewayClass();
-    $this->order->hash = 'order_hash';
-    $this->order->order_id = 1;
-    $this->order->shouldReceive('logPaymentAttempt')->once();
-    $this->order->shouldReceive('updateOrderStatus')->once();
-    $this->order->shouldReceive('markAsPaymentProcessed')->once();
-    $this->order->shouldReceive('isPaymentProcessed')->andReturn(false);
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
 
     $molliePayment = Mockery::mock(MolliePayment::class);
     $molliePayment->shouldReceive('isPaid')->andReturn(true)->once();
@@ -180,35 +250,69 @@ it('processes mollie notify url and updates order status', function() {
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
     $mollieClient->setApiKey('test_'.str_random(30));
     $mollieClient->payments = $paymentEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
 
-    $mollie = Mockery::mock(Mollie::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $mollie->shouldReceive('createClient')->andReturn($mollieClient);
-    $mollie->shouldReceive('createOrderModel->whereHash->first')->andReturn($this->order);
-
-    $response = $mollie->processNotifyUrl(['order_hash']);
+    $response = $this->mollie->processNotifyUrl([$order->hash]);
 
     expect($response->getData())->success->toBe(true);
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment successful',
+        'is_success' => 1,
+        'is_refundable' => 1,
+    ]);
+});
+
+it('processes mollie notify url fails and updates order status', function() {
+    request()->merge([
+        'id' => 'payment_id',
+    ]);
+
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $this->payment->applyGatewayClass();
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+
+    $molliePayment = Mockery::mock(MolliePayment::class);
+    $molliePayment->shouldReceive('isPaid')->andReturn(false)->once();
+    $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
+    $paymentEndpoint->shouldReceive('get')->andReturn($molliePayment)->once();
+    $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
+    $mollieClient->setApiKey('test_'.str_random(30));
+    $mollieClient->payments = $paymentEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
+
+    $response = $this->mollie->processNotifyUrl([$order->hash]);
+
+    expect($response->getData())->success->toBe(true);
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment unsuccessful',
+        'is_success' => 0,
+    ]);
 });
 
 it('throws exception if no order found in mollie notify url', function() {
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('No order found');
 
-    $mollie = Mockery::mock(Mollie::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $mollie->shouldReceive('createOrderModel->whereHash->first')->andReturnNull();
-
     $this->mollie->processNotifyUrl(['invalid_hash']);
 });
 
 it('processes mollie refund form and logs refund attempt', function() {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
     $this->paymentLog->refunded_at = null;
     $this->paymentLog->response = ['status' => 'paid', 'id' => 'payment_id'];
-    $this->order->order_total = 100;
-    $this->order->shouldReceive('logPaymentAttempt')->once();
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
     $this->paymentLog->shouldReceive('markAsRefundProcessed')->once();
 
     $molliePayment = Mockery::mock(MolliePayment::class);
@@ -220,23 +324,59 @@ it('processes mollie refund form and logs refund attempt', function() {
     $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
     $paymentEndpoint->shouldReceive('get')->andReturn($molliePayment)->once();
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
-    $mollieClient->setApiKey('test_'.str_random(30));
     $mollieClient->payments = $paymentEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
 
-    $mollie = Mockery::mock(Mollie::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $mollie->shouldReceive('createClient')->andReturn($mollieClient);
+    $this->mollie->processRefundForm(['refund_type' => 'full'], $order, $this->paymentLog);
 
-    $mollie->processRefundForm(['refund_type' => 'full'], $this->order, $this->paymentLog);
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => sprintf('Payment %s refund processed -> (%s: %s)', 'payment_id', 'full', 'refund_id'),
+        'is_success' => 1,
+    ]);
+});
+
+it('processes mollie refund request fails and logs refund attempt', function() {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $this->paymentLog->refunded_at = null;
+    $this->paymentLog->response = ['status' => 'paid', 'id' => 'payment_id'];
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+
+    $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
+    $paymentEndpoint->shouldReceive('get')->andThrow(new Exception('Refund Error'))->once();
+    $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
+    $mollieClient->payments = $paymentEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
+
+    $this->expectException(ApplicationException::class);
+    $this->expectExceptionMessage('Refund failed');
+
+    $this->mollie->bindEvent('mollie.extendRefundFields', function($fields, $order, $data) {
+        return [
+            'extra_field' => 'extra_value',
+        ];
+    });
+
+    $this->mollie->processRefundForm(['refund_type' => 'full'], $order, $this->paymentLog);
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Refund failed -> Refund Error',
+        'is_success' => 1,
+    ]);
 });
 
 it('throws exception if no mollie charge to refund', function() {
+    $order = Order::factory()->create(['order_total' => 100]);
     $this->paymentLog->refunded_at = null;
     $this->paymentLog->response = ['status' => 'not_paid'];
 
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('No charge to refund');
 
-    $this->mollie->processRefundForm(['refund_type' => 'full'], $this->order, $this->paymentLog);
+    $this->mollie->processRefundForm(['refund_type' => 'full'], $order, $this->paymentLog);
 });

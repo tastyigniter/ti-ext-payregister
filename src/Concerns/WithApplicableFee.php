@@ -8,6 +8,11 @@ use Igniter\PayRegister\Models\Payment;
 
 trait WithApplicableFee
 {
+    protected function validatePaymentMethod($order, $host)
+    {
+        $this->validateApplicableFee($order, $host);
+    }
+
     protected function validateApplicableFee(Order $order, ?Payment $host = null)
     {
         $host = is_null($host) ? $this->model : $host;

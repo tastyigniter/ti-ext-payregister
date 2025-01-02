@@ -148,11 +148,6 @@ class BasePaymentGateway extends ModelAction
         return false;
     }
 
-    protected function validatePaymentMethod($order, $host)
-    {
-        $this->validateApplicableFee($order, $host);
-    }
-
     /**
      * Processes payment using passed data.
      *
@@ -169,6 +164,15 @@ class BasePaymentGateway extends ModelAction
      * Executed when this gateway is rendered on the checkout page.
      */
     public function beforeRenderPaymentForm($host, $controller) {}
+
+    public function renderPaymentForm()
+    {
+        $this->beforeRenderPaymentForm($this->model, controller());
+
+        $viewName = $this->getPaymentFormViewName($this);
+
+        return view($viewName, ['paymentMethod' => $this->model]);
+    }
 
     public function getPaymentFormViewName()
     {

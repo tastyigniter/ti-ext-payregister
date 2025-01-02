@@ -27,11 +27,22 @@ beforeEach(function() {
             return __DIR__.'/../_fixtures/fields';
         }
 
+        public function testValidatePaymentMethod($order, $host)
+        {
+            $this->validatePaymentMethod($order, $host);
+        }
+
         public function validatesApplicable($order): void
         {
             $this->validateApplicableFee($order, $this->model);
         }
     };
+});
+
+it('validates payment method successfully', function() {
+    $this->trait->testValidatePaymentMethod($this->order, $this->payment);
+
+    expect(true)->toBeTrue();
 });
 
 it('validates applicable fee successfully', function() {

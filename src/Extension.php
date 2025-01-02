@@ -2,15 +2,21 @@
 
 namespace Igniter\PayRegister;
 
+use Igniter\PayRegister\Classes\AuthorizeNetClient;
 use Igniter\PayRegister\Classes\PaymentGateways;
+use Igniter\PayRegister\Classes\PayPalClient;
 use Igniter\PayRegister\Listeners\CaptureAuthorizedPayment;
 use Igniter\PayRegister\Listeners\UpdatePaymentIntentSessionOnCheckout;
 use Igniter\PayRegister\Models\Observers\PaymentObserver;
+use Igniter\PayRegister\Models\Observers\PaymentProfileObserver;
 use Igniter\PayRegister\Models\Payment;
+use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\PayRegister\Subscribers\FormFieldsSubscriber;
 use Igniter\System\Classes\BaseExtension;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
+use Mollie\Api\MollieApiClient;
+use Square\SquareClientBuilder;
 
 class Extension extends BaseExtension
 {
@@ -29,10 +35,15 @@ class Extension extends BaseExtension
 
     protected $observers = [
         Payment::class => PaymentObserver::class,
+        PaymentProfile::class => PaymentProfileObserver::class,
     ];
 
     public array $singletons = [
+        AuthorizeNetClient::class,
+        MollieApiClient::class,
         PaymentGateways::class,
+        PayPalClient::class,
+        SquareClientBuilder::class,
     ];
 
     public function registerPaymentGateways(): array

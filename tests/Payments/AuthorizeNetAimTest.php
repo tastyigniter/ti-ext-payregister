@@ -6,13 +6,13 @@ use Exception;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Main\Classes\MainController;
+use Igniter\PayRegister\Classes\AuthorizeNetClient;
+use Igniter\PayRegister\Classes\AuthorizeNetTransactionRequest;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Payments\AuthorizeNetAim;
 use Illuminate\Support\Facades\Event;
 use Mockery;
-use net\authorize\api\contract\v1\CreateTransactionRequest;
-use net\authorize\api\contract\v1\MerchantAuthenticationType;
 use net\authorize\api\contract\v1\TransactionResponseType;
 use net\authorize\api\contract\v1\TransactionResponseType\MessagesAType\MessageAType;
 
@@ -29,6 +29,29 @@ it('returns correct payment form view for authorizenet', function() {
 
 it('returns correct fields config for authorizenet', function() {
     expect($this->authorizeNetAim->defineFieldsConfig())->toBe('igniter.payregister::/models/authorizenetaim');
+});
+
+it('returns hidden fields with default values', function() {
+    $gateway = new AuthorizeNetAim();
+
+    $hiddenFields = $gateway->getHiddenFields();
+
+    expect($hiddenFields)->toBeArray()
+        ->and($hiddenFields)->toHaveKey('authorizenetaim_DataValue', '')
+        ->and($hiddenFields)->toHaveKey('authorizenetaim_DataDescriptor', '');
+});
+
+it('returns accepted cards with correct labels', function() {
+    $gateway = new AuthorizeNetAim();
+
+    $acceptedCards = $gateway->getAcceptedCards();
+
+    expect($acceptedCards)->toBeArray()
+        ->and($acceptedCards)->toHaveKey('visa', 'lang:igniter.payregister::default.authorize_net_aim.text_visa')
+        ->and($acceptedCards)->toHaveKey('mastercard', 'lang:igniter.payregister::default.authorize_net_aim.text_mastercard')
+        ->and($acceptedCards)->toHaveKey('american_express', 'lang:igniter.payregister::default.authorize_net_aim.text_american_express')
+        ->and($acceptedCards)->toHaveKey('jcb', 'lang:igniter.payregister::default.authorize_net_aim.text_jcb')
+        ->and($acceptedCards)->toHaveKey('diners_club', 'lang:igniter.payregister::default.authorize_net_aim.text_diners_club');
 });
 
 it('returns correct endpoint for authorizenet test mode', function() {
@@ -62,7 +85,7 @@ it('returns correct authorizenet model value', function($attribute, $methodName,
 ]);
 
 it('adds JavaScript file to the controller', function() {
-    $controller = Mockery::mock(MainController::class);
+    $controller = mock(MainController::class);
 
     $controller
         ->shouldReceive('addJs')
@@ -73,22 +96,22 @@ it('adds JavaScript file to the controller', function() {
 });
 
 it('processes authorizenet payment form and logs successful payment', function() {
+    $this->payment->transaction_type = 'auth';
     $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
-    $response = Mockery::mock(TransactionResponseType::class);
+    $request = mock(AuthorizeNetTransactionRequest::class);
+    $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('1')->twice();
     $response->shouldReceive('getMessages')->andReturn([$messageAType])->twice();
     $response->shouldReceive('getTransId')->andReturn('12345')->once();
     $response->shouldReceive('getAccountNumber')->andReturn('****1111')->once();
     $response->shouldReceive('getAccountType')->andReturn('Visa')->once();
     $response->shouldReceive('getAuthCode')->andReturn('auth123')->once();
+    $authorizeClient = mock(AuthorizeNetClient::class)->makePartial();
+    $authorizeClient->shouldReceive('createTransactionRequest')->andReturn($request);
+    $authorizeClient->shouldReceive('createTransaction')->andReturn($response);
+    app()->instance(AuthorizeNetClient::class, $authorizeClient);
 
-    $authorizeNetAim = Mockery::mock(AuthorizeNetAim::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $authorizeNetAim->shouldReceive('createAcceptPayment')->andReturn($response)->once();
-    $authorizeNetAim->shouldReceive('shouldAuthorizePayment')->andReturnFalse()->once();
-
-    $order = Mockery::mock(Order::class)->makePartial();
+    $order = mock(Order::class)->makePartial();
     $order->payment_method = $this->payment;
     $order->order_total = 100;
     $order->shouldReceive('logPaymentAttempt')->with('Payment successful', 1, Mockery::any(), Mockery::any(), true)->once();
@@ -98,45 +121,72 @@ it('processes authorizenet payment form and logs successful payment', function()
 
     $this->payment->applyGatewayClass();
 
-    $authorizeNetAim->processPaymentForm($data, $this->payment, $order);
+    $this->authorizeNetAim->processPaymentForm($data, $this->payment, $order);
+});
+
+it('processes authorizenet payment form and logs authorized payment', function() {
+    $this->payment->transaction_type = 'auth_only';
+    $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
+    $request = mock(AuthorizeNetTransactionRequest::class);
+    $response = mock(TransactionResponseType::class);
+    $response->shouldReceive('getResponseCode')->andReturn('1');
+    $response->shouldReceive('getMessages')->andReturn([$messageAType]);
+    $response->shouldReceive('getTransId')->andReturn('12345');
+    $response->shouldReceive('getAccountNumber')->andReturn('****1111');
+    $response->shouldReceive('getAccountType')->andReturn('Visa');
+    $response->shouldReceive('getAuthCode')->andReturn('auth123');
+    $authorizeClient = mock(AuthorizeNetClient::class)->makePartial();
+    $authorizeClient->shouldReceive('createTransactionRequest')->andReturn($request);
+    $authorizeClient->shouldReceive('createTransaction')->andReturn($response);
+    app()->instance(AuthorizeNetClient::class, $authorizeClient);
+
+    $order = mock(Order::class)->makePartial();
+    $order->payment_method = $this->payment;
+    $order->order_total = 100;
+    $order->shouldReceive('logPaymentAttempt')->with('Payment authorized', 1, Mockery::any(), Mockery::any())->once();
+    $order->shouldReceive('updateOrderStatus');
+    $order->shouldReceive('markAsPaymentProcessed');
+    $data = ['authorizenetaim_DataDescriptor' => 'descriptor', 'authorizenetaim_DataValue' => 'value'];
+
+    $this->payment->applyGatewayClass();
+
+    $this->authorizeNetAim->processPaymentForm($data, $this->payment, $order);
 });
 
 it('throws exception if authorizenet payment form processing fails', function() {
-    $order = Mockery::mock(Order::class)->makePartial();
+    $authorizeClient = mock(AuthorizeNetClient::class)->makePartial();
+    $authorizeClient->shouldReceive('createTransactionRequest')->andThrow(new Exception('Payment error'));
+    app()->instance(AuthorizeNetClient::class, $authorizeClient);
+    $order = mock(Order::class)->makePartial();
     $order->shouldReceive('logPaymentAttempt')->with('Payment error -> Payment error', 0, Mockery::any())->once();
     $order->payment_method = $this->payment;
     $order->order_total = 100;
     $data = ['authorizenetaim_DataDescriptor' => 'descriptor', 'authorizenetaim_DataValue' => 'value'];
-
-    $authorizeNetAim = Mockery::mock(AuthorizeNetAim::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $authorizeNetAim->shouldReceive('createAcceptPayment')->andThrow(new Exception('Payment error'))->once();
 
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('Sorry, there was an error processing your payment. Please try again later.');
 
     $this->payment->applyGatewayClass();
 
-    $authorizeNetAim->processPaymentForm($data, $this->payment, $order);
+    $this->authorizeNetAim->processPaymentForm($data, $this->payment, $order);
 });
 
 it('processes authorizenet payment form and logs failed payment', function() {
     $messageAType = (new MessageAType())->setCode('2')->setDescription('Declined');
-    $response = Mockery::mock(TransactionResponseType::class);
+    $request = mock(AuthorizeNetTransactionRequest::class);
+    $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('2')->twice();
     $response->shouldReceive('getMessages')->andReturn([$messageAType])->atMost(5);
     $response->shouldReceive('getTransId')->andReturn('12345')->once();
     $response->shouldReceive('getAccountNumber')->andReturn('****1111')->once();
     $response->shouldReceive('getAccountType')->andReturn('Visa')->once();
     $response->shouldReceive('getAuthCode')->andReturn('auth123')->once();
+    $authorizeClient = mock(AuthorizeNetClient::class)->makePartial();
+    $authorizeClient->shouldReceive('createTransactionRequest')->andReturn($request);
+    $authorizeClient->shouldReceive('createTransaction')->andReturn($response);
+    app()->instance(AuthorizeNetClient::class, $authorizeClient);
 
-    $authorizeNetAim = Mockery::mock(AuthorizeNetAim::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $authorizeNetAim->shouldReceive('createAcceptPayment')->andReturn($response)->once();
-
-    $order = Mockery::mock(Order::class)->makePartial();
+    $order = mock(Order::class)->makePartial();
     $order->order_id = 123;
     $order->payment_method = $this->payment;
     $order->order_total = 100;
@@ -147,120 +197,157 @@ it('processes authorizenet payment form and logs failed payment', function() {
 
     $this->payment->applyGatewayClass();
 
-    $authorizeNetAim->processPaymentForm($data, $this->payment, $order);
+    $this->authorizeNetAim->processPaymentForm($data, $this->payment, $order);
 });
 
 it('processes authorizenet full refund successfully', function() {
     $messageAType = (new MessageAType())->setCode('2')->setDescription('Declined');
-    $paymentLog = Mockery::mock(PaymentLog::class)->makePartial();
+    $paymentLog = mock(PaymentLog::class)->makePartial();
     $paymentLog->shouldReceive('markAsRefundProcessed')->once();
     $paymentLog->refunded_at = null;
     $paymentLog->response = ['status' => '1', 'id' => '12345', 'card_holder' => '****1111'];
 
-    $order = Mockery::mock(Order::class)->makePartial();
+    $order = mock(Order::class)->makePartial();
     $order->shouldReceive('logPaymentAttempt');
     $order->order_total = 100;
 
-    $response = Mockery::mock(TransactionResponseType::class);
+    $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('1')->once();
     $response->shouldReceive('getTransId')->andReturn('54321')->once();
     $response->shouldReceive('getMessages')->andReturn([$messageAType])->twice();
     $response->shouldReceive('getAccountNumber')->andReturn('****1111')->once();
     $response->shouldReceive('getAccountType')->andReturn('Visa')->once();
     $response->shouldReceive('getAuthCode')->andReturn('auth123')->once();
+    $authorizeClient = mock(AuthorizeNetClient::class)->makePartial();
+    $authorizeClient->shouldReceive('createTransaction')->andReturn($response);
+    app()->instance(AuthorizeNetClient::class, $authorizeClient);
 
     $data = ['refund_type' => 'full'];
 
-    $authorizeNetAim = Mockery::mock(AuthorizeNetAim::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $authorizeNetAim->shouldReceive('createRefundPayment')->andReturn($response)->once();
-
-    $authorizeNetAim->processRefundForm($data, $order, $paymentLog);
+    $this->authorizeNetAim->processRefundForm($data, $order, $paymentLog);
 });
 
 it('authorizenet: throws exception if refund amount exceeds order total', function() {
-    $paymentLog = Mockery::mock(PaymentLog::class)->makePartial();
+    $paymentLog = mock(PaymentLog::class)->makePartial();
     $paymentLog->refunded_at = null;
     $paymentLog->response = ['status' => '1', 'id' => '12345', 'card_holder' => '****1111'];
-
-    $order = Mockery::mock(Order::class)->makePartial();
+    $order = mock(Order::class)->makePartial();
     $order->order_total = 100;
-
-    $authorizeNetAim = Mockery::mock(AuthorizeNetAim::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
 
     $data = ['refund_type' => 'partial', 'refund_amount' => 150];
 
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('Refund amount should be be less than or equal to the order total');
 
-    $authorizeNetAim->processRefundForm($data, $order, $paymentLog);
+    $this->authorizeNetAim->processRefundForm($data, $order, $paymentLog);
+});
+
+it('authorizenet: throws exception when refund request fails', function() {
+    $paymentLog = mock(PaymentLog::class)->makePartial();
+    $paymentLog->refunded_at = null;
+    $paymentLog->response = ['status' => '1', 'id' => '12345', 'card_holder' => '****1111'];
+    $order = mock(Order::class)->makePartial();
+    $order->order_total = 100;
+    $order->shouldReceive('logPaymentAttempt')->with('Refund failed -> Refund request error', 0, Mockery::any(), [])->once();
+    $authorizeClient = mock(AuthorizeNetClient::class)->makePartial();
+    $authorizeClient->shouldReceive('createTransactionRequest')->andThrow(new Exception('Refund request error'));
+    app()->instance(AuthorizeNetClient::class, $authorizeClient);
+
+    $data = ['refund_type' => 'partial', 'refund_amount' => 100];
+
+    $this->expectException(ApplicationException::class);
+    $this->expectExceptionMessage('Refund failed, please try again later or contact system administrator');
+
+    $this->authorizeNetAim->processRefundForm($data, $order, $paymentLog);
 });
 
 it('authorizenet: captures authorized payment successfully', function() {
     Event::fake();
-
-    $paymentLog = Mockery::mock(PaymentLog::class)->makePartial();
-    $paymentLog->response = ['id' => '12345'];
-
-    $order = Mockery::mock(Order::class)->makePartial();
-    $order->hash = 'order_hash';
-    $order->shouldReceive('logPaymentAttempt')->once();
-    $order->shouldReceive('payment_logs->firstWhere')
-        ->with('is_success', true)
-        ->andReturn($paymentLog)
-        ->once();
-
     $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
-    $response = Mockery::mock(TransactionResponseType::class);
+    $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('1')->twice();
     $response->shouldReceive('getTransId')->andReturn('54321')->once();
     $response->shouldReceive('getMessages')->andReturn([$messageAType])->twice();
     $response->shouldReceive('getAccountNumber')->andReturn('****1111')->once();
     $response->shouldReceive('getAccountType')->andReturn('Visa')->once();
     $response->shouldReceive('getAuthCode')->andReturn('auth123')->once();
+    $request = mock(AuthorizeNetTransactionRequest::class);
+    $authorizeClient = mock(AuthorizeNetClient::class)->makePartial();
+    $authorizeClient->shouldReceive('createTransactionRequest')->andReturn($request);
+    $authorizeClient->shouldReceive('createTransaction')->andReturn($response);
+    app()->instance(AuthorizeNetClient::class, $authorizeClient);
 
-    $request = new CreateTransactionRequest;
-    $request->setMerchantAuthentication(new MerchantAuthenticationType);
+    $paymentLog = mock(PaymentLog::class)->makePartial();
+    $paymentLog->response = ['id' => '12345'];
 
-    $authorizeNetAim = Mockery::mock(AuthorizeNetAim::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $authorizeNetAim->shouldReceive('createClient->createTransactionRequest')->andReturn($request)->once();
-    $authorizeNetAim->shouldReceive('createClient->createTransaction')->andReturn($response)->once();
+    $order = mock(Order::class)->makePartial();
+    $order->hash = 'order_hash';
+    $order->shouldReceive('logPaymentAttempt')->with('Payment successful', 1, [], Mockery::any(), true)->once();
+    $order->shouldReceive('payment_logs->firstWhere')
+        ->with('is_success', true)
+        ->andReturn($paymentLog)
+        ->once();
 
-    $authorizeNetAim->captureAuthorizedPayment($order);
+    $expectedResponse = $this->authorizeNetAim->captureAuthorizedPayment($order);
 
     Event::assertDispatched('payregister.authorizenetaim.extendCaptureRequest');
+
+    expect($response)->toEqual($expectedResponse);
+});
+
+it('authorizenet: captures authorized payment failed', function() {
+    Event::fake();
+    $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
+    $response = mock(TransactionResponseType::class);
+    $response->shouldReceive('getResponseCode')->andReturn('2')->twice();
+    $response->shouldReceive('getTransId')->andReturn('54321');
+    $response->shouldReceive('getMessages')->andReturn([$messageAType]);
+    $response->shouldReceive('getAccountNumber')->andReturn('****1111');
+    $response->shouldReceive('getAccountType')->andReturn('Visa');
+    $response->shouldReceive('getAuthCode')->andReturn('auth123');
+    $request = mock(AuthorizeNetTransactionRequest::class);
+    $authorizeClient = mock(AuthorizeNetClient::class)->makePartial();
+    $authorizeClient->shouldReceive('createTransactionRequest')->andReturn($request);
+    $authorizeClient->shouldReceive('createTransaction')->andReturn($response);
+    app()->instance(AuthorizeNetClient::class, $authorizeClient);
+
+    $paymentLog = mock(PaymentLog::class)->makePartial();
+    $paymentLog->response = ['id' => '12345'];
+
+    $order = mock(Order::class)->makePartial();
+    $order->hash = 'order_hash';
+    $order->shouldReceive('logPaymentAttempt')->with('Payment failed', 0, [], Mockery::any())->once();
+    $order->shouldReceive('payment_logs->firstWhere')
+        ->with('is_success', true)
+        ->andReturn($paymentLog)
+        ->once();
+
+    $expectedResponse = $this->authorizeNetAim->captureAuthorizedPayment($order);
+
+    Event::assertDispatched('payregister.authorizenetaim.extendCaptureRequest');
+
+    expect($response)->toEqual($expectedResponse);
 });
 
 it('authorizenet: throws exception if no successful transaction to capture', function() {
-    $order = Mockery::mock(Order::class)->makePartial();
+    $order = mock(Order::class)->makePartial();
     $order->shouldReceive('payment_logs->firstWhere')
         ->with('is_success', true)
         ->andReturnNull()
         ->once();
 
-    $authorizeNetAim = Mockery::mock(AuthorizeNetAim::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('No successful transaction to capture');
 
-    $authorizeNetAim->captureAuthorizedPayment($order);
+    $this->authorizeNetAim->captureAuthorizedPayment($order);
 });
 
 it('authorizenet: cancels authorized payment successfully', function() {
     Event::fake();
-
-    $paymentLog = Mockery::mock(PaymentLog::class)->makePartial();
+    $paymentLog = mock(PaymentLog::class)->makePartial();
     $paymentLog->is_success = true;
     $paymentLog->response = ['id' => '12345'];
-
-    $order = Mockery::mock(Order::class)->makePartial();
+    $order = mock(Order::class)->makePartial();
     $order->hash = 'order_hash';
     $order->shouldReceive('logPaymentAttempt');
     $order->shouldReceive('payment_logs->firstWhere')
@@ -269,42 +356,70 @@ it('authorizenet: cancels authorized payment successfully', function() {
         ->once();
 
     $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
-    $response = Mockery::mock(TransactionResponseType::class);
+    $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('1')->twice();
     $response->shouldReceive('getTransId')->andReturn('54321')->once();
     $response->shouldReceive('getMessages')->andReturn([$messageAType])->twice();
     $response->shouldReceive('getAccountNumber')->andReturn('****1111')->once();
     $response->shouldReceive('getAccountType')->andReturn('Visa')->once();
     $response->shouldReceive('getAuthCode')->andReturn('auth123')->once();
+    $request = mock(AuthorizeNetTransactionRequest::class);
+    $authorizeClient = mock(AuthorizeNetClient::class)->makePartial();
+    $authorizeClient->shouldReceive('createTransactionRequest')->andReturn($request);
+    $authorizeClient->shouldReceive('createTransaction')->andReturn($response);
+    app()->instance(AuthorizeNetClient::class, $authorizeClient);
 
-    $request = new CreateTransactionRequest;
-    $request->setMerchantAuthentication(new MerchantAuthenticationType);
+    $expectedResponse = $this->authorizeNetAim->cancelAuthorizedPayment($order);
 
-    $authorizeNetAim = Mockery::mock(AuthorizeNetAim::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-    $authorizeNetAim->shouldReceive('createClient->createTransactionRequest')->andReturn($request)->once();
-    $authorizeNetAim->shouldReceive('createClient->createTransaction')->andReturn($response)->once();
+    expect($response)->toEqual($expectedResponse);
+    Event::assertDispatched('payregister.authorizenetaim.extendCancelRequest');
+});
 
-    $authorizeNetAim->cancelAuthorizedPayment($order);
+it('authorizenet: cancels authorized payment failed', function() {
+    Event::fake();
 
+    $paymentLog = mock(PaymentLog::class)->makePartial();
+    $paymentLog->is_success = true;
+    $paymentLog->response = ['id' => '12345'];
+
+    $order = mock(Order::class)->makePartial();
+    $order->hash = 'order_hash';
+    $order->shouldReceive('logPaymentAttempt')->with('Canceling payment failed', 0, [], Mockery::any())->once();
+    $order->shouldReceive('payment_logs->firstWhere')
+        ->with('is_success', true)
+        ->andReturn($paymentLog)
+        ->once();
+
+    $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
+    $response = mock(TransactionResponseType::class);
+    $response->shouldReceive('getResponseCode')->andReturn('2')->twice();
+    $response->shouldReceive('getTransId')->andReturn('54321')->once();
+    $response->shouldReceive('getMessages')->andReturn([$messageAType])->twice();
+    $response->shouldReceive('getAccountNumber')->andReturn('****1111')->once();
+    $response->shouldReceive('getAccountType')->andReturn('Visa')->once();
+    $response->shouldReceive('getAuthCode')->andReturn('auth123')->once();
+    $request = mock(AuthorizeNetTransactionRequest::class);
+    $authorizeClient = mock(AuthorizeNetClient::class)->makePartial();
+    $authorizeClient->shouldReceive('createTransactionRequest')->andReturn($request);
+    $authorizeClient->shouldReceive('createTransaction')->andReturn($response);
+    app()->instance(AuthorizeNetClient::class, $authorizeClient);
+
+    $expectedResponse = $this->authorizeNetAim->cancelAuthorizedPayment($order);
+
+    expect($response)->toEqual($expectedResponse);
     Event::assertDispatched('payregister.authorizenetaim.extendCancelRequest');
 });
 
 it('authorizenet: throws exception if no successful transaction to cancel', function() {
-    $order = Mockery::mock(Order::class)->makePartial();
+    $order = mock(Order::class)->makePartial();
     $order->shouldReceive('payment_logs->firstWhere')
         ->with('is_success', true)
         ->andReturnNull()
         ->once();
 
-    $authorizeNetAim = Mockery::mock(AuthorizeNetAim::class)
-        ->makePartial()
-        ->shouldAllowMockingProtectedMethods();
-
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('No successful transaction to capture');
 
-    $authorizeNetAim->cancelAuthorizedPayment($order);
+    $this->authorizeNetAim->cancelAuthorizedPayment($order);
 });
 

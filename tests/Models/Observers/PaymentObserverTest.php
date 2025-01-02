@@ -15,7 +15,7 @@ it('applies gateway class and merges data attributes on retrieved', function() {
 
     $observer = new PaymentObserver();
     $observer->retrieved($payment);
-})->only();
+});
 
 it('purges config fields on saving if payment exists', function() {
     $payment = Mockery::mock(Payment::class)->makePartial();

@@ -90,12 +90,10 @@ class Payment extends Model
         $data = [];
         $attributes = $this->getAttributes();
         foreach ($this->getConfigFields() ?: [] as $name => $config) {
-            if (!array_key_exists($name, $attributes)) {
-                continue;
+            if (array_key_exists($name, $attributes)) {
+                $data[$name] = $attributes[$name];
+                unset($this->attributes[$name]);
             }
-
-            $data[$name] = $attributes[$name];
-            unset($this->attributes[$name]);
         }
 
         return $data;
@@ -129,15 +127,6 @@ class Payment extends Model
         $this->class_name = $class;
 
         return !is_null($class);
-    }
-
-    public function renderPaymentForm()
-    {
-        $this->beforeRenderPaymentForm($this, controller());
-
-        $viewName = $this->getPaymentFormViewName($this);
-
-        return view($viewName, ['paymentMethod' => $this->model]);
     }
 
     public function getGatewayClass()

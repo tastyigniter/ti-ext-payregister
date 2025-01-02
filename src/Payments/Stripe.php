@@ -238,9 +238,9 @@ class Stripe extends BasePaymentGateway
             );
 
             if ($response->status == 'succeeded') {
-                $order->logPaymentAttempt('Payment successful', 1, $data, $response);
+                $order->logPaymentAttempt('Payment successful', 1, $data, $response, true);
             } else {
-                $order->logPaymentAttempt('Payment failed', 0, $data, $response);
+                $order->logPaymentAttempt('Payment capture failed', 0, $data, $response);
             }
 
             return $response;
@@ -335,10 +335,6 @@ class Stripe extends BasePaymentGateway
 
         $profileData = array_merge((array)$profile->profile_data, $data);
 
-        if (!$profile) {
-            $profile = $this->model->initPaymentProfile($customer);
-        }
-
         $profile->card_brand = strtolower(array_get($data, 'card.brand'));
         $profile->card_last4 = array_get($data, 'card.last4');
         $profile->setProfileData($profileData);
@@ -348,11 +344,9 @@ class Stripe extends BasePaymentGateway
 
     public function deletePaymentProfile(Customer $customer, PaymentProfile $profile)
     {
-        if (!isset($profile->profile_data['customer_id'])) {
-            return;
+        if (isset($profile->profile_data['customer_id'])) {
+            $this->createGateway()->customers->delete($profile->profile_data['customer_id'], [], $this->getStripeOptions());
         }
-
-        $this->createGateway()->customers->delete($profile->profile_data['customer_id'], [], $this->getStripeOptions());
     }
 
     public function payFromPaymentProfile(Order $order, array $data = [])
@@ -442,11 +436,12 @@ class Stripe extends BasePaymentGateway
 
     public function processRefundForm($data, $order, $paymentLog)
     {
-        if (!is_null($paymentLog->refunded_at) || !is_array($paymentLog->response)) {
-            throw new ApplicationException('Nothing to refund');
+        if (!is_null($paymentLog->refunded_at)) {
+            throw new ApplicationException('Nothing to refund, payment has already been refunded');
         }
 
-        if (array_get($paymentLog->response, 'status') !== 'succeeded'
+        if (!is_array($paymentLog->response)
+            || array_get($paymentLog->response, 'status') !== 'succeeded'
             || array_get($paymentLog->response, 'object') !== 'payment_intent'
         ) {
             throw new ApplicationException('No charge to refund');
@@ -475,7 +470,7 @@ class Stripe extends BasePaymentGateway
             $paymentLog->markAsRefundProcessed();
         } catch (Exception $e) {
             logger()->error($e);
-            $order->logPaymentAttempt('Refund failed: '.$e->getMessage(), 0, $fields, []);
+            $order->logPaymentAttempt('Refund failed -> '.$e->getMessage(), 0, $fields, []);
         }
     }
 
@@ -565,8 +560,11 @@ class Stripe extends BasePaymentGateway
             return response('Request method must be POST', 400);
         }
 
-        $payload = $this->getWebhookPayload();
+        if (!$this->getWebhookSecret()) {
+            return response('Invalid webhook secret', 400);
+        }
 
+        $payload = $this->getWebhookPayload();
         if (!isset($payload['type']) || !strlen($eventType = $payload['type'])) {
             return response('Missing webhook event name', 400);
         }
@@ -578,7 +576,7 @@ class Stripe extends BasePaymentGateway
             $this->$methodName($payload);
         }
 
-        Event::fire('payregister.stripe.webhook.handle'.$eventName, [$payload]);
+        Event::dispatch('payregister.stripe.webhook.handle'.$eventName, [$payload]);
 
         return response('Webhook Handled');
     }
@@ -601,14 +599,10 @@ class Stripe extends BasePaymentGateway
 
     protected function getWebhookPayload(): array
     {
-        if (!$webhookSecret = $this->getWebhookSecret()) {
-            return json_decode(request()->getContent(), true);
-        }
-
         $event = \Stripe\Webhook::constructEvent(
             request()->getContent(),
             request()->header('stripe-signature'),
-            $webhookSecret,
+            $this->getWebhookSecret(),
         );
 
         return $event->toArray();

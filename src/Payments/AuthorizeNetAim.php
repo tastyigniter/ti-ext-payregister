@@ -9,12 +9,7 @@ use Igniter\PayRegister\Classes\AuthorizeNetClient;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithAuthorizedPayment;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
-use net\authorize\api\contract\v1\CreditCardType;
-use net\authorize\api\contract\v1\OpaqueDataType;
-use net\authorize\api\contract\v1\PaymentType;
-use net\authorize\api\contract\v1\TransactionRequestType;
 use net\authorize\api\contract\v1\TransactionResponseType;
-use net\authorize\api\controller\CreateTransactionController;
 
 class AuthorizeNetAim extends BasePaymentGateway
 {
@@ -105,9 +100,7 @@ class AuthorizeNetAim extends BasePaymentGateway
             $response = $this->createAcceptPayment($fields, $order);
             $responseData = $this->convertResponseToArray($response);
 
-            if ($response->getResponseCode() !== '1') {
-                $order->logPaymentAttempt('Payment unsuccessful -> '.$responseData['description'], 0, $fields, $responseData);
-            } else {
+            if ($response->getResponseCode() === '1') {
                 if ($this->shouldAuthorizePayment()) {
                     $order->logPaymentAttempt('Payment authorized', 1, $fields, $responseData);
                 } else {
@@ -116,6 +109,8 @@ class AuthorizeNetAim extends BasePaymentGateway
 
                 $order->updateOrderStatus($host->order_status, ['notify' => false]);
                 $order->markAsPaymentProcessed();
+            } else {
+                $order->logPaymentAttempt('Payment unsuccessful -> '.$responseData['description'], 0, $fields, $responseData);
             }
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields);
@@ -153,7 +148,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Refund failed -> '.$ex->getMessage(), 0, $fields, []);
 
-            throw new Exception('Refund failed');
+            throw new ApplicationException('Refund failed, please try again later or contact system administrator');
         }
     }
 
@@ -169,19 +164,17 @@ class AuthorizeNetAim extends BasePaymentGateway
             new ApplicationException('Missing payment ID in successful transaction response'),
         );
 
-        $transactionRequestType = new TransactionRequestType;
-        $transactionRequestType->setTransactionType('priorAuthCaptureTransaction');
-        $transactionRequestType->setRefTransId($paymentId);
-
         $client = $this->createClient();
 
-        $request = $client->createTransactionRequest();
-        $request->setRefId($order->hash);
-        $request->setTransactionRequest($transactionRequestType);
+        $request = $client->createTransactionRequest([
+            'transactionId' => $paymentId,
+            'refId' => $order->hash,
+            'transactionType' => 'priorAuthCaptureTransaction',
+        ]);
 
         $this->fireSystemEvent('payregister.authorizenetaim.extendCaptureRequest', [$request], false);
 
-        $response = $client->createTransaction(new CreateTransactionController($request));
+        $response = $client->createTransaction($request);
         $responseData = $this->convertResponseToArray($response);
 
         if ($response->getResponseCode() == '1') {
@@ -205,18 +198,16 @@ class AuthorizeNetAim extends BasePaymentGateway
             new ApplicationException('Missing payment ID in successful transaction response'),
         );
 
-        $transactionRequestType = new TransactionRequestType;
-        $transactionRequestType->setTransactionType('voidTransaction');
-        $transactionRequestType->setRefTransId($paymentId);
-
         $client = $this->createClient();
-        $request = $client->createTransactionRequest();
-        $request->setRefId($order->hash);
-        $request->setTransactionRequest($transactionRequestType);
+        $request = $client->createTransactionRequest([
+            'transactionId' => $paymentId,
+            'refId' => $order->hash,
+            'transactionType' => 'voidTransaction',
+        ]);
 
         $this->fireSystemEvent('payregister.authorizenetaim.extendCancelRequest', [$request], false);
 
-        $response = $client->createTransaction(new CreateTransactionController($request));
+        $response = $client->createTransaction($request);
         $responseData = $this->convertResponseToArray($response);
 
         if ($response->getResponseCode() == '1') {
@@ -234,7 +225,8 @@ class AuthorizeNetAim extends BasePaymentGateway
 
     protected function createClient()
     {
-        $client = new AuthorizeNetClient($this->isTestMode());
+        $client = resolve(AuthorizeNetClient::class);
+        $client->setTestMode($this->isTestMode());
 
         $merchantAuthentication = $client->authentication();
         $merchantAuthentication->setName($this->getApiLoginID());
@@ -248,8 +240,8 @@ class AuthorizeNetAim extends BasePaymentGateway
     protected function getPaymentFormFields($order, $data = [])
     {
         return [
+            'refId' => $order->order_id,
             'amount' => number_format($order->order_total, 2, '.', ''),
-            'transactionId' => $order->order_id,
             'currency' => currency()->getUserCurrency(),
         ];
     }
@@ -271,54 +263,32 @@ class AuthorizeNetAim extends BasePaymentGateway
 
     protected function createAcceptPayment(mixed $fields, Order $order)
     {
-        $opaqueData = new OpaqueDataType;
-        $opaqueData->setDataDescriptor($fields['opaqueDataDescriptor']);
-        $opaqueData->setDataValue($fields['opaqueDataValue']);
-
-        $transactionRequestType = new TransactionRequestType;
-        $transactionRequestType->setTransactionType(
-            $this->shouldAuthorizePayment() ? 'authOnlyTransaction' : 'authCaptureTransaction',
-        );
-        $transactionRequestType->setAmount($fields['amount']);
-
-        $paymentOne = new PaymentType;
-        $paymentOne->setOpaqueData($opaqueData);
-        $transactionRequestType->setPayment($paymentOne);
-
         $client = $this->createClient();
 
-        $request = $client->createTransactionRequest();
-        $request->setRefId($fields['transactionId']);
-        $request->setTransactionRequest($transactionRequestType);
+        $fields['transactionType'] = $this->shouldAuthorizePayment() ? 'authOnlyTransaction' : 'authCaptureTransaction';
+        $request = $client->createTransactionRequest($fields);
 
         $this->fireSystemEvent('payregister.authorizenetaim.extendAcceptRequest', [$request], false);
 
-        return $client->createTransaction(new CreateTransactionController($request));
+        return $client->createTransaction($request);
     }
 
     protected function createRefundPayment(mixed $fields, Order $order)
     {
-        $creditCard = new CreditCardType;
-        $creditCard->setCardNumber($fields['card']);
-        $creditCard->setExpirationDate('XXXX');
-        $paymentOne = new PaymentType;
-        $paymentOne->setCreditCard($creditCard);
-
-        $transactionRequestType = new TransactionRequestType;
-        $transactionRequestType->setTransactionType('refundTransaction');
-        $transactionRequestType->setAmount($fields['amount']);
-        $transactionRequestType->setPayment($paymentOne);
-        $transactionRequestType->setRefTransId($fields['transactionId']);
-
         $client = $this->createClient();
 
-        $request = $client->createTransactionRequest();
-        $request->setRefId($fields['refId']);
-        $request->setTransactionRequest($transactionRequestType);
+        $request = $client->createTransactionRequest([
+            'refId' => $fields['refId'],
+            'cardNumber' => $fields['card'],
+            'expirationDate' => 'XXXX',
+            'transactionType' => 'refundTransaction',
+            'amount' => $fields['amount'],
+            'transactionId' => $fields['transactionId'],
+        ]);
 
         $this->fireSystemEvent('payregister.authorizenetaim.extendRefundRequest', [$request], false);
 
-        return $client->createTransaction(new CreateTransactionController($request));
+        return $client->createTransaction($request);
     }
 
     protected function convertResponseToArray(TransactionResponseType $response): array

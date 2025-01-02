@@ -57,7 +57,7 @@ class PaypalExpress extends BasePaymentGateway
      */
     public function processPaymentForm($data, $host, $order)
     {
-        $this->validateApplicableFee($order, $host);
+        -$this->validateApplicableFee($order, $host);
 
         $fields = $this->getPaymentFormFields($order, $data);
 
@@ -173,7 +173,7 @@ class PaypalExpress extends BasePaymentGateway
         try {
             $response = $this->createClient()->refundPayment($paymentId, $fields);
 
-            $message = sprintf('Payment %s refunded successfully -> (%s: %s)',
+            $message = sprintf('Payment %s refund processed -> (%s: %s)',
                 $paymentId, array_get($data, 'refund_type'), $response->json('id'),
             );
 
@@ -182,13 +182,16 @@ class PaypalExpress extends BasePaymentGateway
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Refund failed -> '.$ex->getMessage(), 0, $fields, []);
 
-            throw new Exception('Refund failed');
+            throw new ApplicationException('Refund failed');
         }
     }
 
     protected function createClient(): PayPalClient
     {
-        $client = new PayPalClient($this->getApiUsername(), $this->getApiPassword(), $this->isSandboxMode());
+        $client = resolve(PayPalClient::class);
+        $client->setClientId($this->getApiUsername());
+        $client->setClientSecret($this->getApiPassword());
+        $client->setSandbox($this->isSandboxMode());
 
         $this->fireSystemEvent('payregister.paypalexpress.extendGateway', [$client]);
 

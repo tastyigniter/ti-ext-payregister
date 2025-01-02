@@ -125,7 +125,10 @@ it('registers singletons', function() {
 });
 
 it('syncs payments on theme activation', function() {
-    Event::shouldReceive('listen')->with('main.theme.activated', Mockery::any())->once();
+    Event::shouldReceive('listen')->with('main.theme.activated', Mockery::on(function($callback) {
+        $callback();
+        return true;
+    }))->once();
 
     $this->extension->boot();
 });

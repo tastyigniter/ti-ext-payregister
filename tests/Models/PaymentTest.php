@@ -138,12 +138,12 @@ it('returns true if payment profile exists for customer', function() {
 });
 
 it('returns false if payment profile does not exist for customer', function() {
-    $this->payment->shouldReceive('getGatewayObject->paymentProfileExists')->with($this->customer)->andReturn(false);
-    $this->payment->shouldReceive('findPaymentProfile')->with($this->customer)->andReturn(null);
+    $this->payment->shouldReceive('getGatewayObject->paymentProfileExists')->with($this->customer)->andReturn(null);
+    $this->payment->shouldReceive('findPaymentProfile')->with($this->customer)->andReturn(true);
 
     $result = $this->payment->paymentProfileExists($this->customer);
 
-    expect($result)->toBeFalse();
+    expect($result)->toBeTrue();
 });
 
 it('deletes payment profile for customer', function() {

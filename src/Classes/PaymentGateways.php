@@ -65,20 +65,16 @@ class PaymentGateways
             $this->loadGateways();
         }
 
-        if (!is_array($this->gateways)) {
-            return [];
-        }
+        !is_array($this->gateways) && $this->gateways = [];
 
         $result = [];
         foreach ($this->gateways as $gateway) {
-            if (!class_exists($gateway['class'])) {
-                continue;
+            if (class_exists($gateway['class'])) {
+                $gatewayObj = new $gateway['class'];
+                $result[$gateway['code']] = array_merge($gateway, [
+                    'object' => $gatewayObj,
+                ]);
             }
-
-            $gatewayObj = new $gateway['class'];
-            $result[$gateway['code']] = array_merge($gateway, [
-                'object' => $gatewayObj,
-            ]);
         }
 
         return $this->gateways = $result;

@@ -26,21 +26,33 @@ beforeEach(function() {
     };
 });
 
-it('throws exception if updatePaymentProfile is not implemented', function() {
+it('returns false when supportsPaymentProfiles is not implemented', function() {
+    $result = $this->trait->supportsPaymentProfiles();
+
+    expect($result)->toBeFalse();
+});
+
+it('returns null when paymentProfileExists is not implemented', function() {
+    $result = $this->trait->paymentProfileExists($this->customer);
+
+    expect($result)->toBeNull();
+});
+
+it('throws exception when updatePaymentProfile is not implemented', function() {
     $this->expectException(\LogicException::class);
     $this->expectExceptionMessage('Method updatePaymentProfile must be implemented on your custom payment class.');
 
     $this->trait->updatePaymentProfile($this->customer, []);
 });
 
-it('throws exception if deletePaymentProfile is not implemented', function() {
+it('throws exception when deletePaymentProfile is not implemented', function() {
     $this->expectException(\LogicException::class);
     $this->expectExceptionMessage('Method deletePaymentProfile must be implemented on your custom payment class.');
 
     $this->trait->deletePaymentProfile($this->customer, $this->profile);
 });
 
-it('throws exception if payFromPaymentProfile is not implemented', function() {
+it('throws exception when payFromPaymentProfile is not implemented', function() {
     $this->expectException(\LogicException::class);
     $this->expectExceptionMessage('Method payFromPaymentProfile must be implemented on your custom payment class.');
 

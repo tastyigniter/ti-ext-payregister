@@ -14,7 +14,7 @@ use Igniter\User\Models\Customer;
 use Square\Environment;
 use Square\Http\ApiResponse;
 use Square\Models;
-use Square\SquareClient;
+use Square\SquareClientBuilder;
 
 class Square extends BasePaymentGateway
 {
@@ -167,7 +167,7 @@ class Square extends BasePaymentGateway
 
     public function deletePaymentProfile(Customer $customer, PaymentProfile $profile)
     {
-        $this->handleDeletePaymentProfile($customer, $profile);
+        return $this->handleDeletePaymentProfile($customer, $profile);
     }
 
     public function payFromPaymentProfile(Order $order, array $data = [])
@@ -186,7 +186,7 @@ class Square extends BasePaymentGateway
         try {
             $response = $this->createPayment($fields, $order, $host);
 
-            if ($this->handlePaymentResponse($response, $order, $host, $fields)) {
+            if ($this->handlePaymentResponse($response, $order, $host, $fields, true)) {
                 return;
             }
         } catch (Exception $ex) {
@@ -267,7 +267,7 @@ class Square extends BasePaymentGateway
                 $errors = $response->getErrors();
                 $errors = $errors[0]->getDetail();
 
-                throw new ApplicationException('Square Create Payment Card Error '.$errors);
+                throw new ApplicationException('Square Create Payment Card Error: '.$errors);
             }
         }
 
@@ -306,11 +306,11 @@ class Square extends BasePaymentGateway
 
     public function processRefundForm($data, $order, $paymentLog)
     {
-        if (!is_null($paymentLog->refunded_at) || !is_array($paymentLog->response)) {
-            throw new ApplicationException('Nothing to refund');
+        if (!is_null($paymentLog->refunded_at)) {
+            throw new ApplicationException('Nothing to refund, payment already refunded');
         }
 
-        if (array_get($paymentLog->response, 'payment.status') !== 'COMPLETED') {
+        if (!is_array($paymentLog->response) || array_get($paymentLog->response, 'payment.status') !== 'COMPLETED') {
             throw new ApplicationException('No charge to refund');
         }
 
@@ -344,7 +344,7 @@ class Square extends BasePaymentGateway
             $paymentLog->markAsRefundProcessed();
         } catch (Exception $e) {
             logger()->error($e);
-            $order->logPaymentAttempt('Refund failed: '.$e->getMessage(), 0, $fields, []);
+            $order->logPaymentAttempt('Refund failed -> '.$e->getMessage(), 0, $fields, []);
         }
     }
 
@@ -380,10 +380,10 @@ class Square extends BasePaymentGateway
      */
     protected function createClient()
     {
-        $client = new SquareClient([
-            'accessToken' => $this->getAccessToken(),
-            'environment' => $this->isTestMode() ? Environment::SANDBOX : Environment::PRODUCTION,
-        ]);
+        $clientBuilder = resolve(SquareClientBuilder::class);
+        $clientBuilder->accessToken($this->getAccessToken());
+        $clientBuilder->environment($this->isTestMode() ? Environment::SANDBOX : Environment::PRODUCTION);
+        $client = $clientBuilder->build();
 
         $this->fireSystemEvent('payregister.square.extendGateway', [$client]);
 
@@ -465,10 +465,6 @@ class Square extends BasePaymentGateway
 
     protected function handleDeletePaymentProfile($customer, $profile)
     {
-        if (!isset($profile->profile_data['customer_id'])) {
-            return;
-        }
-
         $cardId = $profile['profile_data']['card_id'];
         $client = $this->createClient();
         $cardsApi = $client->getCardsApi();
@@ -479,7 +475,7 @@ class Square extends BasePaymentGateway
             $errors = $response->getErrors();
             $errors = $errors[0]->getDetail();
 
-            throw new ApplicationException('Square Delete Payment Card Error '.$errors);
+            throw new ApplicationException('Square Delete Payment Card Error: '.$errors);
         }
 
         $this->deletePaymentProfileData($profile);

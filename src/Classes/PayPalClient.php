@@ -8,13 +8,26 @@ use Illuminate\Support\Str;
 
 class PayPalClient
 {
-    public function __construct(
-        protected ?string $clientId,
-        protected ?string $clientSecret,
-        protected bool $sandbox
-    ) {
-        throw_unless($this->clientId, ApplicationException::class, 'PayPal client ID is not configured');
-        throw_unless($this->clientSecret, ApplicationException::class, 'PayPal client secret is not configured');
+    protected ?string $clientId = null;
+    protected ?string $clientSecret = null;
+    protected bool $sandbox = false;
+
+    public function setClientId(?string $clientId): PayPalClient
+    {
+        $this->clientId = $clientId;
+        return $this;
+    }
+
+    public function setClientSecret(?string $clientSecret): PayPalClient
+    {
+        $this->clientSecret = $clientSecret;
+        return $this;
+    }
+
+    public function setSandbox(bool $sandbox): PayPalClient
+    {
+        $this->sandbox = $sandbox;
+        return $this;
     }
 
     public function getOrder($orderId)
@@ -61,6 +74,9 @@ class PayPalClient
 
     protected function generateAccessToken()
     {
+        throw_unless($this->clientId, ApplicationException::class, 'PayPal client ID is not configured');
+        throw_unless($this->clientSecret, ApplicationException::class, 'PayPal client secret is not configured');
+
         if (!cache()->has('payregister_paypal_access_token')) {
             $response = Http::asForm()
                 ->withBasicAuth($this->clientId, $this->clientSecret)
@@ -80,9 +96,8 @@ class PayPalClient
 
     protected function endpoint(string $uri)
     {
-        $endpoint = app()->environment('production')
-            ? 'https://api-m.paypal.com/'
-            : 'https://api-m.sandbox.paypal.com/';
+        $endpoint = 'https://';
+        $endpoint .= app()->environment('production') ? 'api-m.paypal.com/' : 'api-m.sandbox.paypal.com/';
 
         return $endpoint.$uri;
     }
@@ -94,13 +109,4 @@ class PayPalClient
             'PayPal-Request-Id' => Str::uuid()->toString(),
         ];
     }
-
-    public function setTestMode(bool $isSandboxMode)
-    {
-        $this->config['sandbox'] = $isSandboxMode;
-
-        return $this;
-    }
-
-    public function setBrandName(mixed $setting) {}
 }

@@ -198,7 +198,7 @@ class Mollie extends BasePaymentGateway
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Refund failed -> '.$ex->getMessage(), 0, $fields, []);
 
-            throw new Exception('Refund failed');
+            throw new ApplicationException('Refund failed');
         }
     }
 
@@ -261,7 +261,7 @@ class Mollie extends BasePaymentGateway
 
     protected function createClient(): MollieApiClient
     {
-        $client = new MollieApiClient;
+        $client = resolve(MollieApiClient::class);
         $client->setApiKey($this->getApiKey());
 
         $this->fireSystemEvent('payregister.mollie.extendGateway', [$client]);
