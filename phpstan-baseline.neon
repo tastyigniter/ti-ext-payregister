@@ -46,11 +46,6 @@ parameters:
 			path: src/Classes/BasePaymentGateway.php
 
 		-
-			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:normalizePath\\(\\)\\.$#"
-			count: 1
-			path: src/Classes/BasePaymentGateway.php
-
-		-
 			message: "#^Method Igniter\\\\PayRegister\\\\Classes\\\\BasePaymentGateway\\:\\:getPaymentFormViewName\\(\\) invoked with 1 parameter, 0 required\\.$#"
 			count: 1
 			path: src/Classes/BasePaymentGateway.php
@@ -62,21 +57,6 @@ parameters:
 
 		-
 			message: "#^Call to an undefined method Illuminate\\\\Contracts\\\\View\\\\Factory\\:\\:getFinder\\(\\)\\.$#"
-			count: 1
-			path: src/Classes/PaymentGateways.php
-
-		-
-			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:isDirectory\\(\\)\\.$#"
-			count: 1
-			path: src/Classes/PaymentGateways.php
-
-		-
-			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:makeDirectory\\(\\)\\.$#"
-			count: 1
-			path: src/Classes/PaymentGateways.php
-
-		-
-			message: "#^Call to an undefined static method Igniter\\\\Flame\\\\Support\\\\Facades\\\\File\\:\\:put\\(\\)\\.$#"
 			count: 1
 			path: src/Classes/PaymentGateways.php
 
@@ -127,11 +107,6 @@ parameters:
 
 		-
 			message: "#^Call to an undefined method Igniter\\\\PayRegister\\\\Http\\\\Controllers\\\\Payments\\:\\:refreshList\\(\\)\\.$#"
-			count: 1
-			path: src/Http/Controllers/Payments.php
-
-		-
-			message: "#^Call to an undefined static method Igniter\\\\Admin\\\\Facades\\\\AdminMenu\\:\\:setContext\\(\\)\\.$#"
 			count: 1
 			path: src/Http/Controllers/Payments.php
 
