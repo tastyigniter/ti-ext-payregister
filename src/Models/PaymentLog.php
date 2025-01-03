@@ -11,6 +11,21 @@ use Igniter\PayRegister\Events\OrderRefundProcessedEvent;
 
 /**
  * PaymentLog Model Class
+ *
+ * @property int $payment_log_id
+ * @property int $order_id
+ * @property string|null $payment_name
+ * @property string $message
+ * @property array|null $request
+ * @property array|null $response
+ * @property bool $is_success
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property string $payment_code
+ * @property bool $is_refundable
+ * @property \Illuminate\Support\Carbon|null $refunded_at
+ * @property-read mixed $date_added_since
+ * @mixin \Igniter\Flame\Database\Model
  */
 class PaymentLog extends Model
 {

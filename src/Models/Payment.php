@@ -13,6 +13,19 @@ use Igniter\System\Models\Concerns\Switchable;
 
 /**
  * Payment Model Class
+ *
+ * @property int $payment_id
+ * @property string $name
+ * @property string|null $code
+ * @property string $class_name
+ * @property string|null $description
+ * @property array|null $data
+ * @property bool $status
+ * @property bool $is_default
+ * @property int $priority
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @mixin \Igniter\Flame\Database\Model
  */
 class Payment extends Model
 {
@@ -44,6 +57,9 @@ class Payment extends Model
     ];
 
     protected $purgeable = ['payment'];
+    public $attributes = [
+        'data' => '[]',
+    ];
 
     public function getDropdownOptions()
     {

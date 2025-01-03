@@ -5,6 +5,20 @@ namespace Igniter\PayRegister\Models;
 use Igniter\Flame\Database\Factories\HasFactory;
 use Igniter\Flame\Database\Model;
 
+/**
+ * PaymentProfile Model Class
+ *
+ * @property int $payment_profile_id
+ * @property int|null $customer_id
+ * @property int|null $payment_id
+ * @property string|null $card_brand
+ * @property string|null $card_last4
+ * @property array|null $profile_data
+ * @property bool $is_primary
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @mixin \Igniter\Flame\Database\Model
+ */
 class PaymentProfile extends Model
 {
     use HasFactory;
