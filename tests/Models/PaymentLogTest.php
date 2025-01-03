@@ -11,7 +11,11 @@ use Mockery;
 
 beforeEach(function() {
     $this->paymentLog = new PaymentLog();
+    $this->paymentLog->payment_code = 'test_code';
+    $this->paymentLog->payment_name = 'Test Payment';
+    $this->paymentLog->message = 'Payment successful';
     $this->order = Order::factory()->create();
+    $this->paymentLog->order_id = $this->order->getKey();
     $this->paymentMethod = Mockery::mock(Payment::class)->makePartial();
     $this->order->payment_method = $this->paymentMethod;
 });

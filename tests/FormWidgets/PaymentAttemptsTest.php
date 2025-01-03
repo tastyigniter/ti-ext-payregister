@@ -60,7 +60,7 @@ it('throws exception if record not found on load record', function() {
     $this->expectException(FlashException::class);
     $this->expectExceptionMessage('Record not found');
 
-    request()->merge(['recordId' => '1']);
+    request()->merge(['recordId' => '123']);
 
     $this->widget->onLoadRecord();
 });

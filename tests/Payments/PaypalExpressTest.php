@@ -281,6 +281,7 @@ it('throws exception if no paypal express charge to refund', function() {
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
     $paymentLog = PaymentLog::factory()->create([
+        'order_id' => $order->order_id,
         'response' => ['purchase_units' => [['payments' => ['captures' => [['status' => 'not_completed']]]]]],
     ]);
 

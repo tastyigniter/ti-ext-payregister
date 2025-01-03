@@ -31,7 +31,7 @@
     "laravel/pint": "^1.2",
     "larastan/larastan": "^2.4.0",
     "sampoyigi/testbench": "dev-main as 1.0",
-    "pestphp/pest-plugin-laravel": "^2.0"
+    "pestphp/pest-plugin-laravel": "^3.0"
   },
   "autoload": {
     "psr-4": {
@@ -56,7 +56,7 @@
     }
   },
   "scripts": {
-    "test": "vendor/bin/pest",
+    "test": "vendor/bin/pest --coverage --exactly=100",
     "test-coverage": "vendor/bin/pest --coverage",
     "format": "vendor/bin/pint",
     "static": "vendor/bin/phpstan analyse --ansi --memory-limit 1056M"
