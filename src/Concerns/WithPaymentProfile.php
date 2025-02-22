@@ -33,7 +33,7 @@ trait WithPaymentProfile
     /**
      * Deletes a customer payment profile from the payment gateway.
      */
-    public function deletePaymentProfile($customer, PaymentProfile $profile)
+    public function deletePaymentProfile(Customer $customer, PaymentProfile $profile)
     {
         throw new \LogicException('Method deletePaymentProfile must be implemented on your custom payment class.');
     }

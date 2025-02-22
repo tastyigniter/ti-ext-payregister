@@ -155,7 +155,7 @@ class Square extends BasePaymentGateway
     /**
      * {@inheritdoc}
      */
-    public function supportsPaymentProfiles()
+    public function supportsPaymentProfiles(): bool
     {
         return true;
     }

@@ -6,6 +6,8 @@ use Exception;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
+use Igniter\PayRegister\Models\PaymentProfile;
+use Igniter\User\Models\Customer;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Response;
 use Mollie\Api\MollieApiClient;
@@ -209,7 +211,7 @@ class Mollie extends BasePaymentGateway
     /**
      * {@inheritdoc}
      */
-    public function updatePaymentProfile($customer, $data)
+    public function updatePaymentProfile(Customer $customer, array $data = []): PaymentProfile
     {
         $profile = $this->model->findPaymentProfile($customer);
         $profileData = $profile ? (array)$profile->profile_data : [];
