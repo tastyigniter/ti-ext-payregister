@@ -7,6 +7,7 @@ use Igniter\Flame\Database\Model;
 use Igniter\Flame\Database\Traits\Purgeable;
 use Igniter\Flame\Database\Traits\Sortable;
 use Igniter\Flame\Exception\ApplicationException;
+use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Classes\PaymentGateways;
 use Igniter\System\Models\Concerns\Defaultable;
 use Igniter\System\Models\Concerns\Switchable;
@@ -23,9 +24,11 @@ use Igniter\System\Models\Concerns\Switchable;
  * @property bool $status
  * @property bool $is_default
  * @property int $priority
+ * @property float|int $order_total
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @mixin \Igniter\Flame\Database\Model
+ * @mixin BasePaymentGateway
  */
 class Payment extends Model
 {

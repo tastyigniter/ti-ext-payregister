@@ -7,6 +7,7 @@ use Igniter\Flame\Support\Facades\File;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\Main\Classes\ThemeManager;
 use Igniter\PayRegister\Concerns\WithApplicableFee;
+use Igniter\PayRegister\Concerns\WithPaymentProfile;
 use Igniter\System\Actions\ModelAction;
 use Illuminate\Support\Facades\URL;
 
@@ -17,6 +18,7 @@ class BasePaymentGateway extends ModelAction
 {
     use EventEmitter;
     use WithApplicableFee;
+    use WithPaymentProfile;
 
     protected $orderModel = \Igniter\Cart\Models\Order::class;
 
