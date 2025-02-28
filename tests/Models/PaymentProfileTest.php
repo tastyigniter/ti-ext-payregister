@@ -9,7 +9,7 @@ use Igniter\User\Models\Customer;
 use Mockery;
 
 beforeEach(function(): void {
-    $this->paymentProfile = new PaymentProfile();
+    $this->paymentProfile = new PaymentProfile;
     $this->customer = Mockery::mock(Customer::class)->makePartial();
 });
 

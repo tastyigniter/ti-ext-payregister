@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Tests\Concerns;
 
-use LogicException;
 use Igniter\Cart\Models\Order;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithAuthorizedPayment;
 use Igniter\PayRegister\Models\Payment;
+use LogicException;
 
 beforeEach(function(): void {
     $this->order = Order::factory()->create([

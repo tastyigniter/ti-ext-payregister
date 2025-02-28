@@ -14,7 +14,7 @@ beforeEach(function(): void {
     $this->payment = Mockery::mock(Payment::class)->makePartial();
     $this->order = Mockery::mock(Order::class)->makePartial();
     $this->order->payment_method = $this->payment;
-    $this->cod = new Cod();
+    $this->cod = new Cod;
 });
 
 it('returns correct payment form view', function(): void {

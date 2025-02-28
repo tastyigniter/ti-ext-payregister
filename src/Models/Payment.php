@@ -218,7 +218,7 @@ class Payment extends Model
      * @param null|Customer $customer Specifies customer to find a profile for.
      * @return null|PaymentProfile Returns the payment profile object or NULL if the payment profile doesn't exist.
      */
-    public function findPaymentProfile(null|Customer $customer)
+    public function findPaymentProfile(?Customer $customer)
     {
         if (!$customer instanceof Customer) {
             return null;

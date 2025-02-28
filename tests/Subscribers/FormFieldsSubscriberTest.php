@@ -11,7 +11,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Mockery;
 
 beforeEach(function(): void {
-    $this->subscriber = new FormFieldsSubscriber();
+    $this->subscriber = new FormFieldsSubscriber;
     $this->form = new class extends Form
     {
         public function __construct() {}

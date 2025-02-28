@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Tests\Payments;
 
-use Square\Models\Card;
 use Exception;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
@@ -20,6 +19,7 @@ use Square\Apis\CustomersApi;
 use Square\Apis\PaymentsApi;
 use Square\Apis\RefundsApi;
 use Square\Http\ApiResponse;
+use Square\Models\Card;
 use Square\Models\Error;
 use Square\SquareClient;
 use Square\SquareClientBuilder;
@@ -37,6 +37,7 @@ function setupSquareClient(): SquareClient
     app()->instance(SquareClientBuilder::class, $clientBuilder);
     $client = Mockery::mock(SquareClient::class);
     $clientBuilder->shouldReceive('build')->andReturn($client);
+
     return $client;
 }
 

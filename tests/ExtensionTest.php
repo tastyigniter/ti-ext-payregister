@@ -129,6 +129,7 @@ it('registers singletons', function(): void {
 it('syncs payments on theme activation', function(): void {
     Event::shouldReceive('listen')->with('main.theme.activated', Mockery::on(function($callback): true {
         $callback();
+
         return true;
     }))->once();
 

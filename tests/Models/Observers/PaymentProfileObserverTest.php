@@ -13,7 +13,7 @@ it('mark as primary after saved', function(): void {
     $paymentProfile->is_primary = true;
     $paymentProfile->save();
 
-    $observer = new PaymentProfileObserver();
+    $observer = new PaymentProfileObserver;
     $observer->saved($paymentProfile);
 
     expect($paymentProfile->is_primary)->toBeTrue();

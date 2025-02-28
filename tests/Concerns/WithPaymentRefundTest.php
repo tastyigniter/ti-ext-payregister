@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Tests\Concerns;
 
-use LogicException;
 use Igniter\Cart\Models\Order;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
 use Igniter\PayRegister\Models\PaymentLog;
+use LogicException;
 use Mockery;
 
 beforeEach(function(): void {

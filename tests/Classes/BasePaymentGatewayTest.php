@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Tests\Classes;
 
-use LogicException;
-use Illuminate\View\Factory;
 use Igniter\Admin\Models\Status;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Database\Model;
@@ -13,6 +11,8 @@ use Igniter\Main\Classes\MainController;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Tests\Payments\Fixtures\TestPayment;
 use Illuminate\Support\Facades\URL;
+use Illuminate\View\Factory;
+use LogicException;
 use Mockery;
 
 beforeEach(function(): void {
@@ -59,9 +59,7 @@ it('defines fields config', function(): void {
     $model = mock(Model::class)->makePartial();
     $gateway = new class($model) extends BasePaymentGateway
     {
-        public function __construct()
-        {
-        }
+        public function __construct() {}
     };
 
     $result = $gateway->defineFieldsConfig();

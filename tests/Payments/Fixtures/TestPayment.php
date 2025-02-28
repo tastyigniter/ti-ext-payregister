@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Tests\Payments\Fixtures;
 
-use Override;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
+use Override;
 
 class TestPayment extends BasePaymentGateway
 {

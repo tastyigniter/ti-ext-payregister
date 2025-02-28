@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Tests\Payments\Fixtures;
 
-use Override;
 use Igniter\Cart\Models\Order;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithAuthorizedPayment;
+use Override;
 
 class TestPaymentWithAuthorized extends BasePaymentGateway
 {

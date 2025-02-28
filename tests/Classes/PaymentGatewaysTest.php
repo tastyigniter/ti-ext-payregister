@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Tests\Classes;
 
-use Illuminate\View\Factory;
 use Igniter\Flame\Support\Facades\File;
 use Igniter\Main\Classes\Theme;
 use Igniter\Main\Classes\ThemeManager;
@@ -12,10 +11,11 @@ use Igniter\PayRegister\Classes\PaymentGateways;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Tests\Payments\Fixtures\TestPayment;
 use Igniter\System\Classes\ExtensionManager;
+use Illuminate\View\Factory;
 use Mockery;
 
 beforeEach(function(): void {
-    $this->paymentGateways = new PaymentGateways();
+    $this->paymentGateways = new PaymentGateways;
 });
 
 it('returns null if gateway not found', function(): void {
@@ -60,9 +60,7 @@ it('loads gateways from extensions', function(): void {
                 ];
             }
         },
-        'test_extension2' => new class
-        {
-        },
+        'test_extension2' => new class {},
         'test_extension3' => new class
         {
             public function registerPaymentGateways(): string

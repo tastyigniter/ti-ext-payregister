@@ -4,29 +4,29 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister;
 
-use Override;
-use Igniter\PayRegister\Payments\Cod;
-use Igniter\PayRegister\Payments\PaypalExpress;
-use Igniter\PayRegister\Payments\AuthorizeNetAim;
-use Igniter\PayRegister\Payments\Stripe;
-use Igniter\PayRegister\Payments\Mollie;
-use Igniter\PayRegister\Payments\Square;
-use Igniter\PayRegister\FormWidgets\PaymentAttempts;
-use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Classes\AuthorizeNetClient;
 use Igniter\PayRegister\Classes\PaymentGateways;
 use Igniter\PayRegister\Classes\PayPalClient;
+use Igniter\PayRegister\FormWidgets\PaymentAttempts;
 use Igniter\PayRegister\Listeners\CaptureAuthorizedPayment;
 use Igniter\PayRegister\Listeners\UpdatePaymentIntentSessionOnCheckout;
 use Igniter\PayRegister\Models\Observers\PaymentObserver;
 use Igniter\PayRegister\Models\Observers\PaymentProfileObserver;
 use Igniter\PayRegister\Models\Payment;
+use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Models\PaymentProfile;
+use Igniter\PayRegister\Payments\AuthorizeNetAim;
+use Igniter\PayRegister\Payments\Cod;
+use Igniter\PayRegister\Payments\Mollie;
+use Igniter\PayRegister\Payments\PaypalExpress;
+use Igniter\PayRegister\Payments\Square;
+use Igniter\PayRegister\Payments\Stripe;
 use Igniter\PayRegister\Subscribers\FormFieldsSubscriber;
 use Igniter\System\Classes\BaseExtension;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
 use Mollie\Api\MollieApiClient;
+use Override;
 use Square\SquareClientBuilder;
 
 class Extension extends BaseExtension

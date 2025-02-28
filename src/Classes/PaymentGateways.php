@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Classes;
 
-use Illuminate\Http\Response;
 use Igniter\Flame\Pagic\Model;
 use Igniter\Flame\Support\Facades\File;
 use Igniter\Main\Classes\ThemeManager;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\System\Classes\ExtensionManager;
+use Illuminate\Http\Response;
 
 /**
  * Manages payment gateways

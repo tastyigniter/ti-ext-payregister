@@ -615,19 +615,19 @@ it('logs payment attempt and throws exception when payment request fails', funct
         'status' => 'invalid',
     ], 'post');
 
-//    $stripe = Mockery::mock(Stripe::class)->makePartial()->shouldAllowMockingProtectedMethods();
-//    $gateway = Mockery::mock(StripeClient::class);
-//    $paymentIntents = Mockery::mock(PaymentIntentService::class);
-//    $gateway->paymentIntents = $paymentIntents;
-//
-//    $this->order->customer = Mockery::mock(Customer::class)->makePartial();
-//    $this->order->customer_name = 'John Doe';
-//    $stripe->shouldReceive('getHostObject')->andReturn($this->payment);
-//    $stripe->shouldReceive('paymentProfileExists')->andReturnTrue();
-//    $stripe->shouldReceive('createGateway')->andReturn($gateway);
-//    $stripe->shouldReceive('getPaymentFormFields')->with($this->order)->andReturn(['amount' => 1000])->once();
-//    $paymentIntents->shouldReceive('create')->andThrow(new Exception('Payment error'));
-//    $this->order->shouldReceive('logPaymentAttempt')->with('Payment error: Payment error', 0, Mockery::any(), Mockery::any())->once();
+    //    $stripe = Mockery::mock(Stripe::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    //    $gateway = Mockery::mock(StripeClient::class);
+    //    $paymentIntents = Mockery::mock(PaymentIntentService::class);
+    //    $gateway->paymentIntents = $paymentIntents;
+    //
+    //    $this->order->customer = Mockery::mock(Customer::class)->makePartial();
+    //    $this->order->customer_name = 'John Doe';
+    //    $stripe->shouldReceive('getHostObject')->andReturn($this->payment);
+    //    $stripe->shouldReceive('paymentProfileExists')->andReturnTrue();
+    //    $stripe->shouldReceive('createGateway')->andReturn($gateway);
+    //    $stripe->shouldReceive('getPaymentFormFields')->with($this->order)->andReturn(['amount' => 1000])->once();
+    //    $paymentIntents->shouldReceive('create')->andThrow(new Exception('Payment error'));
+    //    $this->order->shouldReceive('logPaymentAttempt')->with('Payment error: Payment error', 0, Mockery::any(), Mockery::any())->once();
 
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('Sorry, there was an error processing your payment. Please try again later');

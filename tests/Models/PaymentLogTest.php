@@ -12,7 +12,7 @@ use Igniter\PayRegister\Models\PaymentLog;
 use Mockery;
 
 beforeEach(function(): void {
-    $this->paymentLog = new PaymentLog();
+    $this->paymentLog = new PaymentLog;
     $this->paymentLog->payment_code = 'test_code';
     $this->paymentLog->payment_name = 'Test Payment';
     $this->paymentLog->message = 'Payment successful';
@@ -72,7 +72,7 @@ it('does not mark payment log as refund processed if already refunded', function
 });
 
 it('configures payment log model correctly', function(): void {
-    $payment = new PaymentLog();
+    $payment = new PaymentLog;
 
     expect(class_uses_recursive($payment))
         ->toContain(Validation::class)

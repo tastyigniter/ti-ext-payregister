@@ -19,18 +19,21 @@ class PayPalClient
     public function setClientId(?string $clientId): PayPalClient
     {
         $this->clientId = $clientId;
+
         return $this;
     }
 
     public function setClientSecret(?string $clientSecret): PayPalClient
     {
         $this->clientSecret = $clientSecret;
+
         return $this;
     }
 
     public function setSandbox(bool $sandbox): PayPalClient
     {
         $this->sandbox = $sandbox;
+
         return $this;
     }
 

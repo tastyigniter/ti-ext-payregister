@@ -14,7 +14,7 @@ use Igniter\PayRegister\Tests\Payments\Fixtures\TestPaymentWithAuthorized;
 use Mockery;
 
 beforeEach(function(): void {
-    $this->listener = new CaptureAuthorizedPayment();
+    $this->listener = new CaptureAuthorizedPayment;
     $this->order = Order::factory()->create();
     $this->paymentMethod = Payment::factory()->create();
     $this->statusHistory = StatusHistory::factory()->create();

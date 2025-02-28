@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Database\Factories;
 
-use Igniter\PayRegister\Models\Payment;
-use Override;
 use Igniter\Flame\Database\Factories\Factory;
+use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Tests\Payments\Fixtures\TestPayment;
+use Override;
 
 class PaymentFactory extends Factory
 {

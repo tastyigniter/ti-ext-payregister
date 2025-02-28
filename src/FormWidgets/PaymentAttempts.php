@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\FormWidgets;
 
-use Override;
-use Igniter\Admin\FormWidgets\DataTable;
 use Igniter\Admin\Classes\BaseFormWidget;
 use Igniter\Admin\Classes\FormField;
+use Igniter\Admin\FormWidgets\DataTable;
 use Igniter\Admin\Traits\FormModelWidget;
 use Igniter\Admin\Traits\ValidatesForm;
 use Igniter\Admin\Widgets\Form;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\FlashException;
 use Igniter\PayRegister\Models\PaymentLog;
+use Override;
 
 /**
  * PaymentAttempts Form Widget

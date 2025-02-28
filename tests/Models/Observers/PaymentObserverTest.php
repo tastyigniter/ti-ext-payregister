@@ -15,7 +15,7 @@ it('applies gateway class and merges data attributes on retrieved', function(): 
     $payment->shouldReceive('getAttributes')->andReturn(['attribute' => 'value']);
     $payment->shouldReceive('setRawAttributes')->with(['key' => 'value', 'attribute' => 'value'])->once();
 
-    $observer = new PaymentObserver();
+    $observer = new PaymentObserver;
     $observer->retrieved($payment);
 });
 
@@ -25,7 +25,7 @@ it('purges config fields on saving if payment exists', function(): void {
     $payment->shouldReceive('purgeConfigFields')->andReturn(['purged' => 'data']);
     $payment->shouldReceive('setAttribute')->with('data', ['purged' => 'data'])->once();
 
-    $observer = new PaymentObserver();
+    $observer = new PaymentObserver;
     $observer->saving($payment);
 });
 
@@ -34,6 +34,6 @@ it('does not purge config fields on saving if payment does not exist', function(
     $payment->exists = false;
     $payment->shouldNotReceive('purgeConfigFields');
 
-    $observer = new PaymentObserver();
+    $observer = new PaymentObserver;
     $observer->saving($payment);
 });

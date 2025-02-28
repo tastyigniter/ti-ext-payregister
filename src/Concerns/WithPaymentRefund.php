@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Concerns;
 
-use LogicException;
 use Igniter\Cart\Models\Order;
 use Igniter\PayRegister\Models\PaymentLog;
+use LogicException;
 
 trait WithPaymentRefund
 {

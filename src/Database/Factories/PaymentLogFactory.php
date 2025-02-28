@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Database\Factories;
 
+use Igniter\Flame\Database\Factories\Factory;
 use Igniter\PayRegister\Models\PaymentLog;
 use Override;
-use Igniter\Flame\Database\Factories\Factory;
 
 class PaymentLogFactory extends Factory
 {

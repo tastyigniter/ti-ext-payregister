@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Database\Factories;
 
-use Override;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Override;
 
 class PaymentProfileFactory extends Factory
 {

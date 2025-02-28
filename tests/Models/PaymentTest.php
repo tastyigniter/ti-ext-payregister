@@ -170,7 +170,7 @@ it('throws exception if payment profile not found for customer', function(): voi
 });
 
 it('configures payment model correctly', function(): void {
-    $payment = new Payment();
+    $payment = new Payment;
 
     expect(class_uses_recursive($payment))
         ->toContain(Defaultable::class)

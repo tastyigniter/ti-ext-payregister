@@ -11,7 +11,7 @@ use Igniter\PayRegister\Payments\Stripe;
 use Mockery;
 
 beforeEach(function(): void {
-    $this->listener = new UpdatePaymentIntentSessionOnCheckout();
+    $this->listener = new UpdatePaymentIntentSessionOnCheckout;
     $this->order = Order::factory()->create();
     $this->paymentMethod = Mockery::mock(Payment::class)->makePartial();
     $this->order->payment_method = $this->paymentMethod;

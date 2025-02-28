@@ -29,9 +29,9 @@ class BasePaymentGateway extends ModelAction
 {
     use EventEmitter;
     use WithApplicableFee;
+    use WithAuthorizedPayment;
     use WithPaymentProfile;
     use WithPaymentRefund;
-    use WithAuthorizedPayment;
 
     protected $orderModel = Order::class;
 

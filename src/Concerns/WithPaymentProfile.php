@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Concerns;
 
-use LogicException;
 use Igniter\Cart\Models\Order;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\User\Models\Customer;
+use LogicException;
 
 trait WithPaymentProfile
 {

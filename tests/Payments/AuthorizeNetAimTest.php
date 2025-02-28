@@ -34,7 +34,7 @@ it('returns correct fields config for authorizenet', function(): void {
 });
 
 it('returns hidden fields with default values', function(): void {
-    $gateway = new AuthorizeNetAim();
+    $gateway = new AuthorizeNetAim;
 
     $hiddenFields = $gateway->getHiddenFields();
 
@@ -44,7 +44,7 @@ it('returns hidden fields with default values', function(): void {
 });
 
 it('returns accepted cards with correct labels', function(): void {
-    $gateway = new AuthorizeNetAim();
+    $gateway = new AuthorizeNetAim;
 
     $acceptedCards = $gateway->getAcceptedCards();
 
@@ -99,7 +99,7 @@ it('adds JavaScript file to the controller', function(): void {
 
 it('processes authorizenet payment form and logs successful payment', function(): void {
     $this->payment->transaction_type = 'auth';
-    $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
+    $messageAType = (new MessageAType)->setCode('1')->setDescription('Success');
     $request = mock(AuthorizeNetTransactionRequest::class);
     $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('1')->twice();
@@ -128,7 +128,7 @@ it('processes authorizenet payment form and logs successful payment', function()
 
 it('processes authorizenet payment form and logs authorized payment', function(): void {
     $this->payment->transaction_type = 'auth_only';
-    $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
+    $messageAType = (new MessageAType)->setCode('1')->setDescription('Success');
     $request = mock(AuthorizeNetTransactionRequest::class);
     $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('1');
@@ -175,7 +175,7 @@ it('throws exception if authorizenet payment form processing fails', function():
 });
 
 it('processes authorizenet payment form and logs failed payment', function(): void {
-    $messageAType = (new MessageAType())->setCode('2')->setDescription('Declined');
+    $messageAType = (new MessageAType)->setCode('2')->setDescription('Declined');
     $request = mock(AuthorizeNetTransactionRequest::class);
     $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('2')->twice();
@@ -205,7 +205,7 @@ it('processes authorizenet payment form and logs failed payment', function(): vo
 });
 
 it('processes authorizenet full refund successfully', function(): void {
-    $messageAType = (new MessageAType())->setCode('2')->setDescription('Declined');
+    $messageAType = (new MessageAType)->setCode('2')->setDescription('Declined');
     $paymentLog = mock(PaymentLog::class)->makePartial();
     $paymentLog->shouldReceive('markAsRefundProcessed')->once();
     $paymentLog->refunded_at = null;
@@ -268,7 +268,7 @@ it('authorizenet: throws exception when refund request fails', function(): void 
 
 it('authorizenet: captures authorized payment successfully', function(): void {
     Event::fake();
-    $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
+    $messageAType = (new MessageAType)->setCode('1')->setDescription('Success');
     $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('1')->twice();
     $response->shouldReceive('getTransId')->andReturn('54321')->once();
@@ -302,7 +302,7 @@ it('authorizenet: captures authorized payment successfully', function(): void {
 
 it('authorizenet: captures authorized payment failed', function(): void {
     Event::fake();
-    $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
+    $messageAType = (new MessageAType)->setCode('1')->setDescription('Success');
     $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('2')->twice();
     $response->shouldReceive('getTransId')->andReturn('54321');
@@ -360,7 +360,7 @@ it('authorizenet: cancels authorized payment successfully', function(): void {
         ->andReturn($paymentLog)
         ->once();
 
-    $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
+    $messageAType = (new MessageAType)->setCode('1')->setDescription('Success');
     $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('1')->twice();
     $response->shouldReceive('getTransId')->andReturn('54321')->once();
@@ -395,7 +395,7 @@ it('authorizenet: cancels authorized payment failed', function(): void {
         ->andReturn($paymentLog)
         ->once();
 
-    $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
+    $messageAType = (new MessageAType)->setCode('1')->setDescription('Success');
     $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('2')->twice();
     $response->shouldReceive('getTransId')->andReturn('54321')->once();

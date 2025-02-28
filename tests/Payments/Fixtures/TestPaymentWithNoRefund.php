@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Tests\Payments\Fixtures;
 
-use Override;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
 use Igniter\PayRegister\Models\PaymentLog;
+use Override;
 
 class TestPaymentWithNoRefund extends BasePaymentGateway
 {

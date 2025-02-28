@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Tests\Http\Controllers;
 
-use stdClass;
 use Igniter\Admin\Classes\ListColumn;
 use Igniter\PayRegister\Classes\PaymentGateways;
 use Igniter\PayRegister\Http\Controllers\Payments;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Tests\Payments\Fixtures\TestPayment;
 use Mockery;
+use stdClass;
 
 it('loads payments page', function(): void {
     actingAsSuperUser()

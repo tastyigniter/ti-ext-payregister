@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Tests\Concerns;
 
-use LogicException;
 use Igniter\Cart\Models\Order;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithPaymentProfile;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\User\Models\Customer;
+use LogicException;
 use Mockery;
 
 beforeEach(function(): void {

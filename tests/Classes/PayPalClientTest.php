@@ -13,7 +13,7 @@ beforeEach(function(): void {
     $this->clientId = 'testClientId';
     $this->clientSecret = 'testClientSecret';
     $this->sandbox = true;
-    $this->payPalClient = new PayPalClient();
+    $this->payPalClient = new PayPalClient;
     $this->payPalClient->setClientSecret($this->clientSecret);
     $this->payPalClient->setClientId($this->clientId);
     $this->payPalClient->setSandbox($this->sandbox);
@@ -37,7 +37,7 @@ it('throws exception if client ID is not configured', function(): void {
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('PayPal client ID is not configured');
 
-    $paypalClient = new PayPalClient();
+    $paypalClient = new PayPalClient;
     $paypalClient->setClientSecret('testClientSecret');
     $paypalClient->getOrder('123');
 });
@@ -46,7 +46,7 @@ it('throws exception if client secret is not configured', function(): void {
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('PayPal client secret is not configured');
 
-    $paypalClient = new PayPalClient();
+    $paypalClient = new PayPalClient;
     $paypalClient->setClientId('testClientId');
     $paypalClient->getOrder('123');
 });

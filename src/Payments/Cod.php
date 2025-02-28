@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Igniter\PayRegister\Payments;
 
-use Override;
-use Igniter\PayRegister\Models\Payment;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
+use Igniter\PayRegister\Models\Payment;
+use Override;
 
 class Cod extends BasePaymentGateway
 {
