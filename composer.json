@@ -19,16 +19,6 @@
     "authorizenet",
     "mollie"
   ],
-  "repositories": {
-    "core": {
-      "type": "path",
-      "url": "../../../core/"
-    },
-    "packages": {
-      "type": "path",
-      "url": "../../../packages/*/*/"
-    }
-  },
   "require": {
     "tastyigniter/core": "^v4.0@beta || ^v4.0@dev",
     "php-http/guzzle7-adapter": "~1.0",
