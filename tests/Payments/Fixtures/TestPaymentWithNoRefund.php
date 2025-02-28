@@ -19,6 +19,7 @@ class TestPaymentWithNoRefund extends BasePaymentGateway
         return __DIR__.'/../../_fixtures/fields';
     }
 
+    #[Override]
     public function canRefundPayment(PaymentLog $paymentLog): bool
     {
         return false;

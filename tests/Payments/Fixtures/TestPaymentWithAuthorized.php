@@ -19,16 +19,19 @@ class TestPaymentWithAuthorized extends BasePaymentGateway
         return __DIR__.'/../../_fixtures/fields';
     }
 
+    #[Override]
     public function shouldAuthorizePayment(): bool
     {
         return true;
     }
 
+    #[Override]
     public function captureAuthorizedPayment(Order $order): bool
     {
         return true;
     }
 
+    #[Override]
     public function cancelAuthorizedPayment(Order $order): bool
     {
         return true;

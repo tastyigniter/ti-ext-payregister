@@ -20,11 +20,13 @@ class TestPaymentWithRefund extends BasePaymentGateway
         return __DIR__.'/../../_fixtures/fields';
     }
 
+    #[Override]
     public function canRefundPayment(PaymentLog $paymentLog): bool
     {
         return true;
     }
 
+    #[Override]
     public function processRefundForm(array $data, Order $order, PaymentLog $paymentLog): bool
     {
         return true;
