@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Events;
 
 use Igniter\Cart\Models\Order;
@@ -17,7 +19,7 @@ class OrderRefundProcessedEvent
         $this->order = $paymentLog->order;
     }
 
-    public static function eventName()
+    public static function eventName(): string
     {
         return 'admin.order.refundProcessed';
     }

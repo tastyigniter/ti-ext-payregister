@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Classes;
 
 use Igniter\Flame\Exception\ApplicationException;
 use net\authorize\api\constants\ANetEnvironment;
 use net\authorize\api\contract\v1\ANetApiResponseType;
+use net\authorize\api\contract\v1\CreateTransactionResponse;
 use net\authorize\api\contract\v1\CreditCardType;
 use net\authorize\api\contract\v1\MerchantAuthenticationType;
 use net\authorize\api\contract\v1\OpaqueDataType;
@@ -18,7 +21,7 @@ class AuthorizeNetClient
 
     protected ?MerchantAuthenticationType $authentication = null;
 
-    public function setTestMode(bool $sandbox = true)
+    public function setTestMode(bool $sandbox = true): static
     {
         $this->sandbox = $sandbox;
 
@@ -27,7 +30,7 @@ class AuthorizeNetClient
 
     public function authentication()
     {
-        if ($this->authentication) {
+        if ($this->authentication instanceof MerchantAuthenticationType) {
             return $this->authentication;
         }
 
@@ -75,6 +78,7 @@ class AuthorizeNetClient
 
     public function createTransaction(AuthorizeNetTransactionRequest $request): TransactionResponseType
     {
+        /** @var null|CreateTransactionResponse $response */
         $response = $request->controller()->executeWithApiResponse(
             $this->sandbox ? ANetEnvironment::SANDBOX : ANetEnvironment::PRODUCTION,
         );
@@ -87,7 +91,7 @@ class AuthorizeNetClient
             throw new ApplicationException($this->getErrorMessageFromResponse($response, $transactionResponse));
         }
 
-        if (is_null($transactionResponse) || is_null($transactionResponse->getMessages())) {
+        if (is_null($transactionResponse->getMessages())) {
             throw new ApplicationException('Transaction failed with empty message');
         }
 

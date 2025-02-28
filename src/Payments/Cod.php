@@ -1,26 +1,34 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Payments;
 
+use Override;
+use Igniter\PayRegister\Models\Payment;
+use Igniter\Cart\Models\Order;
+use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 
 class Cod extends BasePaymentGateway
 {
     public static ?string $paymentFormView = 'igniter.payregister::_partials.cod.payment_form';
 
-    public function defineFieldsConfig()
+    #[Override]
+    public function defineFieldsConfig(): string
     {
         return 'igniter.payregister::/models/cod';
     }
 
     /**
      * @param array $data
-     * @param \Igniter\PayRegister\Models\Payment $host
-     * @param \Igniter\Cart\Models\Order $order
+     * @param Payment $host
+     * @param Order $order
      *
-     * @throws \Igniter\Flame\Exception\ApplicationException
+     * @throws ApplicationException
      */
-    public function processPaymentForm($data, $host, $order)
+    #[Override]
+    public function processPaymentForm($data, $host, $order): void
     {
         $this->validateApplicableFee($order, $host);
 

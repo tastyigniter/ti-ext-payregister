@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Http\Controllers;
 
+use stdClass;
 use Igniter\Admin\Classes\ListColumn;
 use Igniter\PayRegister\Classes\PaymentGateways;
 use Igniter\PayRegister\Http\Controllers\Payments;
@@ -9,19 +12,19 @@ use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Tests\Payments\Fixtures\TestPayment;
 use Mockery;
 
-it('loads payments page', function() {
+it('loads payments page', function(): void {
     actingAsSuperUser()
         ->get(route('igniter.payregister.payments'))
         ->assertOk();
 });
 
-it('loads create payment page', function() {
+it('loads create payment page', function(): void {
     actingAsSuperUser()
         ->get(route('igniter.payregister.payments', ['slug' => 'create']))
         ->assertOk();
 });
 
-it('loads edit payment page', function() {
+it('loads edit payment page', function(): void {
     $payment = Payment::factory()->create();
 
     actingAsSuperUser()
@@ -29,7 +32,7 @@ it('loads edit payment page', function() {
         ->assertOk();
 });
 
-it('sets icon class to fa-star if record is default', function() {
+it('sets icon class to fa-star if record is default', function(): void {
     $payment = Payment::factory()->create([
         'is_default' => 1,
     ]);
@@ -42,7 +45,7 @@ it('sets icon class to fa-star if record is default', function() {
     expect($column->iconCssClass)->toBe('fa fa-star');
 });
 
-it('sets icon class to fa-star-o if record is not default', function() {
+it('sets icon class to fa-star-o if record is not default', function(): void {
     $payment = Payment::factory()->create([
         'is_default' => 0,
     ]);
@@ -55,7 +58,7 @@ it('sets icon class to fa-star-o if record is not default', function() {
     expect($column->iconCssClass)->toBe('fa fa-star-o');
 });
 
-it('applies gateway class if model does not exist', function() {
+it('applies gateway class if model does not exist', function(): void {
     $model = Mockery::mock();
     $model->exists = false;
     $model->shouldReceive('applyGatewayClass');
@@ -65,7 +68,7 @@ it('applies gateway class if model does not exist', function() {
     expect($extendedModel)->toBe($model);
 });
 
-it('does not apply gateway class if model exists', function() {
+it('does not apply gateway class if model exists', function(): void {
     $model = Mockery::mock(Payment::class);
     $model->exists = true;
     $model->shouldNotReceive('applyGatewayClass');
@@ -75,12 +78,12 @@ it('does not apply gateway class if model exists', function() {
     expect($extendedModel)->toBe($model);
 });
 
-it('extends form fields before create context', function() {
+it('extends form fields before create context', function(): void {
     $model = Mockery::mock(Payment::class);
     $model->shouldReceive('getConfigFields')->andReturn(['field1' => ['label' => 'Field1']]);
     $model->exists = true;
 
-    $form = new \stdClass;
+    $form = new stdClass;
     $form->model = $model;
     $form->context = 'create';
     $form->tabs = ['fields' => ['field2' => ['label' => 'Field2']]];
@@ -90,12 +93,12 @@ it('extends form fields before create context', function() {
     expect($form->tabs['fields'])->toBe(['field2' => ['label' => 'Field2'], 'field1' => ['label' => 'Field1']]);
 });
 
-it('extends form fields before non-create context', function() {
+it('extends form fields before non-create context', function(): void {
     $model = Mockery::mock(Payment::class);
     $model->shouldReceive('getConfigFields')->andReturn(['field1' => ['label' => 'Field1']]);
     $model->exists = true;
 
-    $form = new \stdClass;
+    $form = new stdClass;
     $form->model = $model;
     $form->context = 'edit';
     $form->tabs = ['fields' => ['field2' => ['label' => 'Field2']]];
@@ -106,7 +109,7 @@ it('extends form fields before non-create context', function() {
         ->and($form->fields['code']['disabled'])->toBeTrue();
 });
 
-it('sets a default payment', function() {
+it('sets a default payment', function(): void {
     $payment = Payment::factory()->create();
 
     actingAsSuperUser()
@@ -120,7 +123,7 @@ it('sets a default payment', function() {
     expect(Payment::getDefault()->code)->toBe($payment->code);
 });
 
-it('creates payment', function() {
+it('creates payment', function(): void {
     $paymentGateways = Mockery::mock(PaymentGateways::class);
     $paymentGateways->shouldReceive('findGateway')->andReturn([
         'class' => TestPayment::class,
@@ -147,7 +150,7 @@ it('creates payment', function() {
     expect(Payment::where('name', 'Created Payment')->exists())->toBeTrue();
 });
 
-it('updates payment', function() {
+it('updates payment', function(): void {
     $payment = Payment::factory()->create();
 
     actingAsSuperUser()
@@ -170,7 +173,7 @@ it('updates payment', function() {
     expect(Payment::where('name', 'Updated Payment')->exists())->toBeTrue();
 });
 
-it('deletes payment', function() {
+it('deletes payment', function(): void {
     $payment = Payment::factory()->create();
 
     actingAsSuperUser()

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Subscribers;
 
 use Igniter\Admin\Widgets\Form;
@@ -15,7 +17,7 @@ class FormFieldsSubscriber
         ];
     }
 
-    public function handle(Form $form)
+    public function handle(Form $form): void
     {
         if ($form->model instanceof Order) {
             $form->tabs['fields']['payment_logs'] = [

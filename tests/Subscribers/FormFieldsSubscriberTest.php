@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Subscribers;
 
 use Igniter\Admin\Widgets\Form;
@@ -8,7 +10,7 @@ use Igniter\PayRegister\Subscribers\FormFieldsSubscriber;
 use Illuminate\Contracts\Events\Dispatcher;
 use Mockery;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->subscriber = new FormFieldsSubscriber();
     $this->form = new class extends Form
     {
@@ -17,14 +19,14 @@ beforeEach(function() {
     $this->order = Mockery::mock(Order::class)->makePartial();
 });
 
-it('subscribes to admin.form.extendFieldsBefore event', function() {
+it('subscribes to admin.form.extendFieldsBefore event', function(): void {
     $events = $this->subscriber->subscribe(Mockery::mock(Dispatcher::class));
 
     expect($events)->toHaveKey('admin.form.extendFieldsBefore')
         ->and($events['admin.form.extendFieldsBefore'])->toBe('handle');
 });
 
-it('adds payment logs field to form if model is Order', function() {
+it('adds payment logs field to form if model is Order', function(): void {
     $this->form->model = $this->order;
     $this->form->tabs = ['fields' => []];
 
@@ -35,7 +37,7 @@ it('adds payment logs field to form if model is Order', function() {
         ->and($this->form->tabs['fields']['payment_logs']['type'])->toBe('paymentattempts');
 });
 
-it('does not add payment logs field to form if model is not Order', function() {
+it('does not add payment logs field to form if model is not Order', function(): void {
     $this->form->model = Mockery::mock('NonOrderModel');
     $this->form->tabs = ['fields' => []];
 

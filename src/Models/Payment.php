@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Models;
 
+use Igniter\Flame\Database\Builder;
 use Igniter\Flame\Database\Factories\HasFactory;
 use Igniter\Flame\Database\Model;
 use Igniter\Flame\Database\Traits\Purgeable;
@@ -11,6 +14,9 @@ use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Classes\PaymentGateways;
 use Igniter\System\Models\Concerns\Defaultable;
 use Igniter\System\Models\Concerns\Switchable;
+use Igniter\User\Models\Customer;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
 
 /**
  * Payment Model Class
@@ -25,9 +31,14 @@ use Igniter\System\Models\Concerns\Switchable;
  * @property bool $is_default
  * @property int $priority
  * @property float|int $order_total
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @mixin \Igniter\Flame\Database\Model
+ * @property null|int $order_fee_type
+ * @property float|int $order_fee
+ * @property null|int $capture_status
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @method static Builder|Payment query()
+ * @method static Builder|Payment whereIsEnabled()
+ * @mixin Model
  * @mixin BasePaymentGateway
  */
 class Payment extends Model
@@ -38,7 +49,7 @@ class Payment extends Model
     use Sortable;
     use Switchable;
 
-    const SORT_ORDER = 'priority';
+    public const string SORT_ORDER = 'priority';
 
     /**
      * @var string The database table name
@@ -60,26 +71,24 @@ class Payment extends Model
     ];
 
     protected $purgeable = ['payment'];
+
     public $attributes = [
         'data' => '[]',
     ];
 
     public function getDropdownOptions()
     {
-        return $this->whereIsEnabled()->dropdown('name', 'code');
+        return static::whereIsEnabled()->dropdown('name', 'code');
     }
 
     public static function listDropdownOptions()
     {
-        $all = self::select('code', 'name', 'description')->whereIsEnabled()->get();
-        $collection = $all->keyBy('code')->map(function($model) {
-            return [$model->name, $model->description];
-        });
+        $all = self::query()->select('code', 'name', 'description')->whereIsEnabled()->get();
 
-        return $collection;
+        return $all->keyBy('code')->map(fn(self $model): array => [$model->name, $model->description]);
     }
 
-    public static function onboardingIsComplete()
+    public static function onboardingIsComplete(): bool
     {
         return self::whereIsEnabled()->count() > 0;
     }
@@ -87,8 +96,8 @@ class Payment extends Model
     public function listGateways()
     {
         $result = [];
-        $this->gatewayManager = resolve(PaymentGateways::class);
-        foreach ($this->gatewayManager->listGateways() as $code => $gateway) {
+        $gatewayManager = resolve(PaymentGateways::class);
+        foreach ($gatewayManager->listGateways() as $gateway) {
             $result[$gateway['code']] = $gateway['name'];
         }
 
@@ -99,7 +108,7 @@ class Payment extends Model
     // Accessors & Mutators
     //
 
-    public function setCodeAttribute($value)
+    public function setCodeAttribute($value): void
     {
         $this->attributes['code'] = str_slug($value, '_');
     }
@@ -121,21 +130,16 @@ class Payment extends Model
     //
     // Manager
     //
-
     /**
      * Extends this class with the gateway class
-     *
-     * @param string $class Class name
-     *
-     * @return bool
      */
-    public function applyGatewayClass($class = null)
+    public function applyGatewayClass(?string $class = null): bool
     {
         if (is_null($class)) {
             $class = $this->class_name;
         }
 
-        if (!class_exists($class)) {
+        if ($class && !class_exists($class)) {
             $class = null;
         }
 
@@ -153,13 +157,13 @@ class Payment extends Model
         return $this->class_name;
     }
 
-    public function getGatewayObject($class = null)
+    public function getGatewayObject($class = null): mixed
     {
         if (!$class) {
             $class = $this->class_name;
         }
 
-        return $this->asExtension($class);
+        return $class ? $this->asExtension($class) : null;
     }
 
     //
@@ -174,16 +178,14 @@ class Payment extends Model
     /**
      * Return all payments
      *
-     * @return array
+     * @return Collection<int, static>
      */
     public static function listPayments()
     {
-        return self::whereIsEnabled()->get()->filter(function($model) {
-            return strlen($model->class_name) > 0;
-        });
+        return self::query()->whereIsEnabled()->get()->filter(fn(self $model): bool => strlen($model->class_name) > 0);
     }
 
-    public static function syncAll()
+    public static function syncAll(): void
     {
         $payments = self::pluck('code')->all();
 
@@ -193,7 +195,7 @@ class Payment extends Model
                 continue;
             }
 
-            $model = self::make([
+            $model = new self([
                 'code' => $code,
                 'name' => lang($gateway['name']),
                 'description' => lang($gateway['description']),
@@ -211,32 +213,33 @@ class Payment extends Model
     //
     // Payment Profiles
     //
-
     /**
      * Finds and returns a customer payment profile for this payment method.
-     * @param \Igniter\User\Models\Customer $customer Specifies customer to find a profile for.
-     * @return \Igniter\PayRegister\Models\PaymentProfile|object Returns the payment profile object or NULL if the payment profile doesn't exist.
+     * @param null|Customer $customer Specifies customer to find a profile for.
+     * @return null|PaymentProfile Returns the payment profile object or NULL if the payment profile doesn't exist.
      */
-    public function findPaymentProfile($customer)
+    public function findPaymentProfile(null|Customer $customer)
     {
-        if (!$customer) {
+        if (!$customer instanceof Customer) {
             return null;
         }
 
-        $query = PaymentProfile::query();
-
-        return $query->where('customer_id', $customer->customer_id)
+        /** @var PaymentProfile $paymentProfile */
+        $paymentProfile = PaymentProfile::query()
+            ->where('customer_id', $customer->customer_id)
             ->where('payment_id', $this->payment_id)
             ->first();
+
+        return $paymentProfile;
     }
 
     /**
      * Initializes a new empty customer payment profile.
      * This method should be used by payment methods internally.
-     * @param \Igniter\User\Models\Customer $customer Specifies customer to initialize a profile for.
-     * @return \Igniter\PayRegister\Models\PaymentProfile Returns the payment profile object or NULL if the payment profile doesn't exist.
+     * @param Customer $customer Specifies customer to initialize a profile for.
+     * @return PaymentProfile Returns the payment profile object or NULL if the payment profile doesn't exist.
      */
-    public function initPaymentProfile($customer)
+    public function initPaymentProfile($customer): PaymentProfile
     {
         $profile = new PaymentProfile;
         $profile->customer_id = $customer->customer_id;
@@ -255,7 +258,7 @@ class Payment extends Model
         return (bool)$this->findPaymentProfile($customer);
     }
 
-    public function deletePaymentProfile($customer)
+    public function deletePaymentProfile(?Customer $customer): void
     {
         $gatewayObj = $this->getGatewayObject();
 

@@ -1,15 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Payments;
 
 use Exception;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
+use Igniter\Main\Classes\MainController;
 use Igniter\PayRegister\Classes\AuthorizeNetClient;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithAuthorizedPayment;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
+use Igniter\PayRegister\Models\Payment;
+use Igniter\PayRegister\Models\PaymentLog;
 use net\authorize\api\contract\v1\TransactionResponseType;
+use Override;
 
 class AuthorizeNetAim extends BasePaymentGateway
 {
@@ -18,12 +24,13 @@ class AuthorizeNetAim extends BasePaymentGateway
 
     public static ?string $paymentFormView = 'igniter.payregister::_partials.authorizenetaim.payment_form';
 
-    public function defineFieldsConfig()
+    #[Override]
+    public function defineFieldsConfig(): string
     {
         return 'igniter.payregister::/models/authorizenetaim';
     }
 
-    public function getHiddenFields()
+    public function getHiddenFields(): array
     {
         return [
             'authorizenetaim_DataValue' => '',
@@ -46,22 +53,23 @@ class AuthorizeNetAim extends BasePaymentGateway
         return $this->model->api_login_id;
     }
 
-    public function isTestMode()
+    public function isTestMode(): bool
     {
         return $this->model->transaction_mode != 'live';
     }
 
-    public function shouldAuthorizePayment()
+    #[Override]
+    public function shouldAuthorizePayment(): bool
     {
         return $this->model->transaction_type === 'auth_only';
     }
 
-    public function getEndPoint()
+    public function getEndPoint(): string
     {
         return $this->isTestMode() ? 'https://jstest.authorize.net' : 'https://js.authorize.net';
     }
 
-    public function getAcceptedCards()
+    public function getAcceptedCards(): array
     {
         return [
             'visa' => 'lang:igniter.payregister::default.authorize_net_aim.text_visa',
@@ -74,21 +82,21 @@ class AuthorizeNetAim extends BasePaymentGateway
 
     /**
      * @param self $host
-     * @param \Igniter\Main\Classes\MainController $controller
+     * @param MainController $controller
      */
-    public function beforeRenderPaymentForm($host, $controller)
+    #[Override]
+    public function beforeRenderPaymentForm($host, $controller): void
     {
         $controller->addJs('igniter.payregister::/js/authorizenetaim.js', 'authorizenetaim-js');
     }
 
     /**
      * @param array $data
-     * @param \Igniter\PayRegister\Models\Payment $host
-     * @param \Igniter\Cart\Models\Order $order
-     *
-     * @return mixed
+     * @param Payment $host
+     * @param Order $order
      */
-    public function processPaymentForm($data, $host, $order)
+    #[Override]
+    public function processPaymentForm($data, $host, $order): void
     {
         $this->validateApplicableFee($order, $host);
 
@@ -119,7 +127,8 @@ class AuthorizeNetAim extends BasePaymentGateway
         }
     }
 
-    public function processRefundForm($data, $order, $paymentLog)
+    #[Override]
+    public function processRefundForm($data, $order, $paymentLog): void
     {
         throw_if(
             !is_null($paymentLog->refunded_at) || !is_array($paymentLog->response),
@@ -152,6 +161,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         }
     }
 
+    #[Override]
     public function captureAuthorizedPayment(Order $order)
     {
         throw_unless(
@@ -159,6 +169,7 @@ class AuthorizeNetAim extends BasePaymentGateway
             new ApplicationException('No successful transaction to capture'),
         );
 
+        /** @var PaymentLog $paymentLog */
         throw_unless(
             $paymentId = array_get($paymentLog->response, 'id'),
             new ApplicationException('Missing payment ID in successful transaction response'),
@@ -186,6 +197,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         return $response;
     }
 
+    #[Override]
     public function cancelAuthorizedPayment(Order $order)
     {
         throw_unless(
@@ -193,6 +205,7 @@ class AuthorizeNetAim extends BasePaymentGateway
             new ApplicationException('No successful transaction to capture'),
         );
 
+        /** @var PaymentLog $paymentLog */
         throw_unless(
             $paymentId = array_get($paymentLog->response, 'id'),
             new ApplicationException('Missing payment ID in successful transaction response'),
@@ -237,7 +250,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         return $client;
     }
 
-    protected function getPaymentFormFields($order, $data = [])
+    protected function getPaymentFormFields($order, $data = []): array
     {
         return [
             'refId' => $order->order_id,
@@ -246,7 +259,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         ];
     }
 
-    protected function getPaymentRefundFields($order, $data)
+    protected function getPaymentRefundFields($order, $data): array
     {
         $refundAmount = array_get($data, 'refund_type') == 'full'
             ? $order->order_total : array_get($data, 'refund_amount');

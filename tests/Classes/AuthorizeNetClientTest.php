@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Classes;
 
 use Igniter\Flame\Exception\ApplicationException;
@@ -14,18 +16,18 @@ use net\authorize\api\contract\v1\TransactionResponseType\ErrorsAType\ErrorAType
 use net\authorize\api\contract\v1\TransactionResponseType\MessagesAType\MessageAType;
 use net\authorize\api\controller\CreateTransactionController;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->authorizeNetClient = new AuthorizeNetClient;
 });
 
-it('creates authentication instance', function() {
+it('creates authentication instance', function(): void {
     $this->authorizeNetClient->authentication();
     $result = $this->authorizeNetClient->authentication();
 
     expect($result)->toBeInstanceOf(MerchantAuthenticationType::class);
 });
 
-it('creates transaction request instance', function() {
+it('creates transaction request instance', function(): void {
     $result = $this->authorizeNetClient->createTransactionRequest([
         'opaqueDataDescriptor' => 'descriptor',
         'opaqueDataValue' => 'value',
@@ -38,7 +40,7 @@ it('creates transaction request instance', function() {
         ->and($result->getMerchantAuthentication())->toBeInstanceOf(MerchantAuthenticationType::class);
 });
 
-it('throws exception if no response returned from create transaction', function() {
+it('throws exception if no response returned from create transaction', function(): void {
     $request = mock(AuthorizeNetTransactionRequest::class);
     $request->shouldReceive('getMerchantAuthentication')->andReturn(mock(MerchantAuthenticationType::class));
     $request->shouldReceive('setClientId')->andReturnSelf();
@@ -53,7 +55,7 @@ it('throws exception if no response returned from create transaction', function(
     $this->authorizeNetClient->createTransaction($request);
 });
 
-it('throws exception if response result code is not Ok', function() {
+it('throws exception if response result code is not Ok', function(): void {
     $request = mock(AuthorizeNetTransactionRequest::class);
     $request->shouldReceive('getMerchantAuthentication')->andReturn(mock(MerchantAuthenticationType::class));
     $request->shouldReceive('setClientId')->andReturnSelf();
@@ -77,7 +79,7 @@ it('throws exception if response result code is not Ok', function() {
     $this->authorizeNetClient->createTransaction($request);
 });
 
-it('throws exception if response result code is not Ok and has message', function() {
+it('throws exception if response result code is not Ok and has message', function(): void {
     $request = mock(AuthorizeNetTransactionRequest::class);
     $request->shouldReceive('getMerchantAuthentication')->andReturn(mock(MerchantAuthenticationType::class));
     $request->shouldReceive('setClientId')->andReturnSelf();
@@ -104,7 +106,7 @@ it('throws exception if response result code is not Ok and has message', functio
     $this->authorizeNetClient->createTransaction($request);
 });
 
-it('throws exception if response result code is Ok and empty message', function() {
+it('throws exception if response result code is Ok and empty message', function(): void {
     $request = mock(AuthorizeNetTransactionRequest::class);
     $request->shouldReceive('getMerchantAuthentication')->andReturn(mock(MerchantAuthenticationType::class));
     $request->shouldReceive('setClientId')->andReturnSelf();
@@ -124,7 +126,7 @@ it('throws exception if response result code is Ok and empty message', function(
     $this->authorizeNetClient->createTransaction($request);
 });
 
-it('returns transaction response if successful', function() {
+it('returns transaction response if successful', function(): void {
     $response = mock(ANetApiResponseType::class);
     $response->shouldReceive('getMessages->getResultCode')->andReturn('Ok');
     $request = mock(AuthorizeNetTransactionRequest::class);

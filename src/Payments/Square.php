@@ -1,19 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Payments;
 
 use Exception;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
+use Igniter\Main\Classes\MainController;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithPaymentProfile;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\User\Models\Customer;
+use Override;
 use Square\Environment;
 use Square\Http\ApiResponse;
-use Square\Models;
+use Square\Models\Card;
+use Square\Models\CreateCardRequest;
+use Square\Models\CreateCustomerRequest;
+use Square\Models\CreatePaymentRequest;
+use Square\Models\Money;
+use Square\Models\RefundPaymentRequest;
+use Square\SquareClient;
 use Square\SquareClientBuilder;
 
 class Square extends BasePaymentGateway
@@ -23,12 +33,13 @@ class Square extends BasePaymentGateway
 
     public static ?string $paymentFormView = 'igniter.payregister::_partials.square.payment_form';
 
-    public function defineFieldsConfig()
+    #[Override]
+    public function defineFieldsConfig(): string
     {
         return 'igniter.payregister::/models/square';
     }
 
-    public function getHiddenFields()
+    public function getHiddenFields(): array
     {
         return [
             'square_card_nonce' => '',
@@ -36,7 +47,7 @@ class Square extends BasePaymentGateway
         ];
     }
 
-    public function isTestMode()
+    public function isTestMode(): bool
     {
         return $this->model->transaction_mode != 'live';
     }
@@ -58,37 +69,39 @@ class Square extends BasePaymentGateway
 
     /**
      * @param self $host
-     * @param \Igniter\Main\Classes\MainController $controller
+     * @param MainController $controller
      */
-    public function beforeRenderPaymentForm($host, $controller)
+    #[Override]
+    public function beforeRenderPaymentForm($host, $controller): void
     {
         $endpoint = $this->isTestMode() ? 'sandbox.' : '';
         $controller->addJs('https://'.$endpoint.'web.squarecdn.com/v1/square.js', 'square-js');
         $controller->addJs('igniter.payregister::/js/process.square.js', 'process-square-js');
     }
 
-    public function completesPaymentOnClient()
+    #[Override]
+    public function completesPaymentOnClient(): bool
     {
         return true;
     }
 
-    protected function createPayment($fields, $order, $host)
+    protected function createPayment($fields, $order, $host): ApiResponse
     {
         $client = $this->createClient();
         $paymentsApi = $client->getPaymentsApi();
 
         $idempotencyKey = str_random();
 
-        $amountMoney = new Models\Money;
-        $amountMoney->setAmount($fields['amount'] * 100);
+        $amountMoney = new Money;
+        $amountMoney->setAmount((int)($fields['amount'] * 100));
         $amountMoney->setCurrency($fields['currency']);
 
-        $body = new Models\CreatePaymentRequest($fields['sourceId'], $idempotencyKey);
+        $body = new CreatePaymentRequest($fields['sourceId'], $idempotencyKey);
         $body->setAmountMoney($amountMoney);
 
         if (isset($fields['tip'])) {
-            $tipMoney = new Models\Money;
-            $tipMoney->setAmount($fields['tip'] * 100);
+            $tipMoney = new Money;
+            $tipMoney->setAmount((int)($fields['tip'] * 100));
             $tipMoney->setCurrency($fields['currency']);
             $body->setTipMoney($tipMoney);
         }
@@ -115,12 +128,13 @@ class Square extends BasePaymentGateway
      * Processes payment using passed data.
      *
      * @param array $data
-     * @param \Igniter\PayRegister\Models\Payment $host
-     * @param \Igniter\Cart\Models\Order $order
+     * @param Payment $host
+     * @param Order $order
      *
-     * @throws \Igniter\Flame\Exception\ApplicationException
+     * @throws ApplicationException
      */
-    public function processPaymentForm($data, $host, $order)
+    #[Override]
+    public function processPaymentForm($data, $host, $order): void
     {
         $this->validateApplicableFee($order, $host);
 
@@ -155,22 +169,26 @@ class Square extends BasePaymentGateway
     /**
      * {@inheritdoc}
      */
+    #[Override]
     public function supportsPaymentProfiles(): bool
     {
         return true;
     }
 
+    #[Override]
     public function updatePaymentProfile(Customer $customer, array $data = []): PaymentProfile
     {
         return $this->handleUpdatePaymentProfile($customer, $data);
     }
 
+    #[Override]
     public function deletePaymentProfile(Customer $customer, PaymentProfile $profile)
     {
         return $this->handleDeletePaymentProfile($customer, $profile);
     }
 
-    public function payFromPaymentProfile(Order $order, array $data = [])
+    #[Override]
+    public function payFromPaymentProfile(Order $order, array $data = []): void
     {
         $host = $this->getHostObject();
         $profile = $host->findPaymentProfile($order->customer);
@@ -213,7 +231,7 @@ class Square extends BasePaymentGateway
         }
 
         if ($newCustomerRequired) {
-            $body = new Models\CreateCustomerRequest;
+            $body = new CreateCustomerRequest;
             $body->setGivenName($customer->first_name);
             $body->setFamilyName($customer->last_name);
             $body->setEmailAddress($customer->email);
@@ -233,7 +251,7 @@ class Square extends BasePaymentGateway
         return $response->getResult();
     }
 
-    protected function createOrFetchCard($customerId, $referenceId, $profileData, $data)
+    protected function createOrFetchCard(?string $customerId, ?string $referenceId, $profileData, array $data)
     {
         $cardId = array_get($profileData, 'card_id');
         $nonce = array_get($data, 'square_card_nonce');
@@ -253,13 +271,13 @@ class Square extends BasePaymentGateway
         }
 
         if ($newCardRequired) {
-            $body_card = new Models\Card;
+            $body_card = new Card;
 
             $body_card->setCardholderName($data['first_name'].' '.$data['last_name']);
             $body_card->setCustomerId($customerId);
             $body_card->setReferenceId($referenceId);
 
-            $body = new Models\CreateCardRequest(str_random(), $nonce, $body_card);
+            $body = new CreateCardRequest(str_random(), $nonce, $body_card);
 
             $response = $cardsApi->createCard($body);
 
@@ -274,26 +292,16 @@ class Square extends BasePaymentGateway
         return $response->getResult();
     }
 
-    /**
-     * @param \Igniter\PayRegister\Models\PaymentProfile $profile
-     * @param array $profileData
-     * @param array $cardData
-     * @return \Igniter\PayRegister\Models\PaymentProfile
-     */
-    protected function updatePaymentProfileData($profile, $profileData = [], $cardData = [])
+    protected function updatePaymentProfileData(PaymentProfile $profile, array $profileData, Card $cardData): PaymentProfile
     {
-        $profile->card_brand = strtolower($cardData->getCardBrand());
+        $profile->card_brand = strtolower((string)$cardData->getCardBrand());
         $profile->card_last4 = $cardData->getLast4();
         $profile->setProfileData($profileData);
 
         return $profile;
     }
 
-    /**
-     * @param PaymentProfile $profile
-     * @return PaymentProfile
-     */
-    protected function deletePaymentProfileData($profile)
+    protected function deletePaymentProfileData(PaymentProfile $profile): PaymentProfile
     {
         $profile->setProfileData([]);
 
@@ -304,7 +312,8 @@ class Square extends BasePaymentGateway
     //
     //
 
-    public function processRefundForm($data, $order, $paymentLog)
+    #[Override]
+    public function processRefundForm($data, $order, $paymentLog): void
     {
         if (!is_null($paymentLog->refunded_at)) {
             throw new ApplicationException('Nothing to refund, payment already refunded');
@@ -319,11 +328,11 @@ class Square extends BasePaymentGateway
 
         try {
             $idempotencyKey = str_random();
-            $amountMoney = new \Square\Models\Money;
+            $amountMoney = new Money;
             $amountMoney->setAmount($fields['amount']);
             $amountMoney->setCurrency($fields['currency']);
 
-            $body = new \Square\Models\RefundPaymentRequest($idempotencyKey, $amountMoney);
+            $body = new RefundPaymentRequest($idempotencyKey, $amountMoney);
             $body->setPaymentId($paymentChargeId);
             $body->setReason($fields['reason']);
 
@@ -358,7 +367,7 @@ class Square extends BasePaymentGateway
         ));
 
         $fields = [
-            'amount' => number_format($refundAmount, 2, '', ''),
+            'amount' => (int)(number_format($refundAmount, 2, '', '') * 100),
             'currency' => currency()->getUserCurrency(),
             'reason' => array_get($data, 'refund_reason'),
         ];
@@ -374,15 +383,15 @@ class Square extends BasePaymentGateway
     //
     //
     //
-
     /**
-     * @return \Square\SquareClient
+     * @return SquareClient
      */
     protected function createClient()
     {
         $clientBuilder = resolve(SquareClientBuilder::class);
         $clientBuilder->accessToken($this->getAccessToken());
         $clientBuilder->environment($this->isTestMode() ? Environment::SANDBOX : Environment::PRODUCTION);
+
         $client = $clientBuilder->build();
 
         $this->fireSystemEvent('payregister.square.extendGateway', [$client]);
@@ -390,7 +399,7 @@ class Square extends BasePaymentGateway
         return $client;
     }
 
-    protected function getPaymentFormFields($order, $data = [])
+    protected function getPaymentFormFields($order, $data = []): array
     {
         // just for Square - record tips as separate amount
         $orderAmount = $order->order_total;
@@ -404,14 +413,14 @@ class Square extends BasePaymentGateway
 
         $fields = [
             'idempotencyKey' => uniqid(),
-            'amount' => number_format($orderAmount, 2, '.', ''),
+            'amount' => (int)(number_format($orderAmount, 2, '.', '') * 100),
             'currency' => currency()->getUserCurrency(),
             'note' => 'Payment for Order '.$order->order_id,
             'referenceId' => (string)$order->order_id,
         ];
 
         if ($tipAmount) {
-            $fields['tip'] = number_format($tipAmount, 2, '.', '');
+            $fields['tip'] = (int)(number_format($tipAmount, 2, '.', '') * 100);
         }
 
         $this->fireSystemEvent('payregister.square.extendFields', [&$fields, $order, $data]);
@@ -431,15 +440,16 @@ class Square extends BasePaymentGateway
 
         $errors = $response->getErrors();
         $errors = $errors[0]->getDetail();
+
         $order->logPaymentAttempt('Payment error -> '.$errors, 0, $fields, $response->getResult());
 
         return false;
     }
 
-    protected function handleUpdatePaymentProfile($customer, $data)
+    protected function handleUpdatePaymentProfile($customer, array $data)
     {
         $profile = $this->getHostObject()->findPaymentProfile($customer);
-        $profileData = $profile ? (array)$profile->profile_data : [];
+        $profileData = (array)$profile?->profile_data;
 
         $response = $this->createOrFetchCustomer($profileData, $customer);
 
@@ -463,7 +473,7 @@ class Square extends BasePaymentGateway
         return $profile;
     }
 
-    protected function handleDeletePaymentProfile($customer, $profile)
+    protected function handleDeletePaymentProfile($customer, PaymentProfile $profile)
     {
         $cardId = $profile['profile_data']['card_id'];
         $client = $this->createClient();

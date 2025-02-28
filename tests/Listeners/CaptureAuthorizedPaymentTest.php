@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Listeners;
 
 use Igniter\Admin\Models\StatusHistory;
@@ -11,7 +13,7 @@ use Igniter\PayRegister\Tests\Payments\Fixtures\TestPayment;
 use Igniter\PayRegister\Tests\Payments\Fixtures\TestPaymentWithAuthorized;
 use Mockery;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->listener = new CaptureAuthorizedPayment();
     $this->order = Order::factory()->create();
     $this->paymentMethod = Payment::factory()->create();
@@ -19,7 +21,7 @@ beforeEach(function() {
     $this->order->payment_method = $this->paymentMethod;
 });
 
-it('does nothing if order is not an instance of Order', function() {
+it('does nothing if order is not an instance of Order', function(): void {
     $model = Mockery::mock(Model::class);
 
     $result = $this->listener->handle($model, $this->statusHistory);
@@ -27,7 +29,7 @@ it('does nothing if order is not an instance of Order', function() {
     expect($result)->toBeNull();
 });
 
-it('does nothing if payment method is not set', function() {
+it('does nothing if payment method is not set', function(): void {
     $this->order->payment_method = null;
 
     $result = $this->listener->handle($this->order, $this->statusHistory);
@@ -35,7 +37,7 @@ it('does nothing if payment method is not set', function() {
     expect($result)->toBeNull();
 });
 
-it('does nothing if payment method does not use WithAuthorizedPayment', function() {
+it('does nothing if payment method does not use WithAuthorizedPayment', function(): void {
     $this->paymentMethod->class_name = TestPayment::class;
 
     $result = $this->listener->handle($this->order, $this->statusHistory);
@@ -43,7 +45,7 @@ it('does nothing if payment method does not use WithAuthorizedPayment', function
     expect($result)->toBeNull();
 });
 
-it('does nothing if shouldCapturePayment returns false', function() {
+it('does nothing if shouldCapturePayment returns false', function(): void {
     $paymentMethod = Mockery::mock(Payment::class)->makePartial();
     $paymentMethod->shouldReceive('getGatewayClass')->andReturn(TestPaymentWithAuthorized::class);
     $paymentMethod->shouldReceive('shouldCapturePayment')->with($this->order)->andReturn(false);
@@ -54,7 +56,7 @@ it('does nothing if shouldCapturePayment returns false', function() {
     expect($result)->toBeNull();
 });
 
-it('calls captureAuthorizedPayment if shouldCapturePayment returns true', function() {
+it('calls captureAuthorizedPayment if shouldCapturePayment returns true', function(): void {
     $paymentMethod = Mockery::mock(Payment::class)->makePartial();
     $paymentMethod->shouldReceive('getGatewayClass')->andReturn(TestPaymentWithAuthorized::class);
     $paymentMethod->shouldReceive('shouldCapturePayment')->with($this->order)->andReturn(true);

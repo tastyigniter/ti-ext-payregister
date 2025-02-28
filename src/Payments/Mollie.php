@@ -1,16 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Payments;
 
 use Exception;
+use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
+use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\User\Models\Customer;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Response;
 use Mollie\Api\MollieApiClient;
+use Override;
 
 class Mollie extends BasePaymentGateway
 {
@@ -18,12 +24,14 @@ class Mollie extends BasePaymentGateway
 
     public static ?string $paymentFormView = 'igniter.payregister::_partials.mollie.payment_form';
 
-    public function defineFieldsConfig()
+    #[Override]
+    public function defineFieldsConfig(): string
     {
         return 'igniter.payregister::/models/mollie';
     }
 
-    public function registerEntryPoints()
+    #[Override]
+    public function registerEntryPoints(): array
     {
         return [
             'mollie_return_url' => 'processReturnUrl',
@@ -31,7 +39,7 @@ class Mollie extends BasePaymentGateway
         ];
     }
 
-    public function isTestMode()
+    public function isTestMode(): bool
     {
         return $this->model->transaction_mode != 'live';
     }
@@ -45,12 +53,13 @@ class Mollie extends BasePaymentGateway
      * Processes payment using passed data.
      *
      * @param array $data
-     * @param \Igniter\PayRegister\Models\Payment $host
-     * @param \Igniter\Cart\Models\Order $order
+     * @param Payment $host
+     * @param Order $order
      *
-     * @return bool|\Illuminate\Http\RedirectResponse
-     * @throws \Igniter\Flame\Exception\ApplicationException
+     * @return bool|RedirectResponse
+     * @throws ApplicationException
      */
+    #[Override]
     public function processPaymentForm($data, $host, $order)
     {
         $this->validateApplicableFee($order, $host);
@@ -71,7 +80,7 @@ class Mollie extends BasePaymentGateway
                 return Redirect::to($payment->getCheckoutUrl());
             }
 
-            $order->logPaymentAttempt('Payment error -> '.$payment->getMessage(), 0, $fields, [
+            $order->logPaymentAttempt('Payment error -> Failed to create payment redirect link', 0, $fields, [
                 'id' => $payment->id,
                 'status' => $payment->status,
                 'method' => $payment->method,
@@ -168,7 +177,8 @@ class Mollie extends BasePaymentGateway
         return Response::json(['success' => true]);
     }
 
-    public function processRefundForm($data, $order, $paymentLog)
+    #[Override]
+    public function processRefundForm($data, $order, $paymentLog): void
     {
         throw_if(
             !is_null($paymentLog->refunded_at) || !is_array($paymentLog->response),
@@ -197,8 +207,8 @@ class Mollie extends BasePaymentGateway
                 'amount' => $response->amount,
             ]);
             $paymentLog->markAsRefundProcessed();
-        } catch (Exception $ex) {
-            $order->logPaymentAttempt('Refund failed -> '.$ex->getMessage(), 0, $fields, []);
+        } catch (Exception $exception) {
+            $order->logPaymentAttempt('Refund failed -> '.$exception->getMessage(), 0, $fields, []);
 
             throw new ApplicationException('Refund failed');
         }
@@ -211,10 +221,11 @@ class Mollie extends BasePaymentGateway
     /**
      * {@inheritdoc}
      */
+    #[Override]
     public function updatePaymentProfile(Customer $customer, array $data = []): PaymentProfile
     {
         $profile = $this->model->findPaymentProfile($customer);
-        $profileData = $profile ? (array)$profile->profile_data : [];
+        $profileData = (array)$profile?->profile_data;
 
         $response = $this->createOrFetchCustomer($profileData, $customer);
         $customerId = $response->id;
@@ -225,7 +236,7 @@ class Mollie extends BasePaymentGateway
 
         $profile->setProfileData([
             'customer_id' => $customerId,
-            'card_id' => str_random(16),
+            'card_id' => str_random(),
         ]);
 
         return $profile;
@@ -234,13 +245,12 @@ class Mollie extends BasePaymentGateway
     protected function createOrFetchCustomer($profileData, $customer)
     {
         $response = false;
-        $newCustomerRequired = !array_get($profileData, 'customer_id');
+        $newCustomerRequired = !array_get($profileData, 'customer_id', false);
         $client = $this->createClient();
 
         if (!$newCustomerRequired) {
-            if (!$response = $client->customers->get(array_get($profileData, 'customer_id'))) {
-                $newCustomerRequired = true;
-            }
+            $response = $client->customers->get(array_get($profileData, 'customer_id'));
+            $newCustomerRequired = $response?->id !== array_get($profileData, 'customer_id', false);
         }
 
         if ($newCustomerRequired) {
@@ -249,7 +259,8 @@ class Mollie extends BasePaymentGateway
                 'email' => $customer->email,
             ];
 
-            if (!$response = $client->customers->create($fields)) {
+            $response = $client->customers->create($fields);
+            if (!$response->id) {
                 throw new ApplicationException('Unable to create customer');
             }
         }
@@ -271,7 +282,7 @@ class Mollie extends BasePaymentGateway
         return $client;
     }
 
-    protected function getPaymentFormFields($order, $data = [])
+    protected function getPaymentFormFields($order, $data = []): array
     {
         $notifyUrl = $this->makeEntryPointUrl('mollie_notify_url').'/'.$order->hash;
         $returnUrl = $this->makeEntryPointUrl('mollie_return_url').'/'.$order->hash;

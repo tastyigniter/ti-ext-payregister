@@ -1,7 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister;
 
+use Override;
+use Igniter\PayRegister\Payments\Cod;
+use Igniter\PayRegister\Payments\PaypalExpress;
+use Igniter\PayRegister\Payments\AuthorizeNetAim;
+use Igniter\PayRegister\Payments\Stripe;
+use Igniter\PayRegister\Payments\Mollie;
+use Igniter\PayRegister\Payments\Square;
+use Igniter\PayRegister\FormWidgets\PaymentAttempts;
+use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Classes\AuthorizeNetClient;
 use Igniter\PayRegister\Classes\PaymentGateways;
 use Igniter\PayRegister\Classes\PayPalClient;
@@ -46,35 +57,36 @@ class Extension extends BaseExtension
         SquareClientBuilder::class,
     ];
 
+    #[Override]
     public function registerPaymentGateways(): array
     {
         return [
-            \Igniter\PayRegister\Payments\Cod::class => [
+            Cod::class => [
                 'code' => 'cod',
                 'name' => 'lang:igniter.payregister::default.cod.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.cod.text_payment_desc',
             ],
-            \Igniter\PayRegister\Payments\PaypalExpress::class => [
+            PaypalExpress::class => [
                 'code' => 'paypalexpress',
                 'name' => 'lang:igniter.payregister::default.paypal.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.paypal.text_payment_desc',
             ],
-            \Igniter\PayRegister\Payments\AuthorizeNetAim::class => [
+            AuthorizeNetAim::class => [
                 'code' => 'authorizenetaim',
                 'name' => 'lang:igniter.payregister::default.authorize_net_aim.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.authorize_net_aim.text_payment_desc',
             ],
-            \Igniter\PayRegister\Payments\Stripe::class => [
+            Stripe::class => [
                 'code' => 'stripe',
                 'name' => 'lang:igniter.payregister::default.stripe.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.stripe.text_payment_desc',
             ],
-            \Igniter\PayRegister\Payments\Mollie::class => [
+            Mollie::class => [
                 'code' => 'mollie',
                 'name' => 'lang:igniter.payregister::default.mollie.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.mollie.text_payment_desc',
             ],
-            \Igniter\PayRegister\Payments\Square::class => [
+            Square::class => [
                 'code' => 'square',
                 'name' => 'lang:igniter.payregister::default.square.text_payment_title',
                 'description' => 'lang:igniter.payregister::default.square.text_payment_desc',
@@ -82,16 +94,18 @@ class Extension extends BaseExtension
         ];
     }
 
+    #[Override]
     public function registerFormWidgets(): array
     {
         return [
-            \Igniter\PayRegister\FormWidgets\PaymentAttempts::class => [
+            PaymentAttempts::class => [
                 'label' => 'Payment Attempts',
                 'code' => 'paymentattempts',
             ],
         ];
     }
 
+    #[Override]
     public function registerSettings(): array
     {
         return [
@@ -106,6 +120,7 @@ class Extension extends BaseExtension
         ];
     }
 
+    #[Override]
     public function registerPermissions(): array
     {
         return [
@@ -116,7 +131,7 @@ class Extension extends BaseExtension
         ];
     }
 
-    public function registerOnboardingSteps()
+    public function registerOnboardingSteps(): array
     {
         return [
             'igniter.payregister::payments' => [
@@ -125,20 +140,21 @@ class Extension extends BaseExtension
                 'icon' => 'fa-credit-card',
                 'url' => admin_url('payments'),
                 'priority' => 35,
-                'complete' => [\Igniter\PayRegister\Models\Payment::class, 'onboardingIsComplete'],
+                'complete' => Payment::onboardingIsComplete(...),
             ],
         ];
     }
 
-    public function boot()
+    #[Override]
+    public function boot(): void
     {
-        Event::listen('main.theme.activated', function() {
+        Event::listen('main.theme.activated', function(): void {
             Payment::syncAll();
         });
 
         Relation::enforceMorphMap([
-            'payment_logs' => \Igniter\PayRegister\Models\PaymentLog::class,
-            'payments' => \Igniter\PayRegister\Models\Payment::class,
+            'payment_logs' => PaymentLog::class,
+            'payments' => Payment::class,
         ]);
     }
 }

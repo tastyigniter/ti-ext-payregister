@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Models\Observers;
 
 use Igniter\PayRegister\Models\Payment;
 
 class PaymentObserver
 {
-    public function retrieved(Payment $payment)
+    public function retrieved(Payment $payment): void
     {
         $payment->applyGatewayClass();
 
@@ -15,7 +17,7 @@ class PaymentObserver
         }
     }
 
-    public function saving(Payment $payment)
+    public function saving(Payment $payment): void
     {
         if (!$payment->exists) {
             return;

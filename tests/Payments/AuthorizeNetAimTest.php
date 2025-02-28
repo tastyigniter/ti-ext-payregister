@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Payments;
 
 use Exception;
@@ -16,22 +18,22 @@ use Mockery;
 use net\authorize\api\contract\v1\TransactionResponseType;
 use net\authorize\api\contract\v1\TransactionResponseType\MessagesAType\MessageAType;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->payment = Payment::factory()->create([
         'class_name' => AuthorizeNetAim::class,
     ]);
     $this->authorizeNetAim = new AuthorizeNetAim($this->payment);
 });
 
-it('returns correct payment form view for authorizenet', function() {
+it('returns correct payment form view for authorizenet', function(): void {
     expect(AuthorizeNetAim::$paymentFormView)->toBe('igniter.payregister::_partials.authorizenetaim.payment_form');
 });
 
-it('returns correct fields config for authorizenet', function() {
+it('returns correct fields config for authorizenet', function(): void {
     expect($this->authorizeNetAim->defineFieldsConfig())->toBe('igniter.payregister::/models/authorizenetaim');
 });
 
-it('returns hidden fields with default values', function() {
+it('returns hidden fields with default values', function(): void {
     $gateway = new AuthorizeNetAim();
 
     $hiddenFields = $gateway->getHiddenFields();
@@ -41,7 +43,7 @@ it('returns hidden fields with default values', function() {
         ->and($hiddenFields)->toHaveKey('authorizenetaim_DataDescriptor', '');
 });
 
-it('returns accepted cards with correct labels', function() {
+it('returns accepted cards with correct labels', function(): void {
     $gateway = new AuthorizeNetAim();
 
     $acceptedCards = $gateway->getAcceptedCards();
@@ -54,7 +56,7 @@ it('returns accepted cards with correct labels', function() {
         ->and($acceptedCards)->toHaveKey('diners_club', 'lang:igniter.payregister::default.authorize_net_aim.text_diners_club');
 });
 
-it('returns correct endpoint for authorizenet test mode', function() {
+it('returns correct endpoint for authorizenet test mode', function(): void {
     $this->payment->transaction_mode = 'test';
 
     $result = $this->authorizeNetAim->getEndPoint();
@@ -62,7 +64,7 @@ it('returns correct endpoint for authorizenet test mode', function() {
     expect($result)->toBe('https://jstest.authorize.net');
 });
 
-it('returns correct endpoint for authorizenet live mode', function() {
+it('returns correct endpoint for authorizenet live mode', function(): void {
     $this->payment->transaction_mode = 'live';
 
     $result = $this->authorizeNetAim->getEndPoint();
@@ -70,7 +72,7 @@ it('returns correct endpoint for authorizenet live mode', function() {
     expect($result)->toBe('https://js.authorize.net');
 });
 
-it('returns correct authorizenet model value', function($attribute, $methodName, $value, $returnValue) {
+it('returns correct authorizenet model value', function($attribute, $methodName, $value, $returnValue): void {
     $this->payment->$attribute = $value;
 
     expect($this->authorizeNetAim->$methodName())->toBe($returnValue);
@@ -84,7 +86,7 @@ it('returns correct authorizenet model value', function($attribute, $methodName,
     ['transaction_type', 'shouldAuthorizePayment', 'auth_capture', false],
 ]);
 
-it('adds JavaScript file to the controller', function() {
+it('adds JavaScript file to the controller', function(): void {
     $controller = mock(MainController::class);
 
     $controller
@@ -95,7 +97,7 @@ it('adds JavaScript file to the controller', function() {
     $this->authorizeNetAim->beforeRenderPaymentForm($this->authorizeNetAim, $controller);
 });
 
-it('processes authorizenet payment form and logs successful payment', function() {
+it('processes authorizenet payment form and logs successful payment', function(): void {
     $this->payment->transaction_type = 'auth';
     $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
     $request = mock(AuthorizeNetTransactionRequest::class);
@@ -124,7 +126,7 @@ it('processes authorizenet payment form and logs successful payment', function()
     $this->authorizeNetAim->processPaymentForm($data, $this->payment, $order);
 });
 
-it('processes authorizenet payment form and logs authorized payment', function() {
+it('processes authorizenet payment form and logs authorized payment', function(): void {
     $this->payment->transaction_type = 'auth_only';
     $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
     $request = mock(AuthorizeNetTransactionRequest::class);
@@ -146,6 +148,7 @@ it('processes authorizenet payment form and logs authorized payment', function()
     $order->shouldReceive('logPaymentAttempt')->with('Payment authorized', 1, Mockery::any(), Mockery::any())->once();
     $order->shouldReceive('updateOrderStatus');
     $order->shouldReceive('markAsPaymentProcessed');
+
     $data = ['authorizenetaim_DataDescriptor' => 'descriptor', 'authorizenetaim_DataValue' => 'value'];
 
     $this->payment->applyGatewayClass();
@@ -153,7 +156,7 @@ it('processes authorizenet payment form and logs authorized payment', function()
     $this->authorizeNetAim->processPaymentForm($data, $this->payment, $order);
 });
 
-it('throws exception if authorizenet payment form processing fails', function() {
+it('throws exception if authorizenet payment form processing fails', function(): void {
     $authorizeClient = mock(AuthorizeNetClient::class)->makePartial();
     $authorizeClient->shouldReceive('createTransactionRequest')->andThrow(new Exception('Payment error'));
     app()->instance(AuthorizeNetClient::class, $authorizeClient);
@@ -171,7 +174,7 @@ it('throws exception if authorizenet payment form processing fails', function() 
     $this->authorizeNetAim->processPaymentForm($data, $this->payment, $order);
 });
 
-it('processes authorizenet payment form and logs failed payment', function() {
+it('processes authorizenet payment form and logs failed payment', function(): void {
     $messageAType = (new MessageAType())->setCode('2')->setDescription('Declined');
     $request = mock(AuthorizeNetTransactionRequest::class);
     $response = mock(TransactionResponseType::class);
@@ -193,6 +196,7 @@ it('processes authorizenet payment form and logs failed payment', function() {
     $order->shouldReceive('logPaymentAttempt')->with('Payment unsuccessful -> Declined', 0, Mockery::any(), Mockery::any())->once();
     $order->shouldNotReceive('updateOrderStatus');
     $order->shouldNotReceive('markAsPaymentProcessed');
+
     $data = ['authorizenetaim_DataDescriptor' => 'descriptor', 'authorizenetaim_DataValue' => 'value'];
 
     $this->payment->applyGatewayClass();
@@ -200,7 +204,7 @@ it('processes authorizenet payment form and logs failed payment', function() {
     $this->authorizeNetAim->processPaymentForm($data, $this->payment, $order);
 });
 
-it('processes authorizenet full refund successfully', function() {
+it('processes authorizenet full refund successfully', function(): void {
     $messageAType = (new MessageAType())->setCode('2')->setDescription('Declined');
     $paymentLog = mock(PaymentLog::class)->makePartial();
     $paymentLog->shouldReceive('markAsRefundProcessed')->once();
@@ -209,6 +213,7 @@ it('processes authorizenet full refund successfully', function() {
 
     $order = mock(Order::class)->makePartial();
     $order->shouldReceive('logPaymentAttempt');
+
     $order->order_total = 100;
 
     $response = mock(TransactionResponseType::class);
@@ -227,7 +232,7 @@ it('processes authorizenet full refund successfully', function() {
     $this->authorizeNetAim->processRefundForm($data, $order, $paymentLog);
 });
 
-it('authorizenet: throws exception if refund amount exceeds order total', function() {
+it('authorizenet: throws exception if refund amount exceeds order total', function(): void {
     $paymentLog = mock(PaymentLog::class)->makePartial();
     $paymentLog->refunded_at = null;
     $paymentLog->response = ['status' => '1', 'id' => '12345', 'card_holder' => '****1111'];
@@ -242,7 +247,7 @@ it('authorizenet: throws exception if refund amount exceeds order total', functi
     $this->authorizeNetAim->processRefundForm($data, $order, $paymentLog);
 });
 
-it('authorizenet: throws exception when refund request fails', function() {
+it('authorizenet: throws exception when refund request fails', function(): void {
     $paymentLog = mock(PaymentLog::class)->makePartial();
     $paymentLog->refunded_at = null;
     $paymentLog->response = ['status' => '1', 'id' => '12345', 'card_holder' => '****1111'];
@@ -261,7 +266,7 @@ it('authorizenet: throws exception when refund request fails', function() {
     $this->authorizeNetAim->processRefundForm($data, $order, $paymentLog);
 });
 
-it('authorizenet: captures authorized payment successfully', function() {
+it('authorizenet: captures authorized payment successfully', function(): void {
     Event::fake();
     $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
     $response = mock(TransactionResponseType::class);
@@ -295,7 +300,7 @@ it('authorizenet: captures authorized payment successfully', function() {
     expect($response)->toEqual($expectedResponse);
 });
 
-it('authorizenet: captures authorized payment failed', function() {
+it('authorizenet: captures authorized payment failed', function(): void {
     Event::fake();
     $messageAType = (new MessageAType())->setCode('1')->setDescription('Success');
     $response = mock(TransactionResponseType::class);
@@ -329,7 +334,7 @@ it('authorizenet: captures authorized payment failed', function() {
     expect($response)->toEqual($expectedResponse);
 });
 
-it('authorizenet: throws exception if no successful transaction to capture', function() {
+it('authorizenet: throws exception if no successful transaction to capture', function(): void {
     $order = mock(Order::class)->makePartial();
     $order->shouldReceive('payment_logs->firstWhere')
         ->with('is_success', true)
@@ -342,7 +347,7 @@ it('authorizenet: throws exception if no successful transaction to capture', fun
     $this->authorizeNetAim->captureAuthorizedPayment($order);
 });
 
-it('authorizenet: cancels authorized payment successfully', function() {
+it('authorizenet: cancels authorized payment successfully', function(): void {
     Event::fake();
     $paymentLog = mock(PaymentLog::class)->makePartial();
     $paymentLog->is_success = true;
@@ -375,7 +380,7 @@ it('authorizenet: cancels authorized payment successfully', function() {
     Event::assertDispatched('payregister.authorizenetaim.extendCancelRequest');
 });
 
-it('authorizenet: cancels authorized payment failed', function() {
+it('authorizenet: cancels authorized payment failed', function(): void {
     Event::fake();
 
     $paymentLog = mock(PaymentLog::class)->makePartial();
@@ -410,7 +415,7 @@ it('authorizenet: cancels authorized payment failed', function() {
     Event::assertDispatched('payregister.authorizenetaim.extendCancelRequest');
 });
 
-it('authorizenet: throws exception if no successful transaction to cancel', function() {
+it('authorizenet: throws exception if no successful transaction to cancel', function(): void {
     $order = mock(Order::class)->makePartial();
     $order->shouldReceive('payment_logs->firstWhere')
         ->with('is_success', true)
@@ -422,4 +427,3 @@ it('authorizenet: throws exception if no successful transaction to cancel', func
 
     $this->authorizeNetAim->cancelAuthorizedPayment($order);
 });
-

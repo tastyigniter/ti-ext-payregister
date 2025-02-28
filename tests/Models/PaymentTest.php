@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Models;
 
 use Igniter\Flame\Database\Traits\Purgeable;
@@ -14,13 +16,13 @@ use Igniter\System\Models\Concerns\Switchable;
 use Igniter\User\Models\Customer;
 use Mockery;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->payment = Mockery::mock(Payment::class)->makePartial();
     $this->customer = Mockery::mock(Customer::class)->makePartial();
     $this->gatewayManager = Mockery::mock(PaymentGateways::class);
 });
 
-it('returns dropdown options for enabled payments', function() {
+it('returns dropdown options for enabled payments', function(): void {
     $this->payment->shouldReceive('whereIsEnabled->dropdown')
         ->with('name', 'code')
         ->andReturn(['option1' => 'value1']);
@@ -30,13 +32,13 @@ it('returns dropdown options for enabled payments', function() {
     expect($result)->toBe(['option1' => 'value1']);
 });
 
-it('returns list of enabled payments with descriptions', function() {
+it('returns list of enabled payments with descriptions', function(): void {
     $result = Payment::listDropdownOptions();
 
     expect($result->toArray())->toBe(['cod' => ['Cash On Delivery', 'Accept cash on delivery during checkout']]);
 });
 
-it('returns true if onboarding is complete', function() {
+it('returns true if onboarding is complete', function(): void {
     Payment::factory()->create(['status' => 1]);
 
     $result = Payment::onboardingIsComplete();
@@ -44,7 +46,7 @@ it('returns true if onboarding is complete', function() {
     expect($result)->toBeTrue();
 });
 
-it('returns false if onboarding is not complete', function() {
+it('returns false if onboarding is not complete', function(): void {
     Payment::query()->update(['status' => 0]);
 
     $result = Payment::onboardingIsComplete();
@@ -52,7 +54,7 @@ it('returns false if onboarding is not complete', function() {
     expect($result)->toBeFalse();
 });
 
-it('lists gateways from gateway manager', function() {
+it('lists gateways from gateway manager', function(): void {
     $this->payment->gatewayManager = $this->gatewayManager
         ->shouldReceive('listGateways')
         ->andReturn(['code1' => ['code' => 'code1', 'name' => 'Gateway 1']]);
@@ -69,15 +71,16 @@ it('lists gateways from gateway manager', function() {
     ]);
 });
 
-it('sets code attribute with slug format', function() {
+it('sets code attribute with slug format', function(): void {
     $this->payment->setCodeAttribute('Test Code');
 
     expect($this->payment->code)->toBe('test_code');
 });
 
-it('purges config fields and returns data', function() {
+it('purges config fields and returns data', function(): void {
     $paymentMethod = Payment::factory()->create();
     $paymentMethod->applyGatewayClass();
+
     $paymentMethod->test_field = 'value1';
 
     $result = $paymentMethod->purgeConfigFields();
@@ -86,7 +89,7 @@ it('purges config fields and returns data', function() {
         ->and($paymentMethod->getAttributes())->not->toHaveKey('test_field');
 });
 
-it('applies gateway class if class exists', function() {
+it('applies gateway class if class exists', function(): void {
     $this->payment->class_name = TestPayment::class;
     $this->payment->shouldReceive('isClassExtendedWith')->with(TestPayment::class)->andReturn(false);
     $this->payment->shouldReceive('extendClassWith')->with(TestPayment::class);
@@ -97,7 +100,7 @@ it('applies gateway class if class exists', function() {
         ->and($this->payment->class_name)->toBe(TestPayment::class);
 });
 
-it('does not apply gateway class if class does not exist', function() {
+it('does not apply gateway class if class does not exist', function(): void {
     $this->payment->class_name = 'NonExistingClass';
 
     $result = $this->payment->applyGatewayClass();
@@ -106,7 +109,7 @@ it('does not apply gateway class if class does not exist', function() {
         ->and($this->payment->class_name)->toBeNull();
 });
 
-it('finds payment profile for customer', function() {
+it('finds payment profile for customer', function(): void {
     $this->customer->customer_id = 1;
 
     $result = $this->payment->findPaymentProfile($this->customer);
@@ -114,13 +117,13 @@ it('finds payment profile for customer', function() {
     expect($result)->toBeNull();
 });
 
-it('returns null if customer is not provided for finding payment profile', function() {
+it('returns null if customer is not provided for finding payment profile', function(): void {
     $result = $this->payment->findPaymentProfile(null);
 
     expect($result)->toBeNull();
 });
 
-it('initializes new payment profile for customer', function() {
+it('initializes new payment profile for customer', function(): void {
     $this->customer->customer_id = 1;
 
     $result = $this->payment->initPaymentProfile($this->customer);
@@ -129,7 +132,7 @@ it('initializes new payment profile for customer', function() {
         ->and($result->payment_id)->toBe($this->payment->payment_id);
 });
 
-it('returns true if payment profile exists for customer', function() {
+it('returns true if payment profile exists for customer', function(): void {
     $this->payment->shouldReceive('getGatewayObject->paymentProfileExists')->with($this->customer)->andReturn(true);
 
     $result = $this->payment->paymentProfileExists($this->customer);
@@ -137,7 +140,7 @@ it('returns true if payment profile exists for customer', function() {
     expect($result)->toBeTrue();
 });
 
-it('returns false if payment profile does not exist for customer', function() {
+it('returns false if payment profile does not exist for customer', function(): void {
     $this->payment->shouldReceive('getGatewayObject->paymentProfileExists')->with($this->customer)->andReturn(null);
     $this->payment->shouldReceive('findPaymentProfile')->with($this->customer)->andReturn(true);
 
@@ -146,7 +149,7 @@ it('returns false if payment profile does not exist for customer', function() {
     expect($result)->toBeTrue();
 });
 
-it('deletes payment profile for customer', function() {
+it('deletes payment profile for customer', function(): void {
     $profile = Mockery::mock(PaymentProfile::class);
     $this->payment->shouldReceive('findPaymentProfile')->once()->with($this->customer)->andReturn($profile);
     $this->payment->shouldReceive('getGatewayObject->deletePaymentProfile')->once()->with($this->customer, $profile);
@@ -155,7 +158,7 @@ it('deletes payment profile for customer', function() {
     $this->payment->deletePaymentProfile($this->customer);
 });
 
-it('throws exception if payment profile not found for customer', function() {
+it('throws exception if payment profile not found for customer', function(): void {
     $gateway = Mockery::mock(TestPayment::class);
     $this->payment->shouldReceive('getGatewayObject')->with()->andReturn($gateway);
     $this->payment->shouldReceive('findPaymentProfile')->with($this->customer)->andReturn(null);
@@ -166,7 +169,7 @@ it('throws exception if payment profile not found for customer', function() {
     $this->payment->deletePaymentProfile($this->customer);
 });
 
-it('configures payment model correctly', function() {
+it('configures payment model correctly', function(): void {
     $payment = new Payment();
 
     expect(class_uses_recursive($payment))

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Models\Payment;
@@ -14,7 +16,7 @@ use Mollie\Api\MollieApiClient;
 use Mollie\Api\Resources\Customer as MollieCustomer;
 use Mollie\Api\Resources\Payment as MolliePayment;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->payment = Payment::factory()->create([
         'class_name' => Mollie::class,
     ]);
@@ -22,15 +24,15 @@ beforeEach(function() {
     $this->mollie = new Mollie($this->payment);
 });
 
-it('returns correct payment form view for mollie', function() {
+it('returns correct payment form view for mollie', function(): void {
     expect(Mollie::$paymentFormView)->toBe('igniter.payregister::_partials.mollie.payment_form');
 });
 
-it('returns correct fields config for mollie', function() {
+it('returns correct fields config for mollie', function(): void {
     expect($this->mollie->defineFieldsConfig())->toBe('igniter.payregister::/models/mollie');
 });
 
-it('registers correct entry points for mollie', function() {
+it('registers correct entry points for mollie', function(): void {
     $entryPoints = $this->mollie->registerEntryPoints();
 
     expect($entryPoints)->toBe([
@@ -39,32 +41,32 @@ it('registers correct entry points for mollie', function() {
     ]);
 });
 
-it('returns true if in mollie test mode', function() {
+it('returns true if in mollie test mode', function(): void {
     $this->payment->transaction_mode = 'test';
     expect($this->mollie->isTestMode())->toBeTrue();
 });
 
-it('returns false if not in mollie test mode', function() {
+it('returns false if not in mollie test mode', function(): void {
     $this->payment->transaction_mode = 'live';
 
     expect($this->mollie->isTestMode())->toBeFalse();
 });
 
-it('returns mollie test API key in test mode', function() {
+it('returns mollie test API key in test mode', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_api_key = 'test_key';
 
     expect($this->mollie->getApiKey())->toBe('test_key');
 });
 
-it('returns mollie live API key in live mode', function() {
+it('returns mollie live API key in live mode', function(): void {
     $this->payment->transaction_mode = 'live';
     $this->payment->live_api_key = 'live_key';
 
     expect($this->mollie->getApiKey())->toBe('live_key');
 });
 
-it('processes mollie payment form and redirects to checkout url', function() {
+it('processes mollie payment form and redirects to checkout url', function(): void {
     Mail::fake();
     $this->payment->transaction_mode = 'test';
     $this->payment->test_api_key = 'test_'.str_random(30);
@@ -86,7 +88,8 @@ it('processes mollie payment form and redirects to checkout url', function() {
     $customerEndpoint->shouldReceive('get')->andReturnNull();
     $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
     $paymentEndpoint->shouldReceive('create')->andReturn($molliePayment)->once();
-    $customerEndpoint->shouldReceive('create')->andReturn(mock(MollieCustomer::class))->once();
+    $customerEndpoint->shouldReceive('create')->andReturn($mollieCustomer = mock(MollieCustomer::class))->once();
+    $mollieCustomer->id = 'customer_id';
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
     $mollieClient->payments = $paymentEndpoint;
     $mollieClient->customers = $customerEndpoint;
@@ -97,7 +100,7 @@ it('processes mollie payment form and redirects to checkout url', function() {
     expect($response->getTargetUrl())->toBe('http://checkout.url');
 });
 
-it('throws exception when fails to create payment profile', function() {
+it('throws exception when fails to create payment profile', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_api_key = 'test_'.str_random(30);
     $order = Order::factory()
@@ -113,7 +116,7 @@ it('throws exception when fails to create payment profile', function() {
 
     $customerEndpoint = Mockery::mock(CustomerEndpoint::class);
     $customerEndpoint->shouldReceive('get')->andReturnNull();
-    $customerEndpoint->shouldReceive('create')->andReturnNull();
+    $customerEndpoint->shouldReceive('create')->andReturn(mock(MollieCustomer::class))->once();
 
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
     $mollieClient->customers = $customerEndpoint;
@@ -127,7 +130,7 @@ it('throws exception when fails to create payment profile', function() {
     expect($response->getTargetUrl())->toBe('http://checkout.url');
 });
 
-it('throws exception if mollie payment creation fails', function() {
+it('throws exception if mollie payment creation fails', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_api_key = 'test_'.str_random(30);
     $order = Order::factory()
@@ -137,7 +140,6 @@ it('throws exception if mollie payment creation fails', function() {
 
     $payment = Mockery::mock(MolliePayment::class);
     $payment->shouldReceive('isOpen')->andReturn(false)->once();
-    $payment->shouldReceive('getMessage')->andReturn('Payment error')->once();
     $customerEndpoint = Mockery::mock(CustomerEndpoint::class);
     $customerEndpoint->shouldReceive('create')->andReturn((object)['id' => 'customer_id'])->once();
     $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
@@ -158,7 +160,7 @@ it('throws exception if mollie payment creation fails', function() {
     ]);
 });
 
-it('throws exception if mollie payment request fails', function() {
+it('throws exception if mollie payment request fails', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_api_key = 'test_'.str_random(30);
     $order = Order::factory()
@@ -182,7 +184,7 @@ it('throws exception if mollie payment request fails', function() {
     ]);
 });
 
-it('processes mollie return url and updates order status', function() {
+it('processes mollie return url and updates order status', function(): void {
     request()->merge([
         'redirect' => 'http://redirect.url',
         'cancel' => 'http://cancel.url',
@@ -218,7 +220,7 @@ it('processes mollie return url and updates order status', function() {
     ]);
 });
 
-it('throws exception if no order found in mollie return url', function() {
+it('throws exception if no order found in mollie return url', function(): void {
     request()->merge([
         'redirect' => 'http://redirect.url',
         'cancel' => 'http://cancel.url',
@@ -230,7 +232,7 @@ it('throws exception if no order found in mollie return url', function() {
         ->and(flash()->messages()->first())->message->not->toBeNull()->level->toBe('warning');
 });
 
-it('processes mollie notify url and updates order status', function() {
+it('processes mollie notify url and updates order status', function(): void {
     request()->merge([
         'id' => 'payment_id',
     ]);
@@ -249,6 +251,7 @@ it('processes mollie notify url and updates order status', function() {
     $paymentEndpoint->shouldReceive('get')->andReturn($molliePayment)->once();
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
     $mollieClient->setApiKey('test_'.str_random(30));
+
     $mollieClient->payments = $paymentEndpoint;
     app()->instance(MollieApiClient::class, $mollieClient);
 
@@ -264,7 +267,7 @@ it('processes mollie notify url and updates order status', function() {
     ]);
 });
 
-it('processes mollie notify url fails and updates order status', function() {
+it('processes mollie notify url fails and updates order status', function(): void {
     request()->merge([
         'id' => 'payment_id',
     ]);
@@ -283,6 +286,7 @@ it('processes mollie notify url fails and updates order status', function() {
     $paymentEndpoint->shouldReceive('get')->andReturn($molliePayment)->once();
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
     $mollieClient->setApiKey('test_'.str_random(30));
+
     $mollieClient->payments = $paymentEndpoint;
     app()->instance(MollieApiClient::class, $mollieClient);
 
@@ -297,14 +301,14 @@ it('processes mollie notify url fails and updates order status', function() {
     ]);
 });
 
-it('throws exception if no order found in mollie notify url', function() {
+it('throws exception if no order found in mollie notify url', function(): void {
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('No order found');
 
     $this->mollie->processNotifyUrl(['invalid_hash']);
 });
 
-it('processes mollie refund form and logs refund attempt', function() {
+it('processes mollie refund form and logs refund attempt', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_api_key = 'test_'.str_random(30);
     $this->paymentLog->refunded_at = null;
@@ -336,7 +340,7 @@ it('processes mollie refund form and logs refund attempt', function() {
     ]);
 });
 
-it('processes mollie refund request fails and logs refund attempt', function() {
+it('processes mollie refund request fails and logs refund attempt', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_api_key = 'test_'.str_random(30);
     $this->paymentLog->refunded_at = null;
@@ -355,11 +359,9 @@ it('processes mollie refund request fails and logs refund attempt', function() {
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('Refund failed');
 
-    $this->mollie->bindEvent('mollie.extendRefundFields', function($fields, $order, $data) {
-        return [
-            'extra_field' => 'extra_value',
-        ];
-    });
+    $this->mollie->bindEvent('mollie.extendRefundFields', fn($fields, $order, $data): array => [
+        'extra_field' => 'extra_value',
+    ]);
 
     $this->mollie->processRefundForm(['refund_type' => 'full'], $order, $this->paymentLog);
 
@@ -370,7 +372,7 @@ it('processes mollie refund request fails and logs refund attempt', function() {
     ]);
 });
 
-it('throws exception if no mollie charge to refund', function() {
+it('throws exception if no mollie charge to refund', function(): void {
     $order = Order::factory()->create(['order_total' => 100]);
     $this->paymentLog->refunded_at = null;
     $this->paymentLog->response = ['status' => 'not_paid'];

@@ -1,14 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Database\Factories;
 
+use Igniter\PayRegister\Models\Payment;
+use Override;
 use Igniter\Flame\Database\Factories\Factory;
 use Igniter\PayRegister\Tests\Payments\Fixtures\TestPayment;
 
 class PaymentFactory extends Factory
 {
-    protected $model = \Igniter\PayRegister\Models\Payment::class;
+    protected $model = Payment::class;
 
+    #[Override]
     public function definition(): array
     {
         return [

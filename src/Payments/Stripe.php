@@ -1,20 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Payments;
 
 use Exception;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
+use Igniter\Main\Classes\MainController;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithAuthorizedPayment;
 use Igniter\PayRegister\Concerns\WithPaymentProfile;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
+use Igniter\PayRegister\Models\Payment;
+use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\System\Traits\SessionMaker;
 use Igniter\User\Models\Customer;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Override;
 use Stripe\StripeClient;
+use Stripe\Webhook;
 
 class Stripe extends BasePaymentGateway
 {
@@ -27,19 +35,21 @@ class Stripe extends BasePaymentGateway
 
     public static ?string $paymentFormView = 'igniter.payregister::_partials.stripe.payment_form';
 
-    public function defineFieldsConfig()
+    #[Override]
+    public function defineFieldsConfig(): string
     {
         return 'igniter.payregister::/models/stripe';
     }
 
-    public function registerEntryPoints()
+    #[Override]
+    public function registerEntryPoints(): array
     {
         return [
             'stripe_webhook' => 'processWebhookUrl',
         ];
     }
 
-    public function getHiddenFields()
+    public function getHiddenFields(): array
     {
         return [
             'stripe_payment_method' => '',
@@ -47,7 +57,7 @@ class Stripe extends BasePaymentGateway
         ];
     }
 
-    public function isTestMode()
+    public function isTestMode(): bool
     {
         return $this->model->transaction_mode != 'live';
     }
@@ -69,20 +79,23 @@ class Stripe extends BasePaymentGateway
 
     /**
      * @param self $host
-     * @param \Igniter\Main\Classes\MainController $controller
+     * @param MainController $controller
      */
-    public function beforeRenderPaymentForm($host, $controller)
+    #[Override]
+    public function beforeRenderPaymentForm($host, $controller): void
     {
         $controller->addJs('https://js.stripe.com/v3/', 'stripe-js');
         $controller->addJs('igniter.payregister::/js/process.stripe.js', 'process-stripe-js');
     }
 
-    public function completesPaymentOnClient()
+    #[Override]
+    public function completesPaymentOnClient(): bool
     {
         return true;
     }
 
-    public function shouldAuthorizePayment()
+    #[Override]
+    public function shouldAuthorizePayment(): bool
     {
         return $this->model->transaction_type === 'auth_only';
     }
@@ -117,7 +130,7 @@ class Stripe extends BasePaymentGateway
     {
         try {
             if ($order->isPaymentProcessed()) {
-                return;
+                return null;
             }
 
             $this->validateApplicableFee($order, $this->getHostObject());
@@ -140,19 +153,21 @@ class Stripe extends BasePaymentGateway
             $order->logPaymentAttempt('Creating checkout session failed: '.$ex->getMessage(), 0, [], []);
             flash()->warning($ex->getMessage())->important()->now();
         }
+
+        return null;
     }
 
     /**
      * Processes payment using passed data.
      *
      * @param array $data
-     * @param \Igniter\PayRegister\Models\Payment $host
-     * @param \Igniter\Cart\Models\Order $order
+     * @param Payment $host
+     * @param Order $order
      *
-     * @return bool|\Illuminate\Http\RedirectResponse
-     * @throws \Igniter\Flame\Exception\ApplicationException
+     * @throws ApplicationException
      */
-    public function processPaymentForm($data, $host, $order)
+    #[Override]
+    public function processPaymentForm($data, $host, $order): bool|RedirectResponse
     {
         $this->validateApplicableFee($order, $host);
 
@@ -207,12 +222,15 @@ class Stripe extends BasePaymentGateway
             $this->forgetSession($this->intentSessionKey);
         } catch (Exception $ex) {
             logger()->error($ex);
-            $order->logPaymentAttempt('Payment error: '.$ex->getMessage(), 0, $data, $paymentIntent ?? []);
+            $order->logPaymentAttempt('Payment error: '.$ex->getMessage(), 0, $data);
 
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
+
+        return false;
     }
 
+    #[Override]
     public function captureAuthorizedPayment(Order $order, $data = [])
     {
         throw_unless(
@@ -220,6 +238,7 @@ class Stripe extends BasePaymentGateway
             new ApplicationException('No successful authorized payment to capture'),
         );
 
+        /** @var PaymentLog $paymentLog */
         throw_unless(
             $paymentIntentId = array_get($paymentLog->response, 'id'),
             new ApplicationException('Missing payment intent ID in successful authorized payment response'),
@@ -227,7 +246,7 @@ class Stripe extends BasePaymentGateway
 
         throw_if(
             $order->payment !== $this->getHostObject()->code,
-            new ApplicationException(sprintf('Invalid payment class for order: %s', $order->id)),
+            new ApplicationException(sprintf('Invalid payment class for order: %s', $order->order_id)),
         );
 
         try {
@@ -248,8 +267,11 @@ class Stripe extends BasePaymentGateway
             logger()->error($ex);
             $order->logPaymentAttempt('Payment capture failed: '.$ex->getMessage(), 0, $data);
         }
+
+        return null;
     }
 
+    #[Override]
     public function cancelAuthorizedPayment(Order $order, $data = [])
     {
         throw_unless(
@@ -257,6 +279,7 @@ class Stripe extends BasePaymentGateway
             new ApplicationException('No successful authorized payment to cancel'),
         );
 
+        /** @var PaymentLog $paymentLog */
         throw_unless(
             $paymentIntentId = array_get($paymentLog->response, 'id'),
             new ApplicationException('Missing payment intent ID in successful authorized payment response'),
@@ -264,7 +287,7 @@ class Stripe extends BasePaymentGateway
 
         throw_if(
             $order->payment !== $this->getHostObject()->code,
-            new ApplicationException(sprintf('Invalid payment class for order: %s', $order->id)),
+            new ApplicationException(sprintf('Invalid payment class for order: %s', $order->order_id)),
         );
 
         try {
@@ -288,6 +311,8 @@ class Stripe extends BasePaymentGateway
             logger()->error($ex);
             $order->logPaymentAttempt('Payment canceled failed: '.$ex->getMessage(), 0, $data);
         }
+
+        return null;
     }
 
     public function updatePaymentIntentSession($order)
@@ -316,17 +341,21 @@ class Stripe extends BasePaymentGateway
 
             return false;
         }
+
+        return null;
     }
 
     //
     // Payment Profiles
     //
 
+    #[Override]
     public function supportsPaymentProfiles(): bool
     {
         return true;
     }
 
+    #[Override]
     public function updatePaymentProfile(Customer $customer, array $data = []): PaymentProfile
     {
         if (!$profile = $this->model->findPaymentProfile($customer)) {
@@ -335,21 +364,23 @@ class Stripe extends BasePaymentGateway
 
         $profileData = array_merge((array)$profile->profile_data, $data);
 
-        $profile->card_brand = strtolower(array_get($data, 'card.brand'));
+        $profile->card_brand = strtolower((string)array_get($data, 'card.brand'));
         $profile->card_last4 = array_get($data, 'card.last4');
         $profile->setProfileData($profileData);
 
         return $profile;
     }
 
-    public function deletePaymentProfile(Customer $customer, PaymentProfile $profile)
+    #[Override]
+    public function deletePaymentProfile(Customer $customer, PaymentProfile $profile): void
     {
         if (isset($profile->profile_data['customer_id'])) {
             $this->createGateway()->customers->delete($profile->profile_data['customer_id'], [], $this->getStripeOptions());
         }
     }
 
-    public function payFromPaymentProfile(Order $order, array $data = [])
+    #[Override]
+    public function payFromPaymentProfile(Order $order, array $data = []): void
     {
         $host = $this->getHostObject();
         if (!$order->customer || !$this->paymentProfileExists($order->customer)) {
@@ -384,6 +415,7 @@ class Stripe extends BasePaymentGateway
         }
     }
 
+    #[Override]
     public function paymentProfileExists(Customer $customer): ?bool
     {
         $profile = $this->model->findPaymentProfile($customer);
@@ -405,10 +437,10 @@ class Stripe extends BasePaymentGateway
             try {
                 $response = $this->createGateway()->customers->retrieve($customerId, [], $this->getStripeOptions());
 
-                if (isset($response->deleted)) {
+                if (property_exists($response, 'deleted') && $response->deleted !== null) {
                     $newCustomerRequired = true;
                 }
-            } catch (Exception $e) {
+            } catch (Exception) {
                 $newCustomerRequired = true;
             }
         }
@@ -434,7 +466,8 @@ class Stripe extends BasePaymentGateway
     //
     //
 
-    public function processRefundForm($data, $order, $paymentLog)
+    #[Override]
+    public function processRefundForm($data, $order, $paymentLog): void
     {
         if (!is_null($paymentLog->refunded_at)) {
             throw new ApplicationException('Nothing to refund, payment has already been refunded');
@@ -474,7 +507,7 @@ class Stripe extends BasePaymentGateway
         }
     }
 
-    protected function getPaymentFormFields($order, $data = [], $updatingIntent = false)
+    protected function getPaymentFormFields($order, $data = [], $updatingIntent = false): array
     {
         $fields = [
             'amount' => number_format($order->order_total, 2, '', ''),
@@ -516,7 +549,7 @@ class Stripe extends BasePaymentGateway
         $refundAmount = array_get($data, 'refund_type') !== 'full'
             ? array_get($data, 'refund_amount') : $order->order_total;
 
-        throw_if($refundAmount > $order->order_total, new ApplicationException(
+        throw_if(!$refundAmount || $refundAmount > $order->order_total, new ApplicationException(
             'Refund amount should be be less than or equal to the order total',
         ));
 
@@ -532,7 +565,7 @@ class Stripe extends BasePaymentGateway
         return $fields;
     }
 
-    protected function createGateway()
+    protected function createGateway(): StripeClient
     {
         \Stripe\Stripe::setAppInfo(
             'TastyIgniter Stripe',
@@ -565,7 +598,7 @@ class Stripe extends BasePaymentGateway
         }
 
         $payload = $this->getWebhookPayload();
-        if (!isset($payload['type']) || !strlen($eventType = $payload['type'])) {
+        if (!isset($payload['type']) || !strlen((string)($eventType = $payload['type']))) {
             return response('Missing webhook event name', 400);
         }
 
@@ -581,25 +614,25 @@ class Stripe extends BasePaymentGateway
         return response('Webhook Handled');
     }
 
-    protected function webhookHandlePaymentIntentSucceeded($payload)
+    protected function webhookHandlePaymentIntentSucceeded(array $payload)
     {
-        if ($order = Order::find($payload['data']['object']['metadata']['order_id'])) {
-            if (!$order->isPaymentProcessed()) {
-                if ($payload['data']['object']['status'] === 'requires_capture') {
-                    $order->logPaymentAttempt('Payment authorized via webhook', 1, [], $payload['data']['object']);
-                } else {
-                    $order->logPaymentAttempt('Payment successful via webhook', 1, [], $payload['data']['object'], true);
-                }
-
-                $order->updateOrderStatus($this->model->order_status, ['notify' => false]);
-                $order->markAsPaymentProcessed();
+        /** @var null|Order $order */
+        $order = Order::find($payload['data']['object']['metadata']['order_id']);
+        if ($order && !$order->isPaymentProcessed()) {
+            if ($payload['data']['object']['status'] === 'requires_capture') {
+                $order->logPaymentAttempt('Payment authorized via webhook', 1, [], $payload['data']['object']);
+            } else {
+                $order->logPaymentAttempt('Payment successful via webhook', 1, [], $payload['data']['object'], true);
             }
+
+            $order->updateOrderStatus($this->model->order_status, ['notify' => false]);
+            $order->markAsPaymentProcessed();
         }
     }
 
     protected function getWebhookPayload(): array
     {
-        $event = \Stripe\Webhook::constructEvent(
+        $event = Webhook::constructEvent(
             request()->getContent(),
             request()->header('stripe-signature'),
             $this->getWebhookSecret(),

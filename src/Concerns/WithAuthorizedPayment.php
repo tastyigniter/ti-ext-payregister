@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Concerns;
 
+use LogicException;
 use Igniter\Cart\Models\Order;
 
 trait WithAuthorizedPayment
 {
     public function shouldAuthorizePayment()
     {
-        throw new \LogicException('Method shouldAuthorizePayment must be implemented on your custom payment class.');
+        throw new LogicException('Method shouldAuthorizePayment must be implemented on your custom payment class.');
     }
 
     public function shouldCapturePayment(Order $order): bool
@@ -18,11 +21,11 @@ trait WithAuthorizedPayment
 
     public function captureAuthorizedPayment(Order $order)
     {
-        throw new \LogicException('Method captureAuthorizedPayment must be implemented on your custom payment class.');
+        throw new LogicException('Method captureAuthorizedPayment must be implemented on your custom payment class.');
     }
 
     public function cancelAuthorizedPayment(Order $order)
     {
-        throw new \LogicException('Method cancelAuthorizedPayment must be implemented on your custom payment class.');
+        throw new LogicException('Method cancelAuthorizedPayment must be implemented on your custom payment class.');
     }
 }

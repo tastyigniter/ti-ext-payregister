@@ -1,28 +1,41 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Classes;
 
+use Igniter\Admin\Models\Status;
+use Igniter\Cart\Models\Order;
 use Igniter\Flame\Database\Model;
 use Igniter\Flame\Support\Facades\File;
 use Igniter\Flame\Traits\EventEmitter;
 use Igniter\Main\Classes\ThemeManager;
 use Igniter\PayRegister\Concerns\WithApplicableFee;
+use Igniter\PayRegister\Concerns\WithAuthorizedPayment;
 use Igniter\PayRegister\Concerns\WithPaymentProfile;
+use Igniter\PayRegister\Concerns\WithPaymentRefund;
+use Igniter\PayRegister\Models\Payment;
 use Igniter\System\Actions\ModelAction;
 use Illuminate\Support\Facades\URL;
+use LogicException;
+use ReflectionClass;
 
 /**
  * Base Payment Gateway Class
+ *
+ * @property null|Payment $model
  */
 class BasePaymentGateway extends ModelAction
 {
     use EventEmitter;
     use WithApplicableFee;
     use WithPaymentProfile;
+    use WithPaymentRefund;
+    use WithAuthorizedPayment;
 
-    protected $orderModel = \Igniter\Cart\Models\Order::class;
+    protected $orderModel = Order::class;
 
-    protected $orderStatusModel = \Igniter\Admin\Models\Status::class;
+    protected $orderStatusModel = Status::class;
 
     protected $configFields = [];
 
@@ -38,7 +51,7 @@ class BasePaymentGateway extends ModelAction
     {
         parent::__construct($model);
 
-        $reflector = new \ReflectionClass($calledClass = get_called_class());
+        $reflector = new ReflectionClass($calledClass = static::class);
         $this->configPath[] = dirname($reflector->getFileName()).'/'.basename(File::normalizePath(strtolower($calledClass)));
 
         $formConfig = $this->loadConfig($this->defineFieldsConfig(), ['fields']);
@@ -47,7 +60,7 @@ class BasePaymentGateway extends ModelAction
         $this->configValidationAttributes = array_get($formConfig, 'validationAttributes', []);
         $this->configValidationMessages = array_get($formConfig, 'validationMessages', []);
 
-        if (!$model) {
+        if (!$model instanceof Model) {
             return;
         }
 
@@ -57,9 +70,8 @@ class BasePaymentGateway extends ModelAction
     /**
      * Initialize method called when the payment gateway is first loaded
      * with an existing model.
-     * @return array
      */
-    public function initialize($host)
+    public function initialize($host): void
     {
         // Set default data
         if (!$host->exists) {
@@ -77,7 +89,7 @@ class BasePaymentGateway extends ModelAction
     /**
      * Extra field configuration for the payment type.
      */
-    public function defineFieldsConfig()
+    public function defineFieldsConfig(): string
     {
         return 'fields';
     }
@@ -124,7 +136,7 @@ class BasePaymentGateway extends ModelAction
      * following the access point. For example, if URL is /paypal_return/12/34 an array
      * ['12', '34'] will be passed to processPaypalReturn method.
      */
-    public function registerEntryPoints()
+    public function registerEntryPoints(): array
     {
         return [];
     }
@@ -136,7 +148,7 @@ class BasePaymentGateway extends ModelAction
      *
      * @return string
      */
-    public function makeEntryPointUrl($code)
+    public function makeEntryPointUrl(string $code)
     {
         return URL::to('ti_payregister/'.$code);
     }
@@ -145,7 +157,7 @@ class BasePaymentGateway extends ModelAction
      * This method should return TRUE if the gateway completes the payment on the client's browsers.
      * Allows the system to take extra steps during checkout before  completing the payment
      */
-    public function completesPaymentOnClient()
+    public function completesPaymentOnClient(): bool
     {
         return false;
     }
@@ -159,7 +171,7 @@ class BasePaymentGateway extends ModelAction
      */
     public function processPaymentForm($data, $host, $order)
     {
-        throw new \LogicException('Method processPaymentForm must be implemented on your custom payment class.');
+        throw new LogicException('Method processPaymentForm must be implemented on your custom payment class.');
     }
 
     /**
@@ -171,7 +183,7 @@ class BasePaymentGateway extends ModelAction
     {
         $this->beforeRenderPaymentForm($this->model, controller());
 
-        $viewName = $this->getPaymentFormViewName($this);
+        $viewName = $this->getPaymentFormViewName();
 
         return view($viewName, ['paymentMethod' => $this->model]);
     }
@@ -191,10 +203,7 @@ class BasePaymentGateway extends ModelAction
         return view()->exists($viewName) ? $viewName : null;
     }
 
-    /**
-     * @return \Igniter\PayRegister\Models\Payment
-     */
-    public function getHostObject()
+    public function getHostObject(): ?Payment
     {
         return $this->model;
     }
@@ -204,7 +213,7 @@ class BasePaymentGateway extends ModelAction
      */
     protected function createOrderModel()
     {
-        $class = '\\'.ltrim($this->orderModel, '\\');
+        $class = '\\'.ltrim((string)$this->orderModel, '\\');
 
         return new $class;
     }
@@ -214,7 +223,7 @@ class BasePaymentGateway extends ModelAction
      */
     protected function createOrderStatusModel()
     {
-        $class = '\\'.ltrim($this->orderStatusModel, '\\');
+        $class = '\\'.ltrim((string)$this->orderStatusModel, '\\');
 
         return new $class;
     }

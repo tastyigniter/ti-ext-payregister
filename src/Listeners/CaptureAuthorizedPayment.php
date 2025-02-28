@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Listeners;
 
 use Igniter\Admin\Models\StatusHistory;
@@ -9,7 +11,7 @@ use Igniter\PayRegister\Concerns\WithAuthorizedPayment;
 
 class CaptureAuthorizedPayment
 {
-    public function handle(Model $order, StatusHistory $statusHistory)
+    public function handle(Model $order, StatusHistory $statusHistory): void
     {
         if (!$order instanceof Order || !$paymentMethod = $order->payment_method) {
             return;

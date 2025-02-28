@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests;
 
 use Igniter\PayRegister\Classes\PaymentGateways;
@@ -18,11 +20,11 @@ use Igniter\PayRegister\Subscribers\FormFieldsSubscriber;
 use Illuminate\Support\Facades\Event;
 use Mockery;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->extension = new Extension(app());
 });
 
-it('registers payment gateways', function() {
+it('registers payment gateways', function(): void {
     $gateways = $this->extension->registerPaymentGateways();
     expect($gateways)->toHaveKey(Cod::class)
         ->and($gateways[Cod::class]['code'])->toBe('cod')
@@ -50,35 +52,35 @@ it('registers payment gateways', function() {
         ->and($gateways[Square::class]['description'])->toBe('lang:igniter.payregister::default.square.text_payment_desc');
 });
 
-it('registers form widgets', function() {
+it('registers form widgets', function(): void {
     $widgets = $this->extension->registerFormWidgets();
 
     expect($widgets)->toHaveKey(PaymentAttempts::class)
         ->and($widgets[PaymentAttempts::class]['code'])->toBe('paymentattempts');
 });
 
-it('registers settings', function() {
+it('registers settings', function(): void {
     $settings = $this->extension->registerSettings();
 
     expect($settings)->toHaveKey('settings')
         ->and($settings['settings']['label'])->toBe(lang('igniter.payregister::default.text_side_menu'));
 });
 
-it('registers permissions', function() {
+it('registers permissions', function(): void {
     $permissions = $this->extension->registerPermissions();
 
     expect($permissions)->toHaveKey('Admin.Payments')
         ->and($permissions['Admin.Payments']['label'])->toBe('igniter.payregister::default.help_permission');
 });
 
-it('registers onboarding steps', function() {
+it('registers onboarding steps', function(): void {
     $steps = $this->extension->registerOnboardingSteps();
 
     expect($steps)->toHaveKey('igniter.payregister::payments')
         ->and($steps['igniter.payregister::payments']['label'])->toBe('igniter.payregister::default.onboarding_payments');
 });
 
-it('subscribes to events', function() {
+it('subscribes to events', function(): void {
     $extension = new class(app()) extends Extension
     {
         public function subscribers(): array
@@ -90,7 +92,7 @@ it('subscribes to events', function() {
     expect($extension->subscribers())->toContain(FormFieldsSubscriber::class);
 });
 
-it('listens to events', function() {
+it('listens to events', function(): void {
     $extension = new class(app()) extends Extension
     {
         public function listeners(): array
@@ -105,7 +107,7 @@ it('listens to events', function() {
         ->and($listeners['igniter.checkout.afterSaveOrder'])->toContain(UpdatePaymentIntentSessionOnCheckout::class);
 });
 
-it('registers observers', function() {
+it('registers observers', function(): void {
     $extension = new class(app()) extends Extension
     {
         public function observers(): array
@@ -120,12 +122,12 @@ it('registers observers', function() {
         ->and($observers[Payment::class])->toBe(PaymentObserver::class);
 });
 
-it('registers singletons', function() {
+it('registers singletons', function(): void {
     expect($this->extension->singletons)->toContain(PaymentGateways::class);
 });
 
-it('syncs payments on theme activation', function() {
-    Event::shouldReceive('listen')->with('main.theme.activated', Mockery::on(function($callback) {
+it('syncs payments on theme activation', function(): void {
+    Event::shouldReceive('listen')->with('main.theme.activated', Mockery::on(function($callback): true {
         $callback();
         return true;
     }))->once();

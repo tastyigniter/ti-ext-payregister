@@ -1,13 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Models;
 
-use Carbon\Carbon;
+use Igniter\Cart\Models\Order;
 use Igniter\Flame\Database\Factories\HasFactory;
 use Igniter\Flame\Database\Model;
 use Igniter\Flame\Database\Traits\Validation;
 use Igniter\PayRegister\Events\OrderBeforeRefundProcessedEvent;
 use Igniter\PayRegister\Events\OrderRefundProcessedEvent;
+use Illuminate\Support\Carbon;
 
 /**
  * PaymentLog Model Class
@@ -19,13 +22,15 @@ use Igniter\PayRegister\Events\OrderRefundProcessedEvent;
  * @property array|null $request
  * @property array|null $response
  * @property bool $is_success
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property string $payment_code
  * @property bool $is_refundable
- * @property \Illuminate\Support\Carbon|null $refunded_at
+ * @property Carbon|null $refunded_at
  * @property-read mixed $date_added_since
- * @mixin \Igniter\Flame\Database\Model
+ * @property null|Order $order
+ * @property null|Payment $payment_method
+ * @mixin Model
  */
 class PaymentLog extends Model
 {
@@ -48,8 +53,8 @@ class PaymentLog extends Model
 
     public $relation = [
         'belongsTo' => [
-            'order' => [\Igniter\Cart\Models\Order::class],
-            'payment_method' => [\Igniter\PayRegister\Models\Payment::class, 'foreignKey' => 'payment_code', 'otherKey' => 'code'],
+            'order' => [Order::class],
+            'payment_method' => [Payment::class, 'foreignKey' => 'payment_code', 'otherKey' => 'code'],
         ],
     ];
 
@@ -73,9 +78,9 @@ class PaymentLog extends Model
         'refunded_at' => 'datetime',
     ];
 
-    public static function logAttempt($order, $message, $isSuccess, $request = [], $response = [], $isRefundable = false)
+    public static function logAttempt($order, $message, $isSuccess, $request = [], $response = [], $isRefundable = false): void
     {
-        $record = new static;
+        $record = new self;
         $record->message = $message;
         $record->order_id = $order->order_id;
         $record->payment_code = $order->payment_method->code;
@@ -88,12 +93,12 @@ class PaymentLog extends Model
         $record->save();
     }
 
-    public function getDateAddedSinceAttribute($value)
+    public function getDateAddedSinceAttribute($value): ?string
     {
         return $this->created_at ? time_elapsed($this->created_at) : null;
     }
 
-    public function markAsRefundProcessed()
+    public function markAsRefundProcessed(): bool
     {
         if (is_null($this->refunded_at)) {
             OrderBeforeRefundProcessedEvent::dispatch($this);

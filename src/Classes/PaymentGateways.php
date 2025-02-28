@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Classes;
 
+use Illuminate\Http\Response;
 use Igniter\Flame\Pagic\Model;
 use Igniter\Flame\Support\Facades\File;
 use Igniter\Main\Classes\ThemeManager;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\System\Classes\ExtensionManager;
-use Illuminate\Support\Facades\Response;
 
 /**
  * Manages payment gateways
@@ -17,12 +19,12 @@ class PaymentGateways
     /**
      * @var array Cache of registration callbacks.
      */
-    private $callbacks = [];
+    private array $callbacks = [];
 
     /**
      * @var array List of registered gateways.
      */
-    private $gateways;
+    private ?array $gateways = null;
 
     /**
      * Returns payment gateway details based on its name.
@@ -41,7 +43,7 @@ class PaymentGateways
 
     /**
      * Returns a list of the payment gateway objects
-     * @return \Igniter\PayRegister\Classes\BasePaymentGateway[]
+     * @return BasePaymentGateway[]
      */
     public function listGatewayObjects()
     {
@@ -65,10 +67,8 @@ class PaymentGateways
             $this->loadGateways();
         }
 
-        !is_array($this->gateways) && $this->gateways = [];
-
         $result = [];
-        foreach ($this->gateways as $gateway) {
+        foreach ($this->gateways ?? [] as $gateway) {
             if (class_exists($gateway['class'])) {
                 $gatewayObj = new $gateway['class'];
                 $result[$gateway['code']] = array_merge($gateway, [
@@ -110,7 +110,7 @@ class PaymentGateways
      * @param string $owner Specifies the gateways owner extension in the format extension_code.
      * @param array $classes An array of the payment gateway classes.
      */
-    public function registerGateways($owner, array $classes)
+    public function registerGateways($owner, array $classes): void
     {
         if (!$this->gateways) {
             $this->gateways = [];
@@ -138,7 +138,7 @@ class PaymentGateways
      *
      * @param callable $callback A callable function.
      */
-    public function registerCallback(callable $callback)
+    public function registerCallback(callable $callback): void
     {
         $this->callbacks[] = $callback;
     }
@@ -149,11 +149,11 @@ class PaymentGateways
      * @param string $code Entry point code
      * @param string $uri Remaining uri parts
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public static function runEntryPoint($code = null, $uri = null)
     {
-        $params = explode('/', $uri);
+        $params = explode('/', (string)$uri);
 
         $gateways = Payment::listPayments();
         foreach ($gateways as $gateway) {
@@ -164,19 +164,17 @@ class PaymentGateways
             }
         }
 
-        return Response::make('Access Forbidden', '403');
+        return response('Access Forbidden', 403);
     }
 
     //
     // Partials
     //
-
     /**
      * Loops over each payment type and ensures the editing theme has a payment form partial,
      * if the partial does not exist, it will create one.
-     * @return void
      */
-    public static function createPartials()
+    public static function createPartials(): void
     {
         $themeManager = resolve(ThemeManager::class);
         if (!$theme = $themeManager->getActiveTheme()) {
@@ -187,6 +185,7 @@ class PaymentGateways
         $paymentMethods = Payment::whereIsEnabled()->get();
 
         foreach ($paymentMethods as $paymentMethod) {
+            /** @var Payment $paymentMethod */
             $class = $paymentMethod->getGatewayClass();
 
             if (!$class || get_parent_class($class) != BasePaymentGateway::class) {

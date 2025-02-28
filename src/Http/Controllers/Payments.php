@@ -1,8 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Http\Controllers;
 
+use Exception;
+use Igniter\Admin\Classes\AdminController;
 use Igniter\Admin\Facades\AdminMenu;
+use Igniter\Admin\Http\Actions\FormController;
+use Igniter\Admin\Http\Actions\ListController;
 use Igniter\Flame\Database\Model;
 use Igniter\Flame\Exception\FlashException;
 use Igniter\PayRegister\Classes\PaymentGateways;
@@ -10,16 +16,16 @@ use Igniter\PayRegister\Models\Payment;
 use Igniter\System\Helpers\ValidationHelper;
 use Illuminate\Support\Arr;
 
-class Payments extends \Igniter\Admin\Classes\AdminController
+class Payments extends AdminController
 {
     public array $implement = [
-        \Igniter\Admin\Http\Actions\ListController::class,
-        \Igniter\Admin\Http\Actions\FormController::class,
+        ListController::class,
+        FormController::class,
     ];
 
     public array $listConfig = [
         'list' => [
-            'model' => \Igniter\PayRegister\Models\Payment::class,
+            'model' => Payment::class,
             'title' => 'lang:igniter.payregister::default.text_title',
             'emptyMessage' => 'lang:igniter.payregister::default.text_empty',
             'defaultSort' => ['updated_at', 'DESC'],
@@ -30,7 +36,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
 
     public array $formConfig = [
         'name' => 'lang:igniter.payregister::default.text_form_name',
-        'model' => \Igniter\PayRegister\Models\Payment::class,
+        'model' => Payment::class,
         'create' => [
             'title' => 'lang:igniter::admin.form.create_title',
             'redirect' => 'payments/edit/{code}',
@@ -53,7 +59,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
 
     protected $gateway;
 
-    public static function getSlug()
+    public static function getSlug(): string
     {
         return 'payments';
     }
@@ -65,7 +71,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
         AdminMenu::setContext('payments', 'sales');
     }
 
-    public function index()
+    public function index(): void
     {
         Payment::syncAll();
 
@@ -82,10 +88,10 @@ class Payments extends \Igniter\Admin\Classes\AdminController
             flash()->success(sprintf(lang('igniter::admin.alert_success'), lang('igniter.payregister::default.alert_set_default')));
         }
 
-        return $this->refreshList('list');
+        return $this->asExtension(ListController::class)->refreshList('list');
     }
 
-    public function listOverrideColumnValue($record, $column, $alias = null)
+    public function listOverrideColumnValue($record, $column, $alias = null): void
     {
         if ($column->type == 'button' && $column->columnName == 'default') {
             $column->iconCssClass = $record->is_default ? 'fa fa-star' : 'fa fa-star-o';
@@ -99,20 +105,20 @@ class Payments extends \Igniter\Admin\Classes\AdminController
      * @param string $paymentCode
      *
      * @return Model
-     * @throws \Exception
+     * @throws Exception
      */
     public function formFindModelObject($paymentCode = null)
     {
-        throw_unless(strlen($paymentCode),
+        throw_unless(strlen((string)$paymentCode),
             new FlashException(lang('igniter.payregister::default.alert_setting_missing_id')),
         );
 
-        $model = $this->formCreateModelObject();
+        $model = $this->asExtension(FormController::class)->formCreateModelObject();
 
         // Prepare query and find model record
         $query = $model->newQuery();
         $this->fireEvent('admin.controller.extendFormQuery', [$query]);
-        $this->formExtendQuery($query);
+        $this->asExtension(FormController::class)->formExtendQuery($query);
 
         throw_unless($result = $query->whereCode($paymentCode)->first(),
             new FlashException(lang('igniter::admin.form.not_found')),
@@ -130,7 +136,7 @@ class Payments extends \Igniter\Admin\Classes\AdminController
         return $model;
     }
 
-    public function formExtendFieldsBefore($form)
+    public function formExtendFieldsBefore($form): void
     {
         $model = $form->model;
         if ($model->exists) {
@@ -142,9 +148,9 @@ class Payments extends \Igniter\Admin\Classes\AdminController
         }
     }
 
-    public function formBeforeCreate($model)
+    public function formBeforeCreate($model): void
     {
-        throw_unless(strlen($code = post('Payment.payment')),
+        throw_unless(strlen((string)($code = post('Payment.payment'))),
             new FlashException(lang('igniter.payregister::default.alert_invalid_code')),
         );
 
@@ -153,14 +159,14 @@ class Payments extends \Igniter\Admin\Classes\AdminController
         $model->class_name = $paymentGateway['class'];
     }
 
-    public function formAfterUpdate($model)
+    public function formAfterUpdate($model): void
     {
         if ($model->status) {
             Payment::syncAll();
         }
     }
 
-    public function formValidate($model, $form)
+    public function formValidate($model, $form): array
     {
         $rules = [
             'payment' => ['sometimes', 'required', 'alpha_dash'],

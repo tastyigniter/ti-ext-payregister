@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\FormWidgets;
 
 use Igniter\Admin\Classes\FormField;
@@ -13,7 +15,7 @@ use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Tests\Payments\Fixtures\TestPaymentWithNoRefund;
 use Igniter\PayRegister\Tests\Payments\Fixtures\TestPaymentWithRefund;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->order = Order::factory()->state([
         'order_total' => 100.00,
     ])->create();
@@ -35,7 +37,7 @@ beforeEach(function() {
     );
 });
 
-it('initializes with config', function() {
+it('initializes with config', function(): void {
     expect($this->widget->form)->toBe(['fields' => [
         'payment_log_id' => [
             'type' => 'hidden',
@@ -43,20 +45,20 @@ it('initializes with config', function() {
     ]])->and($this->widget->formTitle)->toBe('igniter.payregister::default.text_refund_title');
 });
 
-it('prepares vars', function() {
+it('prepares vars', function(): void {
     $this->widget->prepareVars();
 
     expect($this->widget->vars['field'])->toBeInstanceOf(FormField::class)
         ->and($this->widget->vars['dataTableWidget'])->toBeInstanceOf(DataTable::class);
 });
 
-it('returns no save data for getSaveValue', function() {
+it('returns no save data for getSaveValue', function(): void {
     $result = $this->widget->getSaveValue('some_value');
 
     expect($result)->toBe(FormField::NO_SAVE_DATA);
 });
 
-it('throws exception if record not found on load record', function() {
+it('throws exception if record not found on load record', function(): void {
     $this->expectException(FlashException::class);
     $this->expectExceptionMessage('Record not found');
 
@@ -65,18 +67,19 @@ it('throws exception if record not found on load record', function() {
     $this->widget->onLoadRecord();
 });
 
-it('loads record successfully', function() {
+it('loads record successfully', function(): void {
     request()->merge(['recordId' => $this->paymentLog->getKey()]);
     $result = $this->widget->onLoadRecord();
 
     expect($result)->toContain('Refund: £100.00');
 });
 
-it('throws exception if no successful payment to refund', function() {
+it('throws exception if no successful payment to refund', function(): void {
     $payment = Payment::factory()->create([
         'class_name' => TestPaymentWithNoRefund::class,
     ]);
     $payment->applyGatewayClass();
+
     $this->order->payment_method = $payment;
 
     $this->expectException(FlashException::class);
@@ -86,11 +89,12 @@ it('throws exception if no successful payment to refund', function() {
     $this->widget->onSaveRecord();
 });
 
-it('saves record successfully', function() {
+it('saves record successfully', function(): void {
     $payment = Payment::factory()->create([
         'class_name' => TestPaymentWithRefund::class,
     ]);
     $payment->applyGatewayClass();
+
     $this->order->payment_method = $payment;
 
     request()->merge(['recordId' => $this->paymentLog->getKey()]);

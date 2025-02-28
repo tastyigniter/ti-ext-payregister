@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Payments;
 
 use Exception;
@@ -13,22 +15,22 @@ use Igniter\User\Models\Customer;
 use Illuminate\Http\Client\Response;
 use Mockery;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->payment = Payment::factory()->create([
         'class_name' => PaypalExpress::class,
     ]);
     $this->paypalExpress = new PaypalExpress($this->payment);
 });
 
-it('returns correct payment form view for paypal express', function() {
+it('returns correct payment form view for paypal express', function(): void {
     expect(PaypalExpress::$paymentFormView)->toBe('igniter.payregister::_partials.paypalexpress.payment_form');
 });
 
-it('returns correct fields config for paypal express', function() {
+it('returns correct fields config for paypal express', function(): void {
     expect($this->paypalExpress->defineFieldsConfig())->toBe('igniter.payregister::/models/paypalexpress');
 });
 
-it('registers correct entry points for paypal express', function() {
+it('registers correct entry points for paypal express', function(): void {
     $entryPoints = $this->paypalExpress->registerEntryPoints();
 
     expect($entryPoints)->toBe([
@@ -37,59 +39,59 @@ it('registers correct entry points for paypal express', function() {
     ]);
 });
 
-it('returns true if in sandbox mode for paypal express', function() {
+it('returns true if in sandbox mode for paypal express', function(): void {
     $this->payment->api_mode = 'sandbox';
 
     expect($this->paypalExpress->isSandboxMode())->toBeTrue();
 });
 
-it('returns false if not in sandbox mode for paypal express', function() {
+it('returns false if not in sandbox mode for paypal express', function(): void {
     $this->payment->api_mode = 'live';
 
     expect($this->paypalExpress->isSandboxMode())->toBeFalse();
 });
 
-it('returns sandbox API username in sandbox mode for paypal express', function() {
+it('returns sandbox API username in sandbox mode for paypal express', function(): void {
     $this->payment->api_mode = 'sandbox';
     $this->payment->api_sandbox_user = 'sandbox_user';
 
     expect($this->paypalExpress->getApiUsername())->toBe('sandbox_user');
 });
 
-it('returns live API username in live mode for paypal express', function() {
+it('returns live API username in live mode for paypal express', function(): void {
     $this->payment->api_mode = 'live';
     $this->payment->api_user = 'live_user';
 
     expect($this->paypalExpress->getApiUsername())->toBe('live_user');
 });
 
-it('returns sandbox API password in sandbox mode for paypal express', function() {
+it('returns sandbox API password in sandbox mode for paypal express', function(): void {
     $this->payment->api_mode = 'sandbox';
     $this->payment->api_sandbox_pass = 'sandbox_pass';
 
     expect($this->paypalExpress->getApiPassword())->toBe('sandbox_pass');
 });
 
-it('returns live API password in live mode for paypal express', function() {
+it('returns live API password in live mode for paypal express', function(): void {
     $this->payment->api_mode = 'live';
     $this->payment->api_pass = 'live_pass';
 
     expect($this->paypalExpress->getApiPassword())->toBe('live_pass');
 });
 
-it('returns AUTHORIZE when api_action is authorization for paypal express', function() {
+it('returns AUTHORIZE when api_action is authorization for paypal express', function(): void {
     $this->payment->api_action = 'authorization';
 
     expect($this->paypalExpress->getTransactionMode())->toBe('AUTHORIZE');
 });
 
-it('returns CAPTURE when api_action is not authorization for paypal express', function() {
+it('returns CAPTURE when api_action is not authorization for paypal express', function(): void {
     $this->payment->api_action = 'capture';
 
     expect($this->paypalExpress->getTransactionMode())->toBe('CAPTURE');
 });
 
-it('processes payment form and redirects to payer action url', function() {
+it('processes payment form and redirects to payer action url', function(): void {
     $this->payment->api_action = 'authorization';
     $order = Order::factory()
         ->for(Customer::factory()->create(), 'customer')
@@ -108,7 +110,7 @@ it('processes payment form and redirects to payer action url', function() {
     expect($result->getTargetUrl())->toBe('http://payer.action.url');
 });
 
-it('throws exception when payment response is not successful', function() {
+it('throws exception when payment response is not successful', function(): void {
     $order = Order::factory()
         ->for(Customer::factory()->create(), 'customer')
         ->for($this->payment, 'payment_method')
@@ -134,7 +136,7 @@ it('throws exception when payment response is not successful', function() {
     ]);
 });
 
-it('throws exception when payment request fails', function() {
+it('throws exception when payment request fails', function(): void {
     $order = Order::factory()
         ->for(Customer::factory()->create(), 'customer')
         ->for($this->payment, 'payment_method')
@@ -155,7 +157,7 @@ it('throws exception when payment request fails', function() {
     ]);
 });
 
-it('processes paypal express return url and updates order status', function(string $transactionMode) {
+it('processes paypal express return url and updates order status', function(string $transactionMode): void {
     request()->merge(['token' => 'test_token']);
 
     $this->payment->applyGatewayClass();
@@ -186,7 +188,7 @@ it('processes paypal express return url and updates order status', function(stri
     ['AUTHORIZE'],
 ]);
 
-it('throws exception when no order found in paypal express return url', function() {
+it('throws exception when no order found in paypal express return url', function(): void {
     request()->merge([
         'redirect' => 'http://redirect.url',
         'cancel' => 'http://cancel.url',
@@ -198,7 +200,7 @@ it('throws exception when no order found in paypal express return url', function
         ->and(flash()->messages()->first())->message->not->toBeNull()->level->toBe('warning');
 });
 
-it('processes paypal express cancel url and logs payment attempt', function() {
+it('processes paypal express cancel url and logs payment attempt', function(): void {
     $order = Order::factory()
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
@@ -214,14 +216,14 @@ it('processes paypal express cancel url and logs payment attempt', function() {
     ]);
 });
 
-it('throws exception if no order found in paypal express cancel url', function() {
+it('throws exception if no order found in paypal express cancel url', function(): void {
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('No order found');
 
     $this->paypalExpress->processCancelUrl(['invalid_hash']);
 });
 
-it('processes paypal express refund form and logs refund attempt', function() {
+it('processes paypal express refund form and logs refund attempt', function(): void {
     $order = Order::factory()
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
@@ -246,23 +248,21 @@ it('processes paypal express refund form and logs refund attempt', function() {
     ]);
 });
 
-it('throws exception when refund payment request fails', function() {
+it('throws exception when refund payment request fails', function(): void {
     $order = Order::factory()
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
     $paymentLog = PaymentLog::factory()->create([
         'order_id' => $order->order_id,
-        'response' => ['purchase_units' => [['payments' => ['captures' => [['status' => 'COMPLETED']]]]]],
+        'response' => ['purchase_units' => [['payments' => ['captures' => [['id' => 'paypal_order_id', 'status' => 'COMPLETED']]]]]],
     ]);
 
     $paypalClient = Mockery::mock(PayPalClient::class)->makePartial();
     $paypalClient->shouldReceive('refundPayment')->andThrow(new Exception('Refund Error'));
     app()->instance(PayPalClient::class, $paypalClient);
-    $this->paypalExpress->bindEvent('paypalexpress.extendRefundFields', function($fields, $order, $data) {
-        return [
-            'extra_field' => 'extra_value',
-        ];
-    });
+    $this->paypalExpress->bindEvent('paypalexpress.extendRefundFields', fn($fields, $order, $data): array => [
+        'extra_field' => 'extra_value',
+    ]);
 
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('Refund failed');
@@ -276,7 +276,7 @@ it('throws exception when refund payment request fails', function() {
     ]);
 });
 
-it('throws exception if no paypal express charge to refund', function() {
+it('throws exception if no paypal express charge to refund', function(): void {
     $order = Order::factory()
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);

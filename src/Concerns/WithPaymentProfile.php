@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Concerns;
 
+use LogicException;
 use Igniter\Cart\Models\Order;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\User\Models\Customer;
@@ -27,7 +30,7 @@ trait WithPaymentProfile
      */
     public function updatePaymentProfile(Customer $customer, array $data = []): PaymentProfile
     {
-        throw new \LogicException('Method updatePaymentProfile must be implemented on your custom payment class.');
+        throw new LogicException('Method updatePaymentProfile must be implemented on your custom payment class.');
     }
 
     /**
@@ -35,7 +38,7 @@ trait WithPaymentProfile
      */
     public function deletePaymentProfile(Customer $customer, PaymentProfile $profile)
     {
-        throw new \LogicException('Method deletePaymentProfile must be implemented on your custom payment class.');
+        throw new LogicException('Method deletePaymentProfile must be implemented on your custom payment class.');
     }
 
     /**
@@ -43,6 +46,6 @@ trait WithPaymentProfile
      */
     public function payFromPaymentProfile(Order $order, array $data = [])
     {
-        throw new \LogicException('Method payFromPaymentProfile must be implemented on your custom payment class.');
+        throw new LogicException('Method payFromPaymentProfile must be implemented on your custom payment class.');
     }
 }

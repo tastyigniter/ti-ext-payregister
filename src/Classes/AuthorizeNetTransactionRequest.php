@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Classes;
 
 use net\authorize\api\contract\v1\CreateTransactionRequest;

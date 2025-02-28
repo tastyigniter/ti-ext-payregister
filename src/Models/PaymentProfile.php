@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Models;
 
+use Igniter\Flame\Database\Builder;
 use Igniter\Flame\Database\Factories\HasFactory;
 use Igniter\Flame\Database\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * PaymentProfile Model Class
@@ -15,9 +19,11 @@ use Igniter\Flame\Database\Model;
  * @property string|null $card_last4
  * @property array|null $profile_data
  * @property bool $is_primary
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @mixin \Igniter\Flame\Database\Model
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @method static Builder<static>|PaymentProfile query()
+ * @method static Builder<static>|PaymentProfile applyCustomer($customer)
+ * @mixin Model
  */
 class PaymentProfile extends Model
 {
@@ -36,7 +42,7 @@ class PaymentProfile extends Model
         'is_primary' => 'boolean',
     ];
 
-    public function setProfileData($profileData)
+    public function setProfileData($profileData): void
     {
         $this->profile_data = $profileData;
         $this->save();
@@ -49,9 +55,8 @@ class PaymentProfile extends Model
 
     /**
      * Makes this model the default
-     * @return void
      */
-    public function makePrimary()
+    public function makePrimary(): void
     {
         $this->timestamps = false;
 
@@ -70,9 +75,9 @@ class PaymentProfile extends Model
 
     public static function getPrimary($customer)
     {
-        $profiles = self::applyCustomer($customer)->get();
-
+        $profiles = self::query()->applyCustomer($customer)->get();
         foreach ($profiles as $profile) {
+            /** @var PaymentProfile $profile */
             if ($profile->is_primary) {
                 return $profile;
             }
@@ -81,9 +86,9 @@ class PaymentProfile extends Model
         return $profiles->first();
     }
 
-    public static function customerHasProfile($customer)
+    public static function customerHasProfile($customer): bool
     {
-        return self::applyCustomer($customer)->count() > 0;
+        return self::query()->applyCustomer($customer)->count() > 0;
     }
 
     //

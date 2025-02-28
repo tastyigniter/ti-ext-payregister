@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Payments;
 
 use Exception;
@@ -19,7 +21,7 @@ use Stripe\HttpClient\CurlClient;
 use Stripe\StripeObject;
 use Stripe\Util\CaseInsensitiveArray;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->payment = Payment::factory()->create([
         'class_name' => Stripe::class,
     ]);
@@ -38,15 +40,15 @@ function setupRequest(CurlClient $httpClient, string $uri, array $response, stri
         ]);
 }
 
-it('returns correct payment form view for stripe', function() {
+it('returns correct payment form view for stripe', function(): void {
     expect(Stripe::$paymentFormView)->toBe('igniter.payregister::_partials.stripe.payment_form');
 });
 
-it('returns correct fields config for stripe', function() {
+it('returns correct fields config for stripe', function(): void {
     expect($this->stripe->defineFieldsConfig())->toBe('igniter.payregister::/models/stripe');
 });
 
-it('registers correct entry points for stripe', function() {
+it('registers correct entry points for stripe', function(): void {
     $entryPoints = $this->stripe->registerEntryPoints();
 
     expect($entryPoints)->toBe([
@@ -54,13 +56,13 @@ it('registers correct entry points for stripe', function() {
     ]);
 });
 
-it('returns hidden fields for stripe', function() {
+it('returns hidden fields for stripe', function(): void {
     $hiddenFields = $this->stripe->getHiddenFields();
 
     expect($hiddenFields)->toHaveKeys(['stripe_payment_method', 'stripe_idempotency_key']);
 });
 
-it('returns correct stripe model value', function($attribute, $methodName, $mode, $value, $returnValue) {
+it('returns correct stripe model value', function($attribute, $methodName, $mode, $value, $returnValue): void {
     $this->payment->transaction_mode = $mode;
     $this->payment->$attribute = $value;
 
@@ -78,7 +80,7 @@ it('returns correct stripe model value', function($attribute, $methodName, $mode
     ['transaction_type', 'shouldAuthorizePayment', 'live', 'sale', false],
 ]);
 
-it('adds correct js files for stripe payment form', function() {
+it('adds correct js files for stripe payment form', function(): void {
     $controller = Mockery::mock(MainController::class);
     $controller->shouldReceive('addJs')->with('https://js.stripe.com/v3/', 'stripe-js')->once();
     $controller->shouldReceive('addJs')->with('igniter.payregister::/js/process.stripe.js', 'process-stripe-js')->once();
@@ -86,19 +88,17 @@ it('adds correct js files for stripe payment form', function() {
     $this->stripe->beforeRenderPaymentForm($this->stripe, $controller);
 });
 
-it('returns true for completesPaymentOnClient for stripe', function() {
+it('returns true for completesPaymentOnClient for stripe', function(): void {
     expect($this->stripe->completesPaymentOnClient())->toBeTrue();
 });
 
-it('returns stripe js options with locale', function() {
+it('returns stripe js options with locale', function(): void {
     $order = Mockery::mock(Order::class);
     $this->payment->locale_code = 'en';
 
-    Event::listen('payregister.stripe.extendJsOptions', function($stripePayment, $options, $order) {
-        return [
-            'test_key' => 'test_value',
-        ];
-    });
+    Event::listen('payregister.stripe.extendJsOptions', fn($stripePayment, $options, $order): array => [
+        'test_key' => 'test_value',
+    ]);
 
     expect($this->stripe->getStripeJsOptions($order))->toBe([
         'locale' => 'en',
@@ -106,19 +106,17 @@ it('returns stripe js options with locale', function() {
     ]);
 });
 
-it('returns stripe options with extended options', function() {
-    Event::listen('payregister.stripe.extendOptions', function($stripePayment, $options) {
-        return [
-            'test_key' => 'test_value',
-        ];
-    });
+it('returns stripe options with extended options', function(): void {
+    Event::listen('payregister.stripe.extendOptions', fn($stripePayment, $options): array => [
+        'test_key' => 'test_value',
+    ]);
 
     expect($this->stripe->getStripeOptions())->toBe([
         'test_key' => 'test_value',
     ]);
 });
 
-it('creates stripe payment intent successfully', function() {
+it('creates stripe payment intent successfully', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -136,7 +134,7 @@ it('creates stripe payment intent successfully', function() {
     expect($this->stripe->createOrFetchIntent($order))->toBe('secret');
 });
 
-it('fetches & updates stripe payment intent successfully', function() {
+it('fetches & updates stripe payment intent successfully', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -155,7 +153,7 @@ it('fetches & updates stripe payment intent successfully', function() {
     expect($this->stripe->createOrFetchIntent($order))->toBe('secret');
 });
 
-it('returns null when payment is already processed in createOrFetchIntent', function() {
+it('returns null when payment is already processed in createOrFetchIntent', function(): void {
     $order = Order::factory()
         ->for($this->payment, 'payment_method')
         ->create([
@@ -168,7 +166,7 @@ it('returns null when payment is already processed in createOrFetchIntent', func
     expect($result)->toBeNull();
 });
 
-it('logs error and returns null when exception occurs in createOrFetchIntent', function() {
+it('logs error and returns null when exception occurs in createOrFetchIntent', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
@@ -183,7 +181,7 @@ it('logs error and returns null when exception occurs in createOrFetchIntent', f
     ]);
 });
 
-it('processes stripe payment form successfully', function() {
+it('processes stripe payment form successfully', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
@@ -196,7 +194,7 @@ it('processes stripe payment form successfully', function() {
     $data = [];
     $result = $this->stripe->processPaymentForm($data, $this->payment, $order);
 
-    expect($result)->toBeNull()
+    expect($result)->toBeFalse()
         ->and($this->stripe->getSession('ti_payregister_stripe_intent'))->toBeNull();
 
     $this->assertDatabaseHas('payment_logs', [
@@ -207,7 +205,7 @@ it('processes stripe payment form successfully', function() {
     ]);
 });
 
-it('returns true when payment is already processed in processPaymentForm', function() {
+it('returns true when payment is already processed in processPaymentForm', function(): void {
     $order = Order::factory()
         ->for($this->payment, 'payment_method')
         ->create([
@@ -215,13 +213,14 @@ it('returns true when payment is already processed in processPaymentForm', funct
             'processed' => 1,
         ]);
     $order->updateOrderStatus(1);
+
     $this->stripe->putSession('ti_payregister_stripe_intent', 'pi_123');
 
     $result = $this->stripe->processPaymentForm([], $this->payment, $order);
     expect($result)->toBeTrue();
 });
 
-it('throws exception if stripe payment intent id is missing in session', function() {
+it('throws exception if stripe payment intent id is missing in session', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
@@ -238,7 +237,7 @@ it('throws exception if stripe payment intent id is missing in session', functio
     ]);
 });
 
-it('logs error and throws exception when payment intent status is not succeeded', function() {
+it('logs error and throws exception when payment intent status is not succeeded', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
@@ -255,7 +254,7 @@ it('logs error and throws exception when payment intent status is not succeeded'
     expect($result)->toBeTrue();
 });
 
-it('updates payment profile on process payment form success', function() {
+it('updates payment profile on process payment form success', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -284,7 +283,7 @@ it('updates payment profile on process payment form success', function() {
     ]);
 });
 
-it('captures authorized payment successfully', function() {
+it('captures authorized payment successfully', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -301,11 +300,9 @@ it('captures authorized payment successfully', function() {
         'status' => 'succeeded',
     ], 'post');
 
-    $this->stripe->bindEvent('stripe.extendCaptureFields', function($data, $order) {
-        return [
-            'extra_field' => 'extra_value',
-        ];
-    });
+    $this->stripe->bindEvent('stripe.extendCaptureFields', fn($data, $order): array => [
+        'extra_field' => 'extra_value',
+    ]);
 
     $this->stripe->captureAuthorizedPayment($order, []);
 
@@ -317,7 +314,7 @@ it('captures authorized payment successfully', function() {
     ]);
 });
 
-it('throws exception when no successful authorized payment to capture', function() {
+it('throws exception when no successful authorized payment to capture', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -336,7 +333,7 @@ it('throws exception when no successful authorized payment to capture', function
     $this->stripe->captureAuthorizedPayment($order, []);
 });
 
-it('throws exception when payment intent id is missing in payment response', function() {
+it('throws exception when payment intent id is missing in payment response', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -355,7 +352,7 @@ it('throws exception when payment intent id is missing in payment response', fun
     $this->stripe->captureAuthorizedPayment($order, []);
 });
 
-it('logs error when capture authorized payment request fails', function() {
+it('logs error when capture authorized payment request fails', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -378,7 +375,7 @@ it('logs error when capture authorized payment request fails', function() {
     ]);
 });
 
-it('logs error when capture authorized payment response is invalid', function() {
+it('logs error when capture authorized payment response is invalid', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -404,7 +401,7 @@ it('logs error when capture authorized payment response is invalid', function() 
     ]);
 });
 
-it('cancels authorized stripe payment successfully', function() {
+it('cancels authorized stripe payment successfully', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -421,11 +418,9 @@ it('cancels authorized stripe payment successfully', function() {
         'status' => 'canceled',
     ], 'post');
 
-    $this->stripe->bindEvent('stripe.extendCancelFields', function($data, $order) {
-        return [
-            'extra_field' => 'extra_value',
-        ];
-    });
+    $this->stripe->bindEvent('stripe.extendCancelFields', fn($data, $order): array => [
+        'extra_field' => 'extra_value',
+    ]);
 
     $this->stripe->cancelAuthorizedPayment($order);
 
@@ -436,7 +431,7 @@ it('cancels authorized stripe payment successfully', function() {
     ]);
 });
 
-it('throws exception when no successful authorized payment to cancel', function() {
+it('throws exception when no successful authorized payment to cancel', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -450,7 +445,7 @@ it('throws exception when no successful authorized payment to cancel', function(
     $this->stripe->cancelAuthorizedPayment($order);
 });
 
-it('throws exception when missing payment intent id in cancel payment response', function() {
+it('throws exception when missing payment intent id in cancel payment response', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -469,7 +464,7 @@ it('throws exception when missing payment intent id in cancel payment response',
     $this->stripe->cancelAuthorizedPayment($order);
 });
 
-it('logs error when canceling authorized payment request fails', function() {
+it('logs error when canceling authorized payment request fails', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -492,7 +487,7 @@ it('logs error when canceling authorized payment request fails', function() {
     ]);
 });
 
-it('logs error when canceling authorized payment response is invalid', function() {
+it('logs error when canceling authorized payment response is invalid', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -518,7 +513,7 @@ it('logs error when canceling authorized payment response is invalid', function(
     ]);
 });
 
-it('returns stripe payment intent if status is requires_capture or succeeded', function() {
+it('returns stripe payment intent if status is requires_capture or succeeded', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -534,7 +529,7 @@ it('returns stripe payment intent if status is requires_capture or succeeded', f
     expect($this->stripe->updatePaymentIntentSession($order)->status)->toBe('succeeded');
 });
 
-it('deletes existing payment profile', function() {
+it('deletes existing payment profile', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $customer = Customer::factory()->create();
@@ -551,7 +546,7 @@ it('deletes existing payment profile', function() {
     $this->assertDatabaseHas('payment_profiles', ['payment_profile_id' => $profile->payment_profile_id]);
 });
 
-it('throws exception when customer payment profile not found', function() {
+it('throws exception when customer payment profile not found', function(): void {
     $order = Order::factory()
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
@@ -562,7 +557,7 @@ it('throws exception when customer payment profile not found', function() {
     $this->stripe->payFromPaymentProfile($order);
 });
 
-it('creates payment successfully from stripe payment profile', function() {
+it('creates payment successfully from stripe payment profile', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -596,7 +591,7 @@ it('creates payment successfully from stripe payment profile', function() {
     ]);
 });
 
-it('logs payment attempt and throws exception when payment request fails', function() {
+it('logs payment attempt and throws exception when payment request fails', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -647,7 +642,7 @@ it('logs payment attempt and throws exception when payment request fails', funct
     ]);
 });
 
-it('throw exception when fails to create stripe customer request fails ', function() {
+it('throw exception when fails to create stripe customer request fails ', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -679,7 +674,7 @@ it('throw exception when fails to create stripe customer request fails ', functi
     ]);
 });
 
-it('processes refund form and logs refund attempt', function() {
+it('processes refund form and logs refund attempt', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -697,11 +692,9 @@ it('processes refund form and logs refund attempt', function() {
         'status' => 'succeeded',
     ], 'post');
 
-    $this->stripe->bindEvent('stripe.extendRefundFields', function($data, $order) {
-        return [
-            'extra_field' => 'extra_value',
-        ];
-    });
+    $this->stripe->bindEvent('stripe.extendRefundFields', fn($data, $order): array => [
+        'extra_field' => 'extra_value',
+    ]);
 
     $this->stripe->processRefundForm([
         'refund_type' => 'full',
@@ -715,7 +708,7 @@ it('processes refund form and logs refund attempt', function() {
 
 });
 
-it('throws exception when stripe charge is already refunded', function() {
+it('throws exception when stripe charge is already refunded', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -735,7 +728,7 @@ it('throws exception when stripe charge is already refunded', function() {
     $this->stripe->processRefundForm([], $order, $paymentLog);
 });
 
-it('throws exception when no stripe charge to refund', function() {
+it('throws exception when no stripe charge to refund', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -755,7 +748,7 @@ it('throws exception when no stripe charge to refund', function() {
     $this->stripe->processRefundForm([], $order, $paymentLog);
 });
 
-it('throws exception when refund response fails', function() {
+it('throws exception when refund response fails', function(): void {
     $this->payment->transaction_mode = 'test';
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()
@@ -773,7 +766,7 @@ it('throws exception when refund response fails', function() {
         'status' => 'failed',
     ], 'post');
 
-    $this->stripe->processRefundForm([], $order, $paymentLog);
+    $this->stripe->processRefundForm(['refund_type' => 'full'], $order, $paymentLog);
 
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->order_id,
@@ -782,14 +775,14 @@ it('throws exception when refund response fails', function() {
     ]);
 });
 
-it('returns 400 when request method is not POST', function() {
+it('returns 400 when request method is not POST', function(): void {
     $response = $this->stripe->processWebhookUrl();
 
     expect($response->getStatusCode())->toBe(400)
         ->and($response->getContent())->toBe('Request method must be POST');
 });
 
-it('returns 400 when webhook secret is invalid', function() {
+it('returns 400 when webhook secret is invalid', function(): void {
     $request = Request::create('stripe_webhook', 'POST');
     app()->instance('request', $request);
 
@@ -799,9 +792,10 @@ it('returns 400 when webhook secret is invalid', function() {
         ->and($response->getContent())->toBe('Invalid webhook secret');
 });
 
-it('returns 400 if webhook payload is missing event type', function() {
+it('returns 400 if webhook payload is missing event type', function(): void {
     $this->payment->applyGatewayClass();
-    $this->payment->test_webhook_secret = $webhookSecret = 'whsec_test_webhook_secret';
+    $this->payment->test_webhook_secret = 'whsec_test_webhook_secret';
+    $webhookSecret = 'whsec_test_webhook_secret';
     $this->payment->save();
 
     $payload = [
@@ -811,21 +805,22 @@ it('returns 400 if webhook payload is missing event type', function() {
 
     $timestamp = time();
     $payloadJson = json_encode($payload);
-    $signature = hash_hmac('sha256', "{$timestamp}.{$payloadJson}", $webhookSecret);
+    $signature = hash_hmac('sha256', sprintf('%d.%s', $timestamp, $payloadJson), $webhookSecret);
 
     $response = $this->postJson('/ti_payregister/stripe_webhook/handle', $payload, [
-        'Stripe-Signature' => "t={$timestamp},v1={$signature}",
+        'Stripe-Signature' => sprintf('t=%d,v1=%s', $timestamp, $signature),
     ]);
 
     expect($response->getStatusCode())->toBe(400)
         ->and($response->getContent())->toBe('Missing webhook event name');
 });
 
-it('handles webhook event and logs payment successful attempt', function() {
+it('handles webhook event and logs payment successful attempt', function(): void {
     Event::fake(['payregister.stripe.webhook.handlePaymentIntentSucceeded']);
     $order = Order::factory()->for($this->payment, 'payment_method')->create();
     $this->payment->applyGatewayClass();
-    $this->payment->test_webhook_secret = $webhookSecret = 'whsec_test_webhook_secret';
+    $this->payment->test_webhook_secret = 'whsec_test_webhook_secret';
+    $webhookSecret = 'whsec_test_webhook_secret';
     $this->payment->save();
     $payload = [
         'id' => 'evt_test_webhook',
@@ -841,18 +836,16 @@ it('handles webhook event and logs payment successful attempt', function() {
     ];
     $timestamp = time();
     $payloadJson = json_encode($payload);
-    $signature = hash_hmac('sha256', "{$timestamp}.{$payloadJson}", $webhookSecret);
+    $signature = hash_hmac('sha256', sprintf('%d.%s', $timestamp, $payloadJson), $webhookSecret);
 
     $response = $this->postJson('/ti_payregister/stripe_webhook/handle', $payload, [
-        'Stripe-Signature' => "t={$timestamp},v1={$signature}",
+        'Stripe-Signature' => sprintf('t=%d,v1=%s', $timestamp, $signature),
     ]);
 
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getContent())->toBe('Webhook Handled');
 
-    Event::assertDispatched('payregister.stripe.webhook.handlePaymentIntentSucceeded', function($eventName, $eventPayload) use ($order) {
-        return $eventPayload[0]['data']['object']['metadata']['order_id'] === $order->getKey();
-    });
+    Event::assertDispatched('payregister.stripe.webhook.handlePaymentIntentSucceeded', fn($eventName, $eventPayload): bool => $eventPayload[0]['data']['object']['metadata']['order_id'] === $order->getKey());
 
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->getKey(),
@@ -862,11 +855,12 @@ it('handles webhook event and logs payment successful attempt', function() {
     ]);
 });
 
-it('handles webhook event and logs payment authorized attempt', function() {
+it('handles webhook event and logs payment authorized attempt', function(): void {
     Event::fake(['payregister.stripe.webhook.handlePaymentIntentSucceeded']);
     $order = Order::factory()->for($this->payment, 'payment_method')->create();
     $this->payment->applyGatewayClass();
-    $this->payment->test_webhook_secret = $webhookSecret = 'whsec_test_webhook_secret';
+    $this->payment->test_webhook_secret = 'whsec_test_webhook_secret';
+    $webhookSecret = 'whsec_test_webhook_secret';
     $this->payment->save();
     $payload = [
         'id' => 'evt_test_webhook',
@@ -882,18 +876,16 @@ it('handles webhook event and logs payment authorized attempt', function() {
     ];
     $timestamp = time();
     $payloadJson = json_encode($payload);
-    $signature = hash_hmac('sha256', "{$timestamp}.{$payloadJson}", $webhookSecret);
+    $signature = hash_hmac('sha256', sprintf('%d.%s', $timestamp, $payloadJson), $webhookSecret);
 
     $response = $this->postJson('/ti_payregister/stripe_webhook/handle', $payload, [
-        'Stripe-Signature' => "t={$timestamp},v1={$signature}",
+        'Stripe-Signature' => sprintf('t=%d,v1=%s', $timestamp, $signature),
     ]);
 
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getContent())->toBe('Webhook Handled');
 
-    Event::assertDispatched('payregister.stripe.webhook.handlePaymentIntentSucceeded', function($eventName, $eventPayload) use ($order) {
-        return $eventPayload[0]['data']['object']['metadata']['order_id'] === $order->getKey();
-    });
+    Event::assertDispatched('payregister.stripe.webhook.handlePaymentIntentSucceeded', fn($eventName, $eventPayload): bool => $eventPayload[0]['data']['object']['metadata']['order_id'] === $order->getKey());
 
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->getKey(),

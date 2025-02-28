@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Classes;
 
 use Igniter\Flame\Exception\ApplicationException;
@@ -7,7 +9,7 @@ use Igniter\PayRegister\Classes\PayPalClient;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->clientId = 'testClientId';
     $this->clientSecret = 'testClientSecret';
     $this->sandbox = true;
@@ -17,7 +19,7 @@ beforeEach(function() {
     $this->payPalClient->setSandbox($this->sandbox);
 });
 
-function mockGenerateAccessToken()
+function mockGenerateAccessToken(): void
 {
     Cache::shouldReceive('has')->with('payregister_paypal_access_token')->andReturn(false);
     Cache::shouldReceive('put')->once();
@@ -31,25 +33,25 @@ function mockGenerateAccessToken()
     ]);
 }
 
-it('throws exception if client ID is not configured', function() {
+it('throws exception if client ID is not configured', function(): void {
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('PayPal client ID is not configured');
 
     $paypalClient = new PayPalClient();
     $paypalClient->setClientSecret('testClientSecret');
-    $paypalClient->getOrder(123);
+    $paypalClient->getOrder('123');
 });
 
-it('throws exception if client secret is not configured', function() {
+it('throws exception if client secret is not configured', function(): void {
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('PayPal client secret is not configured');
 
     $paypalClient = new PayPalClient();
     $paypalClient->setClientId('testClientId');
-    $paypalClient->getOrder(123);
+    $paypalClient->getOrder('123');
 });
 
-it('gets order details successfully', function() {
+it('gets order details successfully', function(): void {
     mockGenerateAccessToken();
 
     Http::fake([
@@ -61,7 +63,7 @@ it('gets order details successfully', function() {
     expect($response->json('id'))->toBe('testOrderId');
 });
 
-it('creates order successfully', function() {
+it('creates order successfully', function(): void {
     mockGenerateAccessToken();
 
     Http::fake([
@@ -73,7 +75,7 @@ it('creates order successfully', function() {
     expect($response->json('id'))->toBe('testOrderId');
 });
 
-it('captures order successfully', function() {
+it('captures order successfully', function(): void {
     mockGenerateAccessToken();
 
     Http::fake([
@@ -85,7 +87,7 @@ it('captures order successfully', function() {
     expect($response->json('status'))->toBe('COMPLETED');
 });
 
-it('authorizes order successfully', function() {
+it('authorizes order successfully', function(): void {
     mockGenerateAccessToken();
 
     Http::fake([
@@ -97,7 +99,7 @@ it('authorizes order successfully', function() {
     expect($response->json('status'))->toBe('AUTHORIZED');
 });
 
-it('gets payment details successfully', function() {
+it('gets payment details successfully', function(): void {
     mockGenerateAccessToken();
 
     Http::fake([
@@ -109,7 +111,7 @@ it('gets payment details successfully', function() {
     expect($response->json('id'))->toBe('testPaymentId');
 });
 
-it('refunds payment successfully', function() {
+it('refunds payment successfully', function(): void {
     mockGenerateAccessToken();
 
     Http::fake([
@@ -121,7 +123,7 @@ it('refunds payment successfully', function() {
     expect($response->json('status'))->toBe('COMPLETED');
 });
 
-it('throws exception if access token generation fails', function() {
+it('throws exception if access token generation fails', function(): void {
     Cache::shouldReceive('has')->with('payregister_paypal_access_token')->andReturn(false);
 
     Http::fake([
@@ -131,5 +133,5 @@ it('throws exception if access token generation fails', function() {
     $this->expectException(ApplicationException::class);
     $this->expectExceptionMessage('Failed to generate access token');
 
-    $this->payPalClient->getOrder(123);
+    $this->payPalClient->getOrder('123');
 });

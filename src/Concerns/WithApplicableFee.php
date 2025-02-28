@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Concerns;
 
 use Igniter\Cart\Models\Order;

@@ -1,13 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Payments;
 
 use Exception;
+use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Classes\PayPalClient;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
+use Igniter\PayRegister\Models\Payment;
 use Illuminate\Support\Facades\Redirect;
+use Override;
 
 class PaypalExpress extends BasePaymentGateway
 {
@@ -15,12 +20,14 @@ class PaypalExpress extends BasePaymentGateway
 
     public static ?string $paymentFormView = 'igniter.payregister::_partials.paypalexpress.payment_form';
 
-    public function defineFieldsConfig()
+    #[Override]
+    public function defineFieldsConfig(): string
     {
         return 'igniter.payregister::/models/paypalexpress';
     }
 
-    public function registerEntryPoints()
+    #[Override]
+    public function registerEntryPoints(): array
     {
         return [
             'paypal_return_url' => 'processReturnUrl',
@@ -28,7 +35,7 @@ class PaypalExpress extends BasePaymentGateway
         ];
     }
 
-    public function isSandboxMode()
+    public function isSandboxMode(): bool
     {
         return $this->model->api_mode == 'sandbox';
     }
@@ -50,14 +57,15 @@ class PaypalExpress extends BasePaymentGateway
 
     /**
      * @param array $data
-     * @param \Igniter\PayRegister\Models\Payment $host
-     * @param \Igniter\Cart\Models\Order $order
+     * @param Payment $host
+     * @param Order $order
      *
      * @return mixed
      */
+    #[Override]
     public function processPaymentForm($data, $host, $order)
     {
-        -$this->validateApplicableFee($order, $host);
+        $this->validateApplicableFee($order, $host);
 
         $fields = $this->getPaymentFormFields($order, $data);
 
@@ -95,7 +103,7 @@ class PaypalExpress extends BasePaymentGateway
             );
 
             throw_unless(
-                strlen($token = request()->input('token', '')),
+                strlen((string)($token = request()->input('token', ''))),
                 new ApplicationException('Missing valid token in response'),
             );
 
@@ -155,7 +163,8 @@ class PaypalExpress extends BasePaymentGateway
         return Redirect::to(page_url($redirectPage));
     }
 
-    public function processRefundForm($data, $order, $paymentLog)
+    #[Override]
+    public function processRefundForm($data, $order, $paymentLog): void
     {
         throw_if(
             !is_null($paymentLog->refunded_at) || !is_array($paymentLog->response),
@@ -167,7 +176,11 @@ class PaypalExpress extends BasePaymentGateway
             new ApplicationException('No charge to refund'),
         );
 
-        $paymentId = array_get($paymentLog->response, 'purchase_units.0.payments.captures.0.id');
+        throw_unless(
+            $paymentId = array_get($paymentLog->response, 'purchase_units.0.payments.captures.0.id'),
+            new ApplicationException('Missing payment ID'),
+        );
+
         $fields = $this->getPaymentRefundFields($order, $data);
 
         try {
@@ -198,7 +211,7 @@ class PaypalExpress extends BasePaymentGateway
         return $client;
     }
 
-    protected function getPaymentFormFields($order, $data = [])
+    protected function getPaymentFormFields($order, $data = []): array
     {
         $currencyCode = currency()->getUserCurrency();
 

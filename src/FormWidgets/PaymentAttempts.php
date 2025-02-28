@@ -1,15 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\FormWidgets;
 
+use Override;
+use Igniter\Admin\FormWidgets\DataTable;
 use Igniter\Admin\Classes\BaseFormWidget;
 use Igniter\Admin\Classes\FormField;
 use Igniter\Admin\Traits\FormModelWidget;
 use Igniter\Admin\Traits\ValidatesForm;
 use Igniter\Admin\Widgets\Form;
+use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\FlashException;
 use Igniter\PayRegister\Models\PaymentLog;
 
+/**
+ * PaymentAttempts Form Widget
+ *
+ * @property null|Order $model
+ */
 class PaymentAttempts extends BaseFormWidget
 {
     use FormModelWidget;
@@ -22,11 +32,12 @@ class PaymentAttempts extends BaseFormWidget
     public $formTitle = 'igniter.payregister::default.text_refund_title';
 
     /**
-     * @var \Igniter\Admin\Classes\BaseFormWidget|string
+     * @var null|BaseFormWidget|string
      */
     protected $dataTableWidget;
 
-    public function initialize()
+    #[Override]
+    public function initialize(): void
     {
         $this->fillFromConfig([
             'form',
@@ -36,24 +47,27 @@ class PaymentAttempts extends BaseFormWidget
         $this->makeDataTableWidget();
     }
 
-    public function render()
+    #[Override]
+    public function render(): string
     {
         $this->prepareVars();
 
         return $this->makePartial('paymentattempts/paymentattempts');
     }
 
+    #[Override]
     public function getSaveValue(mixed $value): int
     {
         return FormField::NO_SAVE_DATA;
     }
 
-    public function onLoadRecord()
+    public function onLoadRecord(): string
     {
         $paymentLogId = input('recordId');
 
         throw_unless($model = PaymentLog::find($paymentLogId), new FlashException('Record not found'));
 
+        /** @var PaymentLog $model */
         $formTitle = sprintf(lang($this->formTitle), currency_format($model->order->order_total));
 
         return $this->makePartial('recordeditor/form', [
@@ -63,7 +77,7 @@ class PaymentAttempts extends BaseFormWidget
         ]);
     }
 
-    public function onSaveRecord()
+    public function onSaveRecord(): array
     {
         $paymentLogId = input('recordId');
 
@@ -71,8 +85,9 @@ class PaymentAttempts extends BaseFormWidget
 
         $paymentMethod = $this->model->payment_method;
 
+        /** @var PaymentLog $paymentLog */
         throw_unless(
-            $paymentLog && $paymentMethod->canRefundPayment($paymentLog),
+            $paymentMethod->canRefundPayment($paymentLog),
             new FlashException('No successful payment to refund'),
         );
 
@@ -88,13 +103,14 @@ class PaymentAttempts extends BaseFormWidget
         return $this->reload();
     }
 
-    public function loadAssets()
+    #[Override]
+    public function loadAssets(): void
     {
         $this->addJs('js/recordeditor.modal.js', 'recordeditor-modal-js');
         $this->addJs('igniter.payregister::/js/paymentattempts.js', 'paymentattempts-js');
     }
 
-    public function prepareVars()
+    public function prepareVars(): void
     {
         $this->vars['field'] = $this->formField;
         $this->vars['dataTableWidget'] = $this->makeDataTableWidget();
@@ -117,8 +133,9 @@ class PaymentAttempts extends BaseFormWidget
         $widgetConfig['alias'] = $this->alias.'FormPaymentAttempt';
         $widgetConfig['arrayName'] = $this->formField->arrayName.'[paymentAttempt]';
 
-        $widget = $this->makeFormWidget(\Igniter\Admin\FormWidgets\DataTable::class, $field, $widgetConfig);
+        $widget = $this->makeFormWidget(DataTable::class, $field, $widgetConfig);
         $widget->bindToController();
+
         $widget->previewMode = $this->previewMode;
 
         return $this->dataTableWidget = $widget;
@@ -135,7 +152,6 @@ class PaymentAttempts extends BaseFormWidget
         $widget = $this->makeWidget(Form::class, $widgetConfig);
 
         $widget->bindToController();
-        $widget->previewMode = $this->previewMode;
 
         return $widget;
     }

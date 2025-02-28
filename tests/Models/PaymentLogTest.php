@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Models;
 
 use Carbon\Carbon;
@@ -9,7 +11,7 @@ use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentLog;
 use Mockery;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->paymentLog = new PaymentLog();
     $this->paymentLog->payment_code = 'test_code';
     $this->paymentLog->payment_name = 'Test Payment';
@@ -20,7 +22,7 @@ beforeEach(function() {
     $this->order->payment_method = $this->paymentMethod;
 });
 
-it('logs a successful payment attempt', function() {
+it('logs a successful payment attempt', function(): void {
     $this->paymentMethod->code = 'test_code';
     $this->paymentMethod->name = 'Test Payment';
 
@@ -32,7 +34,7 @@ it('logs a successful payment attempt', function() {
         ->and($log->is_refundable)->toBeTrue();
 });
 
-it('logs a failed payment attempt', function() {
+it('logs a failed payment attempt', function(): void {
     $this->paymentMethod->code = 'test_code';
     $this->paymentMethod->name = 'Test Payment';
 
@@ -44,13 +46,13 @@ it('logs a failed payment attempt', function() {
         ->and($log->is_refundable)->toBeFalse();
 });
 
-it('returns date added since attribute', function() {
+it('returns date added since attribute', function(): void {
     $this->paymentLog->created_at = Carbon::now()->subMinutes(5);
 
     expect($this->paymentLog->date_added_since)->toBe('5 minutes ago');
 });
 
-it('marks payment log as refund processed', function() {
+it('marks payment log as refund processed', function(): void {
     $this->paymentLog->order = $this->order;
     $this->paymentLog->refunded_at = null;
 
@@ -60,7 +62,7 @@ it('marks payment log as refund processed', function() {
         ->and($this->paymentLog->refunded_at)->not->toBeNull();
 });
 
-it('does not mark payment log as refund processed if already refunded', function() {
+it('does not mark payment log as refund processed if already refunded', function(): void {
     $this->paymentLog->refunded_at = Carbon::now();
 
     $result = $this->paymentLog->markAsRefundProcessed();
@@ -69,7 +71,7 @@ it('does not mark payment log as refund processed if already refunded', function
         ->and($this->paymentLog->refunded_at)->not->toBeNull();
 });
 
-it('configures payment log model correctly', function() {
+it('configures payment log model correctly', function(): void {
     $payment = new PaymentLog();
 
     expect(class_uses_recursive($payment))

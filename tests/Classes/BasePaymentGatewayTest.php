@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Classes;
 
+use LogicException;
+use Illuminate\View\Factory;
 use Igniter\Admin\Models\Status;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Database\Model;
@@ -11,11 +15,11 @@ use Igniter\PayRegister\Tests\Payments\Fixtures\TestPayment;
 use Illuminate\Support\Facades\URL;
 use Mockery;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->model = Mockery::mock(Model::class)->makePartial();
     $this->gateway = new class($this->model) extends BasePaymentGateway
     {
-        public function defineFieldsConfig()
+        public function defineFieldsConfig(): string
         {
             return __DIR__.'/../_fixtures/fields';
         }
@@ -32,7 +36,7 @@ beforeEach(function() {
     };
 });
 
-it('initializes with default config data if model does not exist', function() {
+it('initializes with default config data if model does not exist', function(): void {
     $host = Mockery::mock(Model::class);
     $host->exists = false;
     $gateway = Mockery::mock(BasePaymentGateway::class)->makePartial();
@@ -41,7 +45,7 @@ it('initializes with default config data if model does not exist', function() {
     $gateway->initialize($host);
 });
 
-it('does not initialize config data if model exists', function() {
+it('does not initialize config data if model exists', function(): void {
     $host = Mockery::mock(Model::class);
     $host->exists = true;
 
@@ -51,11 +55,13 @@ it('does not initialize config data if model exists', function() {
     $gateway->initialize($host);
 });
 
-it('defines fields config', function() {
+it('defines fields config', function(): void {
     $model = mock(Model::class)->makePartial();
     $gateway = new class($model) extends BasePaymentGateway
     {
-        public function __construct(?Model $model = null) {}
+        public function __construct()
+        {
+        }
     };
 
     $result = $gateway->defineFieldsConfig();
@@ -63,7 +69,7 @@ it('defines fields config', function() {
     expect($result)->toEqual('fields');
 });
 
-it('returns correct config fields', function() {
+it('returns correct config fields', function(): void {
     $result = $this->gateway->getConfigFields();
     expect($result)->toBe([
         'test_field' => [
@@ -73,7 +79,7 @@ it('returns correct config fields', function() {
     ]);
 });
 
-it('returns correct config rules', function() {
+it('returns correct config rules', function(): void {
     $result = $this->gateway->getConfigRules();
 
     expect($result)->toBe([
@@ -81,7 +87,7 @@ it('returns correct config rules', function() {
     ]);
 });
 
-it('returns correct config validation attributes', function() {
+it('returns correct config validation attributes', function(): void {
     $result = $this->gateway->getConfigValidationAttributes();
 
     expect($result)->toBe([
@@ -89,7 +95,7 @@ it('returns correct config validation attributes', function() {
     ]);
 });
 
-it('returns correct config validation messages', function() {
+it('returns correct config validation messages', function(): void {
     $result = $this->gateway->getConfigValidationMessages();
 
     expect($result)->toBe([
@@ -98,22 +104,22 @@ it('returns correct config validation messages', function() {
     ]);
 });
 
-it('creates correct entry point URL', function() {
+it('creates correct entry point URL', function(): void {
     $code = 'test_code';
     $result = $this->gateway->makeEntryPointUrl($code);
 
     expect($result)->toBe(URL::to('ti_payregister/'.$code));
 });
 
-it('throws exception when processPaymentForm is not implemented', function() {
+it('throws exception when processPaymentForm is not implemented', function(): void {
     $data = [];
     $host = Mockery::mock(Model::class);
     $order = Mockery::mock(Order::class);
 
-    expect(fn() => $this->gateway->processPaymentForm($data, $host, $order))->toThrow(\LogicException::class);
+    expect(fn() => $this->gateway->processPaymentForm($data, $host, $order))->toThrow(LogicException::class);
 });
 
-it('returns null when beforeRenderPaymentForm is not implemented', function() {
+it('returns null when beforeRenderPaymentForm is not implemented', function(): void {
     $host = Mockery::mock(Model::class);
     $controller = MainController::getController();
 
@@ -122,10 +128,10 @@ it('returns null when beforeRenderPaymentForm is not implemented', function() {
     expect($result)->toBeNull();
 });
 
-it('renders payment form', function() {
+it('renders payment form', function(): void {
     $controller = MainController::getController();
     $viewName = 'igniter-orange::_partials.payregister.stripe';
-    $factory = Mockery::mock(\Illuminate\View\Factory::class);
+    $factory = Mockery::mock(Factory::class);
     $factory->shouldReceive('exists')->with($viewName)->andReturnTrue();
     $factory->shouldReceive('make')->with($viewName, ['paymentMethod' => $this->model], [])->andReturnSelf();
     app()->instance('view', $factory);
@@ -138,9 +144,9 @@ it('renders payment form', function() {
     expect($result)->toBe($factory);
 });
 
-it('has payment form blade view under payregister partials folder', function() {
+it('has payment form blade view under payregister partials folder', function(): void {
     $viewName = 'igniter-orange::_partials.payregister.stripe';
-    $factory = Mockery::mock(\Illuminate\View\Factory::class);
+    $factory = Mockery::mock(Factory::class);
     $factory->shouldReceive('exists')->with($viewName)->andReturnTrue();
     app()->instance('view', $factory);
 
@@ -150,9 +156,9 @@ it('has payment form blade view under payregister partials folder', function() {
     expect($result)->toStartWith($viewName);
 });
 
-it('guesses payment form blade view', function() {
+it('guesses payment form blade view', function(): void {
     $viewName = 'igniter.payregister::test-payment.payment_form';
-    $factory = Mockery::mock(\Illuminate\View\Factory::class);
+    $factory = Mockery::mock(Factory::class);
     $factory->shouldReceive('exists')->with($viewName)->andReturnTrue();
     $factory->shouldReceive('exists')->with('igniter-orange::_partials.payregister.test-payment')->andReturnFalse();
     app()->instance('view', $factory);
@@ -164,19 +170,19 @@ it('guesses payment form blade view', function() {
     expect($result)->toStartWith($viewName);
 });
 
-it('returns false for completes payment on client', function() {
+it('returns false for completes payment on client', function(): void {
     $result = $this->gateway->completesPaymentOnClient();
 
     expect($result)->toBeFalse();
 });
 
-it('creates an instance of the order model', function() {
+it('creates an instance of the order model', function(): void {
     $result = $this->gateway->getModel();
 
     expect($result)->toBeInstanceOf(Order::class);
 });
 
-it('creates an instance of the order status model', function() {
+it('creates an instance of the order status model', function(): void {
     $result = $this->gateway->getStatusModel();
 
     expect($result)->toBeInstanceOf(Status::class);

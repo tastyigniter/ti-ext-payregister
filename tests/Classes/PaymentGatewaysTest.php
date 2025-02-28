@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Tests\Classes;
 
+use Illuminate\View\Factory;
 use Igniter\Flame\Support\Facades\File;
 use Igniter\Main\Classes\Theme;
 use Igniter\Main\Classes\ThemeManager;
@@ -11,17 +14,17 @@ use Igniter\PayRegister\Tests\Payments\Fixtures\TestPayment;
 use Igniter\System\Classes\ExtensionManager;
 use Mockery;
 
-beforeEach(function() {
+beforeEach(function(): void {
     $this->paymentGateways = new PaymentGateways();
 });
 
-it('returns null if gateway not found', function() {
+it('returns null if gateway not found', function(): void {
     $result = $this->paymentGateways->findGateway('nonexistent');
 
     expect($result)->toBeNull();
 });
 
-it('returns gateway details if gateway found', function() {
+it('returns gateway details if gateway found', function(): void {
     $gateway = ['code' => 'test_gateway', 'class' => TestPayment::class];
     $this->paymentGateways->registerGateways('test_owner', [$gateway['class'] => $gateway]);
 
@@ -33,7 +36,7 @@ it('returns gateway details if gateway found', function() {
         ->and($result['object'])->toBeInstanceOf(TestPayment::class);
 });
 
-it('returns list of gateway objects', function() {
+it('returns list of gateway objects', function(): void {
     $gateway = ['code' => 'test_gateway', 'class' => TestPayment::class];
     $this->paymentGateways->registerGateways('test_owner', [$gateway['class'] => $gateway]);
 
@@ -43,12 +46,12 @@ it('returns list of gateway objects', function() {
         ->and($result['test_gateway'])->toBeInstanceOf(TestPayment::class);
 });
 
-it('loads gateways from extensions', function() {
+it('loads gateways from extensions', function(): void {
     $extensionManager = Mockery::mock(ExtensionManager::class);
     $extensionManager->shouldReceive('getExtensions')->andReturn([
         'test_extension' => new class
         {
-            public function registerPaymentGateways()
+            public function registerPaymentGateways(): array
             {
                 return [
                     TestPayment::class => [
@@ -62,7 +65,7 @@ it('loads gateways from extensions', function() {
         },
         'test_extension3' => new class
         {
-            public function registerPaymentGateways()
+            public function registerPaymentGateways(): string
             {
                 return 'is-not-array';
             }
@@ -70,7 +73,7 @@ it('loads gateways from extensions', function() {
     ]);
     app()->instance(ExtensionManager::class, $extensionManager);
 
-    $this->paymentGateways->registerCallback(function($gateway) {
+    $this->paymentGateways->registerCallback(function($gateway): void {
         $gateway->registerGateways('test_owner2', [
             TestPayment::class => [
                 'code' => 'test_gateway2',
@@ -86,7 +89,7 @@ it('loads gateways from extensions', function() {
         ->and($result['code'])->toBe('test_gateway');
 });
 
-it('executes entry point and returns response', function() {
+it('executes entry point and returns response', function(): void {
     Payment::factory()->create([
         'code' => 'test_code',
         'class_name' => TestPayment::class,
@@ -97,13 +100,13 @@ it('executes entry point and returns response', function() {
     expect($result)->toBe('test_endpoint');
 });
 
-it('returns 403 response if entry point not found', function() {
+it('returns 403 response if entry point not found', function(): void {
     $result = PaymentGateways::runEntryPoint('invalid_code', 'test/uri');
 
     expect($result->getStatusCode())->toBe(403);
 });
 
-it('creates partials returns null when no active theme', function() {
+it('creates partials returns null when no active theme', function(): void {
     $themeManager = mock(ThemeManager::class);
     $themeManager->shouldReceive('getActiveTheme')->andReturnNull();
     app()->instance(ThemeManager::class, $themeManager);
@@ -113,7 +116,7 @@ it('creates partials returns null when no active theme', function() {
     expect($result)->toBeNull();
 });
 
-it('creates partials for enabled payment methods', function() {
+it('creates partials for enabled payment methods', function(): void {
     $themeManager = mock(ThemeManager::class);
     $theme = mock(Theme::class);
     $themeManager->shouldReceive('getActiveTheme')->andReturn($theme);
@@ -145,7 +148,7 @@ it('creates partials for enabled payment methods', function() {
         'Test content',
     )->andReturn(true);
 
-    $factory = Mockery::mock(\Illuminate\View\Factory::class);
+    $factory = Mockery::mock(Factory::class);
     $factory->shouldReceive('getFinder->find')->andReturn('Test content');
     app()->instance('view', $factory);
 

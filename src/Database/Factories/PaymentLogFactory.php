@@ -1,13 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Igniter\PayRegister\Database\Factories;
 
+use Igniter\PayRegister\Models\PaymentLog;
+use Override;
 use Igniter\Flame\Database\Factories\Factory;
 
 class PaymentLogFactory extends Factory
 {
-    protected $model = \Igniter\PayRegister\Models\PaymentLog::class;
+    protected $model = PaymentLog::class;
 
+    #[Override]
     public function definition(): array
     {
         return [
