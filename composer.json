@@ -1,7 +1,14 @@
 {
   "name": "tastyigniter/ti-ext-payregister",
-  "type": "tastyigniter-extension",
+  "type": "tastyigniter-package",
   "description": "Allows you to accept credit card payments using PayPal, Stripe, Authorize.Net and/or Mollie.",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Sam Poyigi",
+      "email": "sam@sampoyigi.com"
+    }
+  ],
   "keywords": [
     "tastyigniter",
     "paypal",
@@ -12,20 +19,30 @@
     "authorizenet",
     "mollie"
   ],
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Sam Poyigi",
-      "email": "sam@sampoyigi.com"
-    }
-  ],
   "require": {
-    "php-http/guzzle7-adapter": "~1.0",
-    "omnipay/authorizenet": "~3.0",
-    "omnipay/paypal": "~3.0",
-    "stripe/stripe-php": "~7.93.0",
-    "omnipay/mollie": "~5.1",
+    "tastyigniter/core": "^v4.0",
+    "php-http/guzzle7-adapter": "^1.0",
+    "authorizenet/authorizenet": "2.0.2",
+    "stripe/stripe-php": "^7.93",
+    "mollie/mollie-api-php": "^2.0",
     "square/square": "26.0.0.20230419"
+  },
+  "require-dev": {
+    "larastan/larastan": "^2.4",
+    "laravel/pint": "^1.2",
+    "pestphp/pest-plugin-laravel": "^3.0",
+    "rector/rector": "^1.2",
+    "sampoyigi/testbench": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Igniter\\PayRegister\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Igniter\\PayRegister\\Tests\\": "tests/"
+    }
   },
   "extra": {
     "tastyigniter-extension": {
@@ -38,5 +55,26 @@
       },
       "homepage": "https://tastyigniter.com/marketplace/item/igniter-payregister"
     }
+  },
+  "scripts": {
+    "test": "vendor/bin/pest --compact",
+    "test-coverage": "vendor/bin/pest --coverage --exactly=100 --compact",
+    "type-coverage": "vendor/bin/pest --type-coverage --min=100",
+    "format": "vendor/bin/pint",
+    "refactor": "vendor/bin/rector process --dry-run",
+    "static": "vendor/bin/phpstan analyse --ansi --memory-limit 1056M",
+    "test-suite": [
+      "@refactor",
+      "@static",
+      "@test-coverage"
+    ]
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true,
+      "php-http/discovery": true,
+      "composer/installers": true
+    },
+    "sort-packages": true
   }
 }

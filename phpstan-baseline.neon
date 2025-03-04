@@ -1,0 +1,21 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Method Igniter\\\\PayRegister\\\\Models\\\\Payment\\:\\:listPayments\\(\\) should return Illuminate\\\\Database\\\\Eloquent\\\\Collection\\<int, static\\(Igniter\\\\PayRegister\\\\Models\\\\Payment\\)\\> but returns Illuminate\\\\Database\\\\Eloquent\\\\Collection\\<int, Illuminate\\\\Database\\\\Eloquent\\\\Model\\>\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of method Illuminate\\\\Database\\\\Eloquent\\\\Collection\\<\\(int\\|string\\),Illuminate\\\\Database\\\\Eloquent\\\\Model\\>\\:\\:map\\(\\) expects callable\\(Illuminate\\\\Database\\\\Eloquent\\\\Model, int\\|string\\)\\: array\\{string, string\\|null\\}, Closure\\(Igniter\\\\PayRegister\\\\Models\\\\Payment\\)\\: array\\{string, string\\|null\\} given\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of method Illuminate\\\\Support\\\\Collection\\<int,Illuminate\\\\Database\\\\Eloquent\\\\Model\\>\\:\\:filter\\(\\) expects \\(callable\\(Illuminate\\\\Database\\\\Eloquent\\\\Model, int\\)\\: bool\\)\\|null, Closure\\(Igniter\\\\PayRegister\\\\Models\\\\Payment\\)\\: bool given\\.$#"
+			count: 1
+			path: src/Models/Payment.php
+
+		-
+			message: "#^Using nullsafe property access on non\\-nullable type Mollie\\\\Api\\\\Resources\\\\Customer\\. Use \\-\\> instead\\.$#"
+			count: 1
+			path: src/Payments/Mollie.php

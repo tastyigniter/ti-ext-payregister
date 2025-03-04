@@ -1,23 +1,20 @@
 <?php
 
-namespace Igniter\PayRegister\Database\Migrations;
+declare(strict_types=1);
 
-use Admin\Models\Payments_model;
+use Igniter\PayRegister\Models\Payment;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Main\Classes\ThemeManager;
 
-class SeedDefaultPaymentGateways extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
-        if (!Schema::hasTable('payments') || DB::table('payments')->count())
+        if (!Schema::hasTable('payments') || DB::table('payments')->count()) {
             return;
+        }
 
-        if (!ThemeManager::instance()->getActiveTheme())
-            return;
-
-        Payments_model::syncAll();
+        rescue(fn() => Payment::syncAll());
     }
-}
+};
