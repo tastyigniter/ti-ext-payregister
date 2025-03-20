@@ -1,3 +1,9 @@
+---
+title: "Pay Register"
+section: "extensions"
+sortOrder: 80
+---
+
 ## Installation
 
 You can install the extension via composer using the following command:
