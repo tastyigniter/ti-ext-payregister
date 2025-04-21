@@ -250,7 +250,7 @@ class Mollie extends BasePaymentGateway
 
         if (!$newCustomerRequired) {
             $response = $client->customers->get(array_get($profileData, 'customer_id'));
-            $newCustomerRequired = $response?->id !== array_get($profileData, 'customer_id', false);
+            $newCustomerRequired = $response->id !== array_get($profileData, 'customer_id', false);
         }
 
         if ($newCustomerRequired) {

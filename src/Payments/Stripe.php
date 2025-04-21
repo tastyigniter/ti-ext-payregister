@@ -147,7 +147,7 @@ class Stripe extends BasePaymentGateway
                 $this->putSession($this->intentSessionKey, $response->id);
             }
 
-            return $response?->client_secret;
+            return $response->client_secret;
         } catch (Exception $ex) {
             logger()->error($ex);
             $order->logPaymentAttempt('Creating checkout session failed: '.$ex->getMessage(), 0, [], []);

@@ -12,7 +12,7 @@ class UpdatePaymentIntentSessionOnCheckout
 {
     public function handle(Order $order): void
     {
-        if (!$order->payment_method || !$order->payment_method instanceof Payment) {
+        if (!$order->payment_method instanceof Payment) {
             return;
         }
 
