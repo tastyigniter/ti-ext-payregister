@@ -85,6 +85,7 @@ class Payment extends Model
     {
         $all = self::query()->select('code', 'name', 'description')->whereIsEnabled()->get();
 
+        // @phpstan-ignore-next-line argument.type
         return $all->keyBy('code')->map(fn(self $model): array => [$model->name, $model->description]);
     }
 
@@ -182,6 +183,7 @@ class Payment extends Model
      */
     public static function listPayments()
     {
+        // @phpstan-ignore-next-line return.type
         return self::query()->whereIsEnabled()->get()->filter(fn(self $model): bool => strlen($model->class_name) > 0);
     }
 

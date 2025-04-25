@@ -85,7 +85,7 @@ it('processes mollie payment form and redirects to checkout url', function(): vo
     $molliePayment->shouldReceive('isOpen')->andReturn(true)->once();
     $molliePayment->shouldReceive('getCheckoutUrl')->andReturn('http://checkout.url')->once();
     $customerEndpoint = Mockery::mock(CustomerEndpoint::class);
-    $customerEndpoint->shouldReceive('get')->andReturnNull();
+    $customerEndpoint->shouldReceive('get')->andReturn(mock(MollieCustomer::class));
     $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
     $paymentEndpoint->shouldReceive('create')->andReturn($molliePayment)->once();
     $customerEndpoint->shouldReceive('create')->andReturn($mollieCustomer = mock(MollieCustomer::class))->once();
@@ -115,7 +115,7 @@ it('throws exception when fails to create payment profile', function(): void {
     ]);
 
     $customerEndpoint = Mockery::mock(CustomerEndpoint::class);
-    $customerEndpoint->shouldReceive('get')->andReturnNull();
+    $customerEndpoint->shouldReceive('get')->andReturn(mock(MollieCustomer::class));
     $customerEndpoint->shouldReceive('create')->andReturn(mock(MollieCustomer::class))->once();
 
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
