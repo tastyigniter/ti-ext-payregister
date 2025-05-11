@@ -24,6 +24,7 @@ use Igniter\PayRegister\Payments\Stripe;
 use Igniter\PayRegister\Subscribers\FormFieldsSubscriber;
 use Igniter\System\Classes\BaseExtension;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Event;
 use Mollie\Api\MollieApiClient;
 use Override;
@@ -155,6 +156,10 @@ class Extension extends BaseExtension
         Relation::enforceMorphMap([
             'payment_logs' => PaymentLog::class,
             'payments' => Payment::class,
+        ]);
+
+        VerifyCsrfToken::except([
+            'ti_payregister/*',
         ]);
     }
 }

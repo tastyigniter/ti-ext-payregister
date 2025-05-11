@@ -28,8 +28,8 @@ return [
     'label_refund_amount' => 'Refund Partial Amount',
     'label_refund_reason' => 'Refund Reason',
 
-    'onboarding_payments' => 'Configure your payment gateways',
-    'help_onboarding_payments' => 'Enable and configure a default payment method for your customers.',
+    'onboarding_payments' => 'Set up how you get paid',
+    'help_onboarding_payments' => 'Enable and configure at least one payment method so you can start accepting orders right away — online or offline.',
 
     'button_delete_card' => 'Delete and use a different card.',
     'button_refund' => 'Refund',
