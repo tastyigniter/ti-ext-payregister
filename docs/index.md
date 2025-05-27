@@ -20,11 +20,13 @@ php artisan igniter:up
 
 ## Getting started
 
-Go to _Sales > Payments_ to enable and manage payments. Here you can enable your preferred payment gateways and configure their settings.
+Go to _Manage > Settings > Configure Payments_ to enable and manage payments. Here you can enable your preferred payment gateways and configure their settings.
 
-You can also enable/disable payments for specific locations by going to _Restaurant > Settings > Checkout settings_.
+You can also enable/disable payments for specific locations by navigating to the _Manage > Locations_ admin page, and click on the _Settings Icon_ next to the location then click the _Checkout settings_ button under the _General_ tab.
 
 ## Usage
+
+This section explains how to integrate the Pay Register extension into your own extension if you need to create custom payment gateways, handle payment processing, or manage payment profiles. The Pay Register extension provides a simple API for managing payments, payment gateways, and payment profiles.
 
 ### Defining payment gateways
 
@@ -113,7 +115,7 @@ Each form field defined in the form definition file can be accessed on the payme
 
 ### Registering payment gateways
 
-You can register a new payment gateway by creating an extension and implementing the `registerPaymentGateways` method in the [Extension class](https://tastyigniter.com/docs/extend/extension#extension-class). Here is an example:
+You can register a new payment gateway by creating an extension and implementing the `registerPaymentGateways` method in the [Extension class](https://tastyigniter.com/docs/extend/extensions#extension-class). Here is an example:
 
 ```php
 public function registerPaymentGateways(): array
@@ -488,7 +490,7 @@ class MyPayment extends BasePaymentGateway
 
 > It is recommended to call the `markAsRefundProcessed` method on the payment log model to mark the refund as processed.
 
-### Payment Attempts Form Widget
+### Payment attempts form widget
 
 The Payment Attempts form widget allows you to view and manage payment attempts for an order. By default, the Payment Attempts form widget is added to the order detail page. Here is an example adding the Payment Attempts form widget to the order detail page:
 
@@ -524,13 +526,15 @@ The following options are available for the `paymentattempts` form widget type:
 - `defaultSort`: _(array)_ The default sort order for the widget. Default is `null`.  A `datatable` widget option.
 - `columns`: _(array)_ The columns to use to display the payment attempts. Default is `null`. A `datatable` widget option.
 
-See the [DataTables widget documentation](https://tastyigniter.com/extend/forms#data-table) for more information on the available options.
+See the [DataTables widget documentation](https://tastyigniter.com/docs/extend/forms#data-table) for more information on the available options.
 
 ### Permissions
 
 The PayRegister extension registers the following permissions:
 
 - `Admin.Payments`: Control who can manage payments in the admin area.
+
+For more on restricting access to the admin area, see the [TastyIgniter Permissions](https://tastyigniter.com/docs/customize/permissions) documentation.
 
 ### Events
 
