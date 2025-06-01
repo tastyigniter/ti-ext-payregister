@@ -26,7 +26,7 @@ You can also enable/disable payments for specific locations by navigating to the
 
 ## Usage
 
-This section explains how to integrate the Pay Register extension into your own extension if you need to create custom payment gateways, handle payment processing, or manage payment profiles. The Pay Register extension provides a simple API for managing payments, payment gateways, and payment profiles.
+This section covers how to integrate the Pay Register extension into your own extension if you need to create custom payment gateways, handle payment processing, or manage payment profiles. The Pay Register extension provides a simple API for managing payments, payment gateways, and payment profiles.
 
 ### Defining payment gateways
 
