@@ -4,7 +4,9 @@
     var ProcessStripe = function (element, options) {
         this.$el = $(element)
         this.options = options || {}
-        this.$checkoutForm = this.$el.closest('[data-control="checkout"]')
+        this.$checkoutFormContainer = this.$el.closest('[data-control="checkout"]')
+        this.$checkoutForm = this.$checkoutFormContainer.find('form')
+        this.$checkoutBtn = $('[data-checkout-control="submit"]')
         this.stripe = null
         this.elements = null
         this.paymentElement = null
@@ -18,7 +20,7 @@
     }
 
     ProcessStripe.prototype.init = function () {
-        if (this.$checkoutForm.checkout('selectedPaymentInput').val() !== 'stripe') return
+        if (this.$checkoutFormContainer.checkout('selectedPaymentInput').val() !== 'stripe') return
 
         if (!$(this.options.cardSelector).length || $(this.options.cardSelector+' iframe').length)
             return
@@ -36,10 +38,10 @@
                 if (self.$checkoutForm.find('input[name="fields.payment"]:checked').val() !== 'stripe')
                     return
 
-                self.paymentElement?.update({disabled: true});
+                self.paymentElement?.update({readOnly: true});
             })
             .on('ajaxFail', function () {
-                self.paymentElement?.update({disabled: false});
+                self.paymentElement?.update({readOnly: false});
             })
     }
 
@@ -62,8 +64,9 @@
         })
 
         this.paymentElement = this.elements.create('payment', {
-            theme: 'flat',
-            layout: 'tabs',
+            layout: {
+                type: 'tabs'
+            },
         })
 
         // Add an instance of the card Element into the `card-element` <div>.
@@ -75,17 +78,19 @@
 
     ProcessStripe.prototype.validationErrorHandler = function (event) {
         $('[data-checkout-control="submit"]').prop('disabled', false)
-        this.paymentElement.update({disabled: false});
+        this.paymentElement.update({readOnly: false});
     }
 
     ProcessStripe.prototype.submitFormHandler = function (event) {
         var self = this,
             $form = this.$checkoutForm
 
-        if (this.$checkoutForm.checkout('selectedPaymentInput').val() !== 'stripe') return
+        if (this.$checkoutFormContainer.checkout('selectedPaymentInput').val() !== 'stripe') return
 
         // Prevent the form from submitting with the default action
         event.preventDefault()
+
+        self.$checkoutBtn.prop('disabled', true)
 
         this.stripe.confirmPayment({
             elements: this.elements,
@@ -96,6 +101,7 @@
 
             if (result.error && !(paymentIntentStatus === 'requires_capture' || paymentIntentStatus === 'succeeded')) {
                 // Inform the user if there was an error.
+                self.$checkoutBtn.prop('disabled', false)
                 self.validationErrorHandler(result)
             } else {
                 // Switch back to default to submit form

@@ -35,7 +35,7 @@ it('returns dropdown options for enabled payments', function(): void {
 it('returns list of enabled payments with descriptions', function(): void {
     $result = Payment::listDropdownOptions();
 
-    expect($result->toArray())->toBe(['cod' => ['Cash On Delivery', 'Accept cash on delivery during checkout']]);
+    expect($result->toArray())->toBe(['cod' => ['Cash On Delivery', 'Pay with cash when you pick up your order or when is delivered']]);
 });
 
 it('returns true if onboarding is complete', function(): void {

@@ -8,6 +8,7 @@ use Exception;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\Main\Classes\MainController;
+use Igniter\PayRegister\Jobs\ProcessStripeWebhookJob;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Models\PaymentProfile;
@@ -15,6 +16,7 @@ use Igniter\PayRegister\Payments\Stripe;
 use Igniter\User\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Mockery;
 use Stripe\ApiRequestor as StripeApiRequestorAlias;
 use Stripe\HttpClient\CurlClient;
@@ -82,7 +84,7 @@ it('returns correct stripe model value', function($attribute, $methodName, $mode
 
 it('adds correct js files for stripe payment form', function(): void {
     $controller = Mockery::mock(MainController::class);
-    $controller->shouldReceive('addJs')->with('https://js.stripe.com/v3/', 'stripe-js')->once();
+    $controller->shouldReceive('addJs')->with('https://js.stripe.com/basil/stripe.js', 'stripe-js')->once();
     $controller->shouldReceive('addJs')->with('igniter.payregister::/js/process.stripe.js', 'process-stripe-js')->once();
 
     $this->stripe->beforeRenderPaymentForm($this->stripe, $controller);
@@ -194,7 +196,7 @@ it('processes stripe payment form successfully', function(): void {
     $data = [];
     $result = $this->stripe->processPaymentForm($data, $this->payment, $order);
 
-    expect($result)->toBeFalse()
+    expect($result)->toBeTrue()
         ->and($this->stripe->getSession('ti_payregister_stripe_intent'))->toBeNull();
 
     $this->assertDatabaseHas('payment_logs', [
@@ -779,17 +781,19 @@ it('returns 400 when request method is not POST', function(): void {
     $response = $this->stripe->processWebhookUrl();
 
     expect($response->getStatusCode())->toBe(400)
-        ->and($response->getContent())->toBe('Request method must be POST');
+        ->and($response->getContent())->toContain('Request method must be POST');
 });
 
 it('returns 400 when webhook secret is invalid', function(): void {
+    $this->payment->applyGatewayClass();
+    $this->payment->test_webhook_secret = 'whsec_test_webhook_secret';
     $request = Request::create('stripe_webhook', 'POST');
     app()->instance('request', $request);
 
     $response = $this->stripe->processWebhookUrl();
 
     expect($response->getStatusCode())->toBe(400)
-        ->and($response->getContent())->toBe('Invalid webhook secret');
+        ->and($response->getContent())->toContain('Failed to parse webhook payload: ');
 });
 
 it('returns 400 if webhook payload is missing event type', function(): void {
@@ -812,15 +816,13 @@ it('returns 400 if webhook payload is missing event type', function(): void {
     ]);
 
     expect($response->getStatusCode())->toBe(400)
-        ->and($response->getContent())->toBe('Missing webhook event name');
+        ->and($response->getContent())->toContain('Missing webhook event name');
 });
 
-it('handles webhook event and logs payment successful attempt', function(): void {
-    Event::fake(['payregister.stripe.webhook.handlePaymentIntentSucceeded']);
+it('handles webhook event without webhook secret', function(): void {
+    Queue::fake();
     $order = Order::factory()->for($this->payment, 'payment_method')->create();
     $this->payment->applyGatewayClass();
-    $this->payment->test_webhook_secret = 'whsec_test_webhook_secret';
-    $webhookSecret = 'whsec_test_webhook_secret';
     $this->payment->save();
     $payload = [
         'id' => 'evt_test_webhook',
@@ -836,27 +838,20 @@ it('handles webhook event and logs payment successful attempt', function(): void
     ];
     $timestamp = time();
     $payloadJson = json_encode($payload);
-    $signature = hash_hmac('sha256', sprintf('%d.%s', $timestamp, $payloadJson), $webhookSecret);
+    $signature = hash_hmac('sha256', sprintf('%d.%s', $timestamp, $payloadJson), 'whsec_test_webhook_secret');
 
     $response = $this->postJson('/ti_payregister/stripe_webhook/handle', $payload, [
         'Stripe-Signature' => sprintf('t=%d,v1=%s', $timestamp, $signature),
     ]);
 
     expect($response->getStatusCode())->toBe(200)
-        ->and($response->getContent())->toBe('Webhook Handled');
+        ->and($response->getContent())->toContain('Webhook Handled');
 
-    Event::assertDispatched('payregister.stripe.webhook.handlePaymentIntentSucceeded', fn($eventName, $eventPayload): bool => $eventPayload[0]['data']['object']['metadata']['order_id'] === $order->getKey());
-
-    $this->assertDatabaseHas('payment_logs', [
-        'order_id' => $order->getKey(),
-        'message' => 'Payment successful via webhook',
-        'is_success' => 1,
-        'is_refundable' => 1,
-    ]);
+    Queue::assertPushed(ProcessStripeWebhookJob::class);
 });
 
-it('handles webhook event and logs payment authorized attempt', function(): void {
-    Event::fake(['payregister.stripe.webhook.handlePaymentIntentSucceeded']);
+it('handles webhook event with webhook secret', function(): void {
+    Queue::fake();
     $order = Order::factory()->for($this->payment, 'payment_method')->create();
     $this->payment->applyGatewayClass();
     $this->payment->test_webhook_secret = 'whsec_test_webhook_secret';
@@ -883,14 +878,7 @@ it('handles webhook event and logs payment authorized attempt', function(): void
     ]);
 
     expect($response->getStatusCode())->toBe(200)
-        ->and($response->getContent())->toBe('Webhook Handled');
+        ->and($response->getContent())->toContain('Webhook Handled');
 
-    Event::assertDispatched('payregister.stripe.webhook.handlePaymentIntentSucceeded', fn($eventName, $eventPayload): bool => $eventPayload[0]['data']['object']['metadata']['order_id'] === $order->getKey());
-
-    $this->assertDatabaseHas('payment_logs', [
-        'order_id' => $order->getKey(),
-        'message' => 'Payment authorized via webhook',
-        'is_success' => 1,
-        'is_refundable' => 0,
-    ]);
+    Queue::assertPushed(ProcessStripeWebhookJob::class);
 });

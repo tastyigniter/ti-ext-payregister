@@ -12,14 +12,13 @@ use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithAuthorizedPayment;
 use Igniter\PayRegister\Concerns\WithPaymentProfile;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
+use Igniter\PayRegister\Jobs\ProcessStripeWebhookJob;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\System\Traits\SessionMaker;
 use Igniter\User\Models\Customer;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Str;
 use Override;
 use Stripe\StripeClient;
 use Stripe\Webhook;
@@ -84,7 +83,7 @@ class Stripe extends BasePaymentGateway
     #[Override]
     public function beforeRenderPaymentForm($host, $controller): void
     {
-        $controller->addJs('https://js.stripe.com/v3/', 'stripe-js');
+        $controller->addJs('https://js.stripe.com/basil/stripe.js', 'stripe-js');
         $controller->addJs('igniter.payregister::/js/process.stripe.js', 'process-stripe-js');
     }
 
@@ -220,14 +219,14 @@ class Stripe extends BasePaymentGateway
             $order->markAsPaymentProcessed();
 
             $this->forgetSession($this->intentSessionKey);
+
+            return true;
         } catch (Exception $ex) {
             logger()->error($ex);
             $order->logPaymentAttempt('Payment error: '.$ex->getMessage(), 0, $data);
 
             throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
         }
-
-        return false;
     }
 
     #[Override]
@@ -590,52 +589,39 @@ class Stripe extends BasePaymentGateway
     public function processWebhookUrl()
     {
         if (strtolower(request()->method()) !== 'post') {
-            return response('Request method must be POST', 400);
+            return response()->json('Request method must be POST', 400);
         }
 
-        if (!$this->getWebhookSecret()) {
-            return response('Invalid webhook secret', 400);
+        try {
+            $payload = $this->getWebhookPayload();
+        } catch (Exception $ex) {
+            return response()->json('Failed to parse webhook payload: '.$ex->getMessage(), 400);
         }
 
-        $payload = $this->getWebhookPayload();
         if (!isset($payload['type']) || !strlen((string)($eventType = $payload['type']))) {
-            return response('Missing webhook event name', 400);
+            return response()->json('Missing webhook event name', 400);
         }
 
-        $eventName = Str::studly(str_replace('.', '_', $eventType));
-        $methodName = 'webhookHandle'.$eventName;
+        $webhookJob = new ProcessStripeWebhookJob($this->model, $eventType, $payload);
 
-        if (method_exists($this, $methodName)) {
-            $this->$methodName($payload);
-        }
+        $webhookJob->checkMethod();
 
-        Event::dispatch('payregister.stripe.webhook.handle'.$eventName, [$payload]);
+        // Delay the job to ensure the webhook is processed after the checkout request is completed
+        dispatch($webhookJob)->delay(now()->addMinute());
 
-        return response('Webhook Handled');
-    }
-
-    protected function webhookHandlePaymentIntentSucceeded(array $payload)
-    {
-        /** @var null|Order $order */
-        $order = Order::find($payload['data']['object']['metadata']['order_id']);
-        if ($order && !$order->isPaymentProcessed()) {
-            if ($payload['data']['object']['status'] === 'requires_capture') {
-                $order->logPaymentAttempt('Payment authorized via webhook', 1, [], $payload['data']['object']);
-            } else {
-                $order->logPaymentAttempt('Payment successful via webhook', 1, [], $payload['data']['object'], true);
-            }
-
-            $order->updateOrderStatus($this->model->order_status, ['notify' => false]);
-            $order->markAsPaymentProcessed();
-        }
+        return response()->json('Webhook Handled');
     }
 
     protected function getWebhookPayload(): array
     {
+        if (!$webhookSecret = $this->getWebhookSecret()) {
+            return json_decode(request()->getContent(), true);
+        }
+
         $event = Webhook::constructEvent(
             request()->getContent(),
             request()->header('stripe-signature'),
-            $this->getWebhookSecret(),
+            $webhookSecret,
         );
 
         return $event->toArray();
