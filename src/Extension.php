@@ -113,7 +113,7 @@ class Extension extends BaseExtension
             'settings' => [
                 'label' => lang('igniter.payregister::default.text_side_menu'),
                 'description' => 'Manage payment gateways and settings',
-                'icon' => 'fa fa-cash-register',
+                'icon' => 'fa fa-credit-card',
                 'priority' => -1,
                 'permissions' => ['Admin.Payments'],
                 'url' => admin_url('payments'),
