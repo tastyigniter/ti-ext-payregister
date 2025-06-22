@@ -104,7 +104,7 @@ class PaymentLog extends Model
             OrderBeforeRefundProcessedEvent::dispatch($this);
 
             $this->refunded_at = Carbon::now();
-            $this->save();
+            $this->saveQuietly();
 
             OrderRefundProcessedEvent::dispatch($this);
         }

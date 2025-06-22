@@ -56,7 +56,7 @@ return [
     'cod' => [
         'text_tab_general' => 'General',
         'text_payment_title' => 'Cash On Delivery',
-        'text_payment_desc' => 'Accept cash on delivery during checkout',
+        'text_payment_desc' => 'Pay with cash when you pick up your order or when is delivered',
 
         'label_title' => 'Title',
         'label_status' => 'Status',
@@ -66,7 +66,7 @@ return [
     'paypal' => [
         'text_tab_general' => 'General',
         'text_payment_title' => 'PayPal Express',
-        'text_payment_desc' => 'Allows your customers to make payment using PayPal',
+        'text_payment_desc' => 'Securely pay using your PayPal account',
 
         'text_sandbox' => 'Sandbox',
         'text_go_live' => 'Go Live',
@@ -88,7 +88,7 @@ return [
 
     'authorize_net_aim' => [
         'text_payment_title' => 'Authorize.Net (AIM)',
-        'text_payment_desc' => 'Accept credit card payments though Authorize.Net',
+        'text_payment_desc' => 'Pay with your credit card via Authorize.Net',
         'text_go_live' => 'Go Live',
         'text_test' => 'Test',
         'text_test_live' => 'Test Live',
@@ -116,7 +116,7 @@ return [
     'stripe' => [
         'text_tab_general' => 'General',
         'text_payment_title' => 'Stripe Payment',
-        'text_payment_desc' => 'Accept credit card payments using Stripe',
+        'text_payment_desc' => 'Pay with your credit card using Stripe',
         'text_credit_or_debit' => 'Credit or debit card',
 
         'text_auth_only' => 'Authorization Only',
@@ -146,7 +146,7 @@ return [
 
     'mollie' => [
         'text_payment_title' => 'Mollie Payment',
-        'text_payment_desc' => 'Accept credit card payments using Mollie API',
+        'text_payment_desc' => 'Pay with your credit card through Mollie',
 
         'text_live' => 'Live',
         'text_test' => 'Test',
@@ -160,7 +160,7 @@ return [
 
     'square' => [
         'text_payment_title' => 'Square Payment',
-        'text_payment_desc' => 'Accept credit card payments using Square',
+        'text_payment_desc' => 'Pay with your credit card using Square',
 
         'text_description' => 'Pay by Credit Card using Square',
         'text_live' => 'Live',

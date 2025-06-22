@@ -68,7 +68,7 @@ class Payments extends AdminController
     {
         parent::__construct();
 
-        AdminMenu::setContext('payments', 'sales');
+        AdminMenu::setContext('settings', 'system');
     }
 
     public function index(): void
