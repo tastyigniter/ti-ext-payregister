@@ -50,8 +50,8 @@
       "name": "Pay Register",
       "icon": {
         "class": "fa fa-cash-register",
-        "backgroundColor": "#88C425",
-        "color": "#1B2707"
+        "backgroundColor": "#FF4900",
+        "color": "#FFFFFF"
       },
       "homepage": "https://tastyigniter.com/marketplace/item/igniter-payregister"
     },
