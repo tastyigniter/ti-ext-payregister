@@ -117,7 +117,7 @@ class PaymentGateways
         }
 
         foreach ($classes as $classPath => $paymentGateway) {
-            $code = $paymentGateway['code'] ?? strtolower(basename($classPath));
+            $code = $paymentGateway['code'] ?? strtolower(basename((string)$classPath));
 
             $this->gateways[$code] = array_merge($paymentGateway, [
                 'owner' => $owner,

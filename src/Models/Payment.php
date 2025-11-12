@@ -184,7 +184,7 @@ class Payment extends Model
     public static function listPayments()
     {
         // @phpstan-ignore-next-line return.type
-        return self::query()->whereIsEnabled()->get()->filter(fn(self $model): bool => strlen($model->class_name) > 0);
+        return self::query()->whereIsEnabled()->get()->filter(fn(self $model): bool => (string)$model->class_name !== '');
     }
 
     public static function syncAll(): void
