@@ -85,7 +85,7 @@ class Square extends BasePaymentGateway
         return true;
     }
 
-    protected function createPayment($fields, $order, $host): ApiResponse
+    protected function createPayment(array $fields, $order, $host): ApiResponse
     {
         $client = $this->createClient();
         $paymentsApi = $client->getPaymentsApi();
