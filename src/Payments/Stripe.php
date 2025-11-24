@@ -373,9 +373,11 @@ class Stripe extends BasePaymentGateway
     #[Override]
     public function deletePaymentProfile(Customer $customer, PaymentProfile $profile): void
     {
-        if (isset($profile->profile_data['customer_id'])) {
-            $this->createGateway()->customers->delete($profile->profile_data['customer_id'], [], $this->getStripeOptions());
-        }
+        rescue(function() use ($profile): void {
+            if (isset($profile->profile_data['customer_id'])) {
+                $this->createGateway()->customers->delete($profile->profile_data['customer_id'], [], $this->getStripeOptions());
+            }
+        });
     }
 
     #[Override]
@@ -440,6 +442,7 @@ class Stripe extends BasePaymentGateway
                     $newCustomerRequired = true;
                 }
             } catch (Exception) {
+                $profile->setProfileData($profileData = []);
                 $newCustomerRequired = true;
             }
         }

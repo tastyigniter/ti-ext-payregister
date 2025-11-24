@@ -109,6 +109,16 @@ it('does not apply gateway class if class does not exist', function(): void {
         ->and($this->payment->class_name)->toBeNull();
 });
 
+it('syncs all payment gateways when none exist in the database', function(): void {
+    Payment::query()->delete();
+
+    Payment::syncAll();
+
+    $payments = Payment::all();
+
+    expect($payments->count())->toBeGreaterThan(0);
+});
+
 it('finds payment profile for customer', function(): void {
     $this->customer->customer_id = 1;
 
