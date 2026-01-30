@@ -27,7 +27,7 @@ Please see [CHANGELOG](https://github.com/tastyigniter/ti-ext-payregister/blob/m
 
 ## Reporting issues
 
-If you encounter a bug in this extension, please report it using the [Issue Tracker](https://github.com/tastyigniter/ti-ext-payregister/issues) on GitHub.
+If you encounter a bug in this extension, please report it using the [Issue Tracker](https://github.com/tastyigniter/TastyIgniter/issues) on GitHub.
 
 ## Contributing
 
