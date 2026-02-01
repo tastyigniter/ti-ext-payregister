@@ -10,6 +10,7 @@ use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
 use Igniter\PayRegister\Models\Payment;
+use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\User\Models\Customer;
 use Illuminate\Http\RedirectResponse;
@@ -74,9 +75,12 @@ class Mollie extends BasePaymentGateway
         try {
             $payment = $this->createClient()->payments->create($fields);
 
-            session()->put('mollie.payment_id', $payment->id);
-
             if ($payment->isOpen()) {
+                $order->logPaymentAttempt('redirecting-to-payment-gateway', 0, $fields, [
+                    'id' => $payment->id,
+                    'status' => $payment->status,
+                ]);
+
                 return Redirect::to($payment->getCheckoutUrl());
             }
 
@@ -109,9 +113,19 @@ class Mollie extends BasePaymentGateway
                 new ApplicationException('No valid payment method found'),
             );
 
+            $paymentId = array_get(PaymentLog::where('order_id', $order->order_id)
+                ->where('payment_code', $paymentMethod->code)
+                ->where('message', 'redirecting-to-payment-gateway')
+                ->value('response') ?? [], 'id');
+
             throw_unless(
-                $payment = $this->createClient()->payments->get(session()->get('mollie.payment_id')),
-                new ApplicationException('Missing payment id in query parameters'),
+                !$paymentId,
+                new ApplicationException('Missing payment id in payment attempt records'),
+            );
+
+            throw_unless(
+                $payment = $this->createClient()->payments->get($paymentId),
+                new ApplicationException(sprintf('Payment not found for %s', $paymentId)),
             );
 
             throw_if($order->isPaymentProcessed(), new ApplicationException('Payment has already been processed'));
