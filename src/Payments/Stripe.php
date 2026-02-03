@@ -574,14 +574,12 @@ class Stripe extends BasePaymentGateway
             'payment_intent_data' => [
                 'capture_method' => $this->shouldAuthorizePayment() ? 'manual' : 'automatic',
             ],
-            'customer_email' => array_get($data, 'email'),
         ];
 
         if ($order->customer && ($profileData = $this->createOrFetchProfileData($order->customer))) {
             $fields['customer'] = array_get($profileData, 'customer_id');
-            if ($paymentId = array_get($profileData, 'card_id')) {
-                $fields['payment_method'] = $paymentId;
-            }
+        } else {
+            $fields['customer_email'] = array_get($data, 'email');
         }
 
         $this->fireSystemEvent('payregister.stripe.extendCheckoutSessionFields', [&$fields, $order, $data]);

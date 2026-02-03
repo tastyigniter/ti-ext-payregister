@@ -811,7 +811,7 @@ it('redirects to stripe checkout when offsite mode is enabled', function(): void
     PaymentProfile::factory()->create([
         'customer_id' => $customer->getKey(),
         'payment_id' => $this->payment->getKey(),
-        'profile_data' => ['customer_id' => 'cus_existing123', 'card_id' => 'pm_card123'],
+        'profile_data' => ['customer_id' => 'cus_existing123'],
     ]);
     setupRequest($this->httpClient, 'customers/cus_existing123', [
         'id' => 'cus_existing123',
