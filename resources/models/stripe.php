@@ -6,6 +6,11 @@ return [
             'type' => 'partial',
             'path' => 'igniter.payregister::stripe.info',
         ],
+        'offsite_enabled' => [
+            'label' => 'lang:igniter.payregister::default.stripe.label_offsite_enabled',
+            'type' => 'switch',
+            'comment' => 'lang:igniter.payregister::default.stripe.help_offsite_enabled',
+        ],
         'transaction_mode' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_transaction_mode',
             'type' => 'radiotoggle',
@@ -132,6 +137,7 @@ return [
         ],
     ],
     'rules' => [
+        ['offsite_enabled', 'lang:igniter.payregister::default.stripe.label_offsite_enabled', 'required|boolean'],
         ['transaction_mode', 'lang:igniter.payregister::default.stripe.label_transaction_mode', 'required|string'],
         ['transaction_type', 'lang:igniter.payregister::default.stripe.label_transaction_type', 'required|string'],
         ['live_secret_key', 'lang:igniter.payregister::default.stripe.label_live_secret_key', 'nullable|required_if:transaction_mode,live|string'],

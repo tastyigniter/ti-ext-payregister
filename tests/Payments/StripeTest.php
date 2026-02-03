@@ -12,8 +12,10 @@ use Igniter\PayRegister\Jobs\ProcessStripeWebhookJob;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Models\PaymentProfile;
+use Igniter\PayRegister\Payments\Cod;
 use Igniter\PayRegister\Payments\Stripe;
 use Igniter\User\Models\Customer;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -55,6 +57,8 @@ it('registers correct entry points for stripe', function(): void {
 
     expect($entryPoints)->toBe([
         'stripe_webhook' => 'processWebhookUrl',
+        'stripe_return_url' => 'processReturnUrl',
+        'stripe_cancel_url' => 'processCancelUrl',
     ]);
 });
 
@@ -92,6 +96,23 @@ it('adds correct js files for stripe payment form', function(): void {
 
 it('returns true for completesPaymentOnClient for stripe', function(): void {
     expect($this->stripe->completesPaymentOnClient())->toBeTrue();
+});
+
+it('returns true for isOffsiteMode when offsite_enabled is set', function(): void {
+    $this->payment->offsite_enabled = true;
+
+    expect($this->stripe->completesPaymentOnClient())->toBeFalse()
+        ->and($this->stripe->isOffsiteMode())->toBeTrue();
+});
+
+it('returns false for isOffsiteMode when offsite_enabled is not set', function(): void {
+    $this->payment->offsite_enabled = false;
+
+    expect($this->stripe->isOffsiteMode())->toBeFalse();
+
+    $this->payment->offsite_enabled = null;
+
+    expect($this->stripe->isOffsiteMode())->toBeFalse();
 });
 
 it('returns stripe js options with locale', function(): void {
@@ -775,6 +796,235 @@ it('throws exception when refund response fails', function(): void {
         'message' => 'Refund failed -> Refund failed',
         'is_success' => 0,
     ]);
+});
+
+it('redirects to stripe checkout when offsite mode is enabled', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $this->payment->offsite_enabled = true;
+    $this->payment->transaction_type = 'auth_only';
+    $customer = Customer::factory()->create();
+    $order = Order::factory()
+        ->for($customer, 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    PaymentProfile::factory()->create([
+        'customer_id' => $customer->getKey(),
+        'payment_id' => $this->payment->getKey(),
+        'profile_data' => ['customer_id' => 'cus_existing123', 'card_id' => 'pm_card123'],
+    ]);
+    setupRequest($this->httpClient, 'customers/cus_existing123', [
+        'id' => 'cus_existing123',
+    ]);
+    setupRequest($this->httpClient, 'checkout/sessions', [
+        'id' => 'cs_123',
+        'url' => 'https://checkout.stripe.com/pay/cs_123',
+    ], 'post');
+
+    $result = $this->stripe->processPaymentForm([
+        'email' => 'test@example.com',
+        'successPage' => 'checkout.success',
+        'cancelPage' => 'checkout.checkout',
+    ], $this->payment, $order);
+
+    expect($result)->toBeInstanceOf(RedirectResponse::class)
+        ->and($result->getTargetUrl())->toBe('https://checkout.stripe.com/pay/cs_123');
+});
+
+it('creates new customer for checkout session when profile has no customer_id', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $this->payment->offsite_enabled = true;
+    $customer = Customer::factory()->create();
+    $order = Order::factory()
+        ->for($customer, 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    setupRequest($this->httpClient, 'customers', [
+        'id' => 'cus_new123',
+    ], 'post');
+    setupRequest($this->httpClient, 'checkout/sessions', [
+        'id' => 'cs_123',
+        'url' => 'https://checkout.stripe.com/pay/cs_123',
+    ], 'post');
+
+    $result = $this->stripe->processPaymentForm([], $this->payment, $order);
+
+    expect($result)->toBeInstanceOf(RedirectResponse::class);
+});
+
+it('does not include customer data in checkout session when order has no customer', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $this->payment->offsite_enabled = true;
+    $order = Order::factory()
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    setupRequest($this->httpClient, 'checkout/sessions', [
+        'id' => 'cs_123',
+        'url' => 'https://checkout.stripe.com/pay/cs_123',
+    ], 'post');
+
+    $result = $this->stripe->processPaymentForm([], $this->payment, $order);
+
+    expect($result)->toBeInstanceOf(RedirectResponse::class);
+});
+
+it('processes return url successfully when order is not yet processed', function(): void {
+    $order = Order::factory()
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    $this->payment->applyGatewayClass();
+    $this->payment->save();
+
+    $request = Request::create('/ti_payregister/stripe_return_url/handle/'.$order->hash, 'GET', [
+        'redirect' => 'checkout.success',
+        'cancel' => 'checkout.checkout',
+    ]);
+    app()->instance('request', $request);
+
+    $result = $this->stripe->processReturnUrl([$order->hash]);
+
+    expect($result)->toBeInstanceOf(RedirectResponse::class)
+        ->and($result->getTargetUrl())->toContain('checkout/success');
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment successful',
+        'is_success' => 1,
+    ]);
+});
+
+it('processes return url and skips logging when order is already processed', function(): void {
+    $order = Order::factory()
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100, 'processed' => 1]);
+    $order->updateOrderStatus(1);
+    $this->payment->applyGatewayClass();
+    $this->payment->save();
+
+    $request = Request::create('/ti_payregister/stripe_return_url/handle/'.$order->hash, 'GET', [
+        'redirect' => 'checkout.success',
+        'cancel' => 'checkout.checkout',
+    ]);
+    app()->instance('request', $request);
+
+    $result = $this->stripe->processReturnUrl([$order->hash]);
+
+    expect($result)->toBeInstanceOf(RedirectResponse::class)
+        ->and($result->getTargetUrl())->toContain('checkout/success');
+});
+
+it('redirects to cancel page when order is not found in processReturnUrl', function(): void {
+    $this->payment->applyGatewayClass();
+    $this->payment->save();
+
+    $request = Request::create('/ti_payregister/stripe_return_url/handle/invalid_hash', 'GET', [
+        'redirect' => 'checkout.success',
+        'cancel' => 'checkout.checkout',
+    ]);
+    app()->instance('request', $request);
+
+    $result = $this->stripe->processReturnUrl(['invalid_hash']);
+
+    expect($result)->toBeInstanceOf(RedirectResponse::class)
+        ->and($result->getTargetUrl())->toContain('/checkout');
+});
+
+it('redirects to cancel page when payment method is invalid in processReturnUrl', function(): void {
+    $otherPayment = Payment::factory()->create(['class_name' => Cod::class]);
+    $order = Order::factory()
+        ->for($otherPayment, 'payment_method')
+        ->create(['order_total' => 100]);
+    $otherPayment->applyGatewayClass();
+
+    $request = Request::create('/ti_payregister/stripe_return_url/handle/'.$order->hash, 'GET', [
+        'redirect' => 'checkout.success',
+        'cancel' => 'checkout.checkout',
+    ]);
+    app()->instance('request', $request);
+
+    $result = (new Stripe($otherPayment))->processReturnUrl([$order->hash]);
+
+    expect($result)->toBeInstanceOf(RedirectResponse::class)
+        ->and($result->getTargetUrl())->toContain('/checkout');
+});
+
+it('processes cancel url and logs cancellation', function(): void {
+    $order = Order::factory()
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    $this->payment->applyGatewayClass();
+    $this->payment->save();
+
+    $request = Request::create('/ti_payregister/stripe_cancel_url/handle/'.$order->hash, 'GET', [
+        'redirect' => 'checkout.checkout',
+    ]);
+    app()->instance('request', $request);
+
+    $result = $this->stripe->processCancelUrl([$order->hash]);
+
+    expect($result)->toBeInstanceOf(RedirectResponse::class)
+        ->and($result->getTargetUrl())->toContain('/checkout');
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment canceled by customer',
+        'is_success' => 0,
+    ]);
+});
+
+it('throws exception when order not found in processCancelUrl', function(): void {
+    $this->payment->applyGatewayClass();
+    $this->payment->save();
+
+    $request = Request::create('/ti_payregister/stripe_cancel_url/handle/invalid_hash', 'GET', [
+        'redirect' => 'checkout.checkout',
+    ]);
+    app()->instance('request', $request);
+
+    $this->expectException(ApplicationException::class);
+    $this->expectExceptionMessage('No order found');
+
+    $this->stripe->processCancelUrl(['invalid_hash']);
+});
+
+it('throws exception when payment method is invalid in processCancelUrl', function(): void {
+    $otherPayment = Payment::factory()->create(['class_name' => Cod::class]);
+    $order = Order::factory()
+        ->for($otherPayment, 'payment_method')
+        ->create(['order_total' => 100]);
+    $otherPayment->applyGatewayClass();
+
+    $request = Request::create('/ti_payregister/stripe_cancel_url/handle/'.$order->hash, 'GET', [
+        'redirect' => 'checkout.checkout',
+    ]);
+    app()->instance('request', $request);
+
+    expect(fn(): RedirectResponse => (new Stripe($otherPayment))->processCancelUrl([$order->hash]))
+        ->toThrow(ApplicationException::class, 'No valid payment method found');
+});
+
+it('fires event to extend checkout session fields', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $this->payment->offsite_enabled = true;
+    $order = Order::factory()
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+
+    $this->stripe->bindEvent('stripe.extendCheckoutSessionFields', function(array &$fields, $order, $data): void {
+        $fields['custom_field'] = 'custom_value';
+    });
+
+    setupRequest($this->httpClient, 'checkout/sessions', [
+        'id' => 'cs_123',
+        'url' => 'https://checkout.stripe.com/pay/cs_123',
+    ], 'post');
+
+    $result = $this->stripe->processPaymentForm([], $this->payment, $order);
+
+    expect($result)->toBeInstanceOf(RedirectResponse::class);
 });
 
 it('returns 400 when request method is not POST', function(): void {

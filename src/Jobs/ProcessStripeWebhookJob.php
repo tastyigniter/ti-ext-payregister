@@ -17,6 +17,8 @@ use LogicException;
 
 class ProcessStripeWebhookJob implements ShouldQueue
 {
+    public $model;
+
     use Dispatchable;
     use InteractsWithQueue;
     use Queueable;
@@ -71,5 +73,25 @@ class ProcessStripeWebhookJob implements ShouldQueue
 
         $order->updateOrderStatus($this->payment->order_status, ['notify' => false]);
         $order->markAsPaymentProcessed();
+    }
+
+    protected function handleCheckoutSessionCompleted(array $payload)
+    {
+        /** @var null|Order $order */
+        $order = Order::find($payload['data']['object']['metadata']['order_id']);
+        if (!$order) {
+            return;
+        }
+
+        if ($payload['data']['object']['status'] === 'requires_capture') {
+            $order->logPaymentAttempt('Payment authorized via webhook', 1, [], $payload['data']['object']);
+        } else {
+            $order->logPaymentAttempt('Payment successful via webhook', 1, [], $payload['data']['object'], true);
+        }
+
+        if (!$order->isPaymentProcessed()) {
+            $order->updateOrderStatus($this->payment->order_status, ['notify' => false]);
+            $order->markAsPaymentProcessed();
+        }
     }
 }
