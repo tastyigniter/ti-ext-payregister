@@ -35,20 +35,9 @@ class ProcessStripeWebhookJob implements ShouldQueue
         return 'handle'.Str::studly(str_replace('.', '_', $this->eventName));
     }
 
-    public function checkMethod(): void
-    {
-        throw_unless(method_exists($this, $this->getMethod()), new LogicException(sprintf(
-            'Webhook handler method %s does not exist in %s', $this->getMethod(), static::class,
-        )));
-    }
-
     public function handle(): void
     {
-        $this->checkMethod();
-
         $this->{$this->getMethod()}($this->payload);
-
-        Event::dispatch('payregister.stripe.webhook.handle', [$this]);
     }
 
     protected function handlePaymentIntentSucceeded(array $payload)
