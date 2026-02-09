@@ -19,6 +19,7 @@ use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\System\Traits\SessionMaker;
 use Igniter\User\Models\Customer;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redirect;
 use Override;
 use Stripe\StripeClient;
@@ -91,7 +92,10 @@ class Stripe extends BasePaymentGateway
     #[Override]
     public function beforeRenderPaymentForm($host, $controller): void
     {
-        $controller->addJs('https://js.stripe.com/basil/stripe.js', 'stripe-js');
+        if (!$this->isOffsiteMode()) {
+            $controller->addJs('https://js.stripe.com/basil/stripe.js', 'stripe-js');
+        }
+
         $controller->addJs('igniter.payregister::/js/process.stripe.js', 'process-stripe-js');
     }
 
@@ -728,12 +732,14 @@ class Stripe extends BasePaymentGateway
             return response()->json('Missing webhook event name', 400);
         }
 
+        Event::dispatch('payregister.stripe.webhook.handle', [$this->model, $eventType, $payload]);
+
         $webhookJob = new ProcessStripeWebhookJob($this->model, $eventType, $payload);
 
-        $webhookJob->checkMethod();
-
-        // Delay the job to ensure the webhook is processed after the checkout request is completed
-        dispatch($webhookJob)->delay(now()->addMinute());
+        if (method_exists($webhookJob, $webhookJob->getMethod())) {
+            // Delay the job to ensure the webhook is processed after the checkout request is completed
+            dispatch($webhookJob)->delay(now()->addMinute());
+        }
 
         return response()->json('Webhook Handled');
     }

@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Event;
 use LogicException;
 
 it('handles payment intent succeeded with valid order and successful status', function(): void {
-    Event::fake();
     $order = Order::factory()->create(['payment' => 'stripe']);
     $order->payment_method->applyGatewayClass();
 
@@ -27,8 +26,6 @@ it('handles payment intent succeeded with valid order and successful status', fu
     $job = new ProcessStripeWebhookJob($order->payment_method, 'payment_intent.succeeded', $payload);
     $job->handle();
 
-    Event::assertDispatched('payregister.stripe.webhook.handle');
-
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->getKey(),
         'message' => 'Payment successful via webhook',
@@ -38,7 +35,6 @@ it('handles payment intent succeeded with valid order and successful status', fu
 });
 
 it('handles payment intent succeeded with valid order and requires capture status', function(): void {
-    Event::fake();
     $order = Order::factory()->create(['payment' => 'stripe']);
     $order->payment_method->applyGatewayClass();
 
@@ -54,8 +50,6 @@ it('handles payment intent succeeded with valid order and requires capture statu
     $job = new ProcessStripeWebhookJob($order->payment_method, 'payment_intent.succeeded', $payload);
     $job->handle();
 
-    Event::assertDispatched('payregister.stripe.webhook.handle');
-
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->getKey(),
         'message' => 'Payment authorized via webhook',
@@ -65,7 +59,6 @@ it('handles payment intent succeeded with valid order and requires capture statu
 });
 
 it('skips processing when order is already processed', function(): void {
-    Event::fake();
     $order = Order::factory()->create(['payment' => 'stripe']);
     $order->payment_method->applyGatewayClass();
     $order->markAsPaymentProcessed();
@@ -82,8 +75,6 @@ it('skips processing when order is already processed', function(): void {
     $job = new ProcessStripeWebhookJob($order->payment_method, 'payment_intent.succeeded', $payload);
     $job->handle();
 
-    Event::assertDispatched('payregister.stripe.webhook.handle');
-
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->getKey(),
         'message' => 'Payment already processed, skipping webhook',
@@ -93,8 +84,6 @@ it('skips processing when order is already processed', function(): void {
 });
 
 it('does nothing when order is not found', function(): void {
-    Event::fake();
-
     $payload = [
         'data' => [
             'object' => [
@@ -107,17 +96,12 @@ it('does nothing when order is not found', function(): void {
     $job = new ProcessStripeWebhookJob(mock(Payment::class), 'payment_intent.succeeded', $payload);
     $job->handle();
 
-    Event::assertDispatched('payregister.stripe.webhook.handle');
-});
-
-it('throws exception when webhook handler method does not exist', function(): void {
-    $job = new ProcessStripeWebhookJob(mock(Payment::class), 'non_existent_event', []);
-
-    expect(fn() => $job->checkMethod())->toThrow(LogicException::class);
+    $this->assertDatabaseMissing('payment_logs', [
+        'order_id' => 99999,
+    ]);
 });
 
 it('handles checkout session completed with valid order and successful status', function(): void {
-    Event::fake();
     $order = Order::factory()->create(['payment' => 'stripe']);
     $order->payment_method->applyGatewayClass();
 
@@ -133,8 +117,6 @@ it('handles checkout session completed with valid order and successful status', 
     $job = new ProcessStripeWebhookJob($order->payment_method, 'checkout.session.completed', $payload);
     $job->handle();
 
-    Event::assertDispatched('payregister.stripe.webhook.handle');
-
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->getKey(),
         'message' => 'Payment successful via webhook',
@@ -144,7 +126,6 @@ it('handles checkout session completed with valid order and successful status', 
 });
 
 it('handles checkout session completed with valid order and requires capture status', function(): void {
-    Event::fake();
     $order = Order::factory()->create(['payment' => 'stripe']);
     $order->payment_method->applyGatewayClass();
 
@@ -160,8 +141,6 @@ it('handles checkout session completed with valid order and requires capture sta
     $job = new ProcessStripeWebhookJob($order->payment_method, 'checkout.session.completed', $payload);
     $job->handle();
 
-    Event::assertDispatched('payregister.stripe.webhook.handle');
-
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->getKey(),
         'message' => 'Payment authorized via webhook',
@@ -171,7 +150,6 @@ it('handles checkout session completed with valid order and requires capture sta
 });
 
 it('handles checkout session completed and skips order status update when already processed', function(): void {
-    Event::fake();
     $order = Order::factory()->create(['payment' => 'stripe']);
     $order->payment_method->applyGatewayClass();
     $order->markAsPaymentProcessed();
@@ -188,8 +166,6 @@ it('handles checkout session completed and skips order status update when alread
     $job = new ProcessStripeWebhookJob($order->payment_method, 'checkout.session.completed', $payload);
     $job->handle();
 
-    Event::assertDispatched('payregister.stripe.webhook.handle');
-
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->getKey(),
         'message' => 'Payment successful via webhook',
@@ -199,8 +175,6 @@ it('handles checkout session completed and skips order status update when alread
 });
 
 it('does nothing when order is not found for checkout session completed', function(): void {
-    Event::fake();
-
     $payload = [
         'data' => [
             'object' => [
@@ -213,5 +187,7 @@ it('does nothing when order is not found for checkout session completed', functi
     $job = new ProcessStripeWebhookJob(mock(Payment::class), 'checkout.session.completed', $payload);
     $job->handle();
 
-    Event::assertDispatched('payregister.stripe.webhook.handle');
+    $this->assertDatabaseMissing('payment_logs', [
+        'order_id' => 99999,
+    ]);
 });

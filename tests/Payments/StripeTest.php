@@ -1071,6 +1071,7 @@ it('returns 400 if webhook payload is missing event type', function(): void {
 
 it('handles webhook event without webhook secret', function(): void {
     Queue::fake();
+    Event::fake(['payregister.stripe.webhook.handle']);
     $order = Order::factory()->for($this->payment, 'payment_method')->create();
     $this->payment->applyGatewayClass();
     $this->payment->save();
@@ -1097,11 +1098,13 @@ it('handles webhook event without webhook secret', function(): void {
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getContent())->toContain('Webhook Handled');
 
+    Event::assertDispatched('payregister.stripe.webhook.handle');
     Queue::assertPushed(ProcessStripeWebhookJob::class);
 });
 
 it('handles webhook event with webhook secret', function(): void {
     Queue::fake();
+    Event::fake(['payregister.stripe.webhook.handle']);
     $order = Order::factory()->for($this->payment, 'payment_method')->create();
     $this->payment->applyGatewayClass();
     $this->payment->test_webhook_secret = 'whsec_test_webhook_secret';
@@ -1130,5 +1133,6 @@ it('handles webhook event with webhook secret', function(): void {
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getContent())->toContain('Webhook Handled');
 
+    Event::assertDispatched('payregister.stripe.webhook.handle');
     Queue::assertPushed(ProcessStripeWebhookJob::class);
 });
