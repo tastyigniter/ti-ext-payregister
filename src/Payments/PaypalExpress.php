@@ -195,7 +195,7 @@ class PaypalExpress extends BasePaymentGateway
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Refund failed -> '.$ex->getMessage(), 0, $fields, []);
 
-            throw new ApplicationException('Refund failed');
+            throw new ApplicationException('Refund failed', $ex->getCode(), $ex);
         }
     }
 

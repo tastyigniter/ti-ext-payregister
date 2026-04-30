@@ -17,7 +17,7 @@ trait WithApplicableFee
 
     protected function validateApplicableFee(Order $order, ?Payment $host = null)
     {
-        $host = is_null($host) ? $this->model : $host;
+        $host ??= $this->model;
 
         $paymentMethod = $order->payment_method;
         if (!$paymentMethod || $paymentMethod->code != $host->code) {
@@ -37,7 +37,7 @@ trait WithApplicableFee
      */
     public function isApplicable(float $total, ?Payment $host = null): bool
     {
-        $host = is_null($host) ? $this->model : $host;
+        $host ??= $this->model;
 
         return $host->order_total <= $total;
     }
@@ -47,7 +47,7 @@ trait WithApplicableFee
      */
     public function hasApplicableFee(?Payment $host = null): bool
     {
-        $host = is_null($host) ? $this->model : $host;
+        $host ??= $this->model;
 
         return ($host->order_fee ?? 0) > 0;
     }
@@ -57,7 +57,7 @@ trait WithApplicableFee
      */
     public function getFormattedApplicableFee(?Payment $host = null): string
     {
-        $host = is_null($host) ? $this->model : $host;
+        $host ??= $this->model;
 
         return ((int)$host->order_fee_type === 2)
             ? $host->order_fee.'%'

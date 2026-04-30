@@ -224,7 +224,7 @@ class Mollie extends BasePaymentGateway
         } catch (Exception $exception) {
             $order->logPaymentAttempt('Refund failed -> '.$exception->getMessage(), 0, $fields, []);
 
-            throw new ApplicationException('Refund failed');
+            throw new ApplicationException('Refund failed', $exception->getCode(), $exception);
         }
     }
 

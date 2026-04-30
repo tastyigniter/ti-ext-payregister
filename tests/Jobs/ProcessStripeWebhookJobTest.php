@@ -7,8 +7,6 @@ namespace Igniter\PayRegister\Tests\Jobs;
 use Igniter\Cart\Models\Order;
 use Igniter\PayRegister\Jobs\ProcessStripeWebhookJob;
 use Igniter\PayRegister\Models\Payment;
-use Illuminate\Support\Facades\Event;
-use LogicException;
 
 it('handles payment intent succeeded with valid order and successful status', function(): void {
     $order = Order::factory()->create(['payment' => 'stripe']);

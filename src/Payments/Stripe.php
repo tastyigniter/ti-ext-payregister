@@ -241,7 +241,7 @@ class Stripe extends BasePaymentGateway
             logger()->error($ex);
             $order->logPaymentAttempt('Payment error: '.$ex->getMessage(), 0, $data);
 
-            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.', $ex->getCode(), $ex);
         }
     }
 
@@ -428,7 +428,7 @@ class Stripe extends BasePaymentGateway
             logger()->error($e);
             $order->logPaymentAttempt('Payment error: '.$e->getMessage(), 0, $data, $intent ?? []);
 
-            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.', $e->getCode(), $e);
         }
     }
 
@@ -474,7 +474,7 @@ class Stripe extends BasePaymentGateway
                 $profile->setProfileData($profileData);
             }
         } catch (Exception $ex) {
-            throw new ApplicationException($ex->getMessage());
+            throw new ApplicationException($ex->getMessage(), $ex->getCode(), $ex);
         }
 
         return $profileData;
