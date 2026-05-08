@@ -1,10 +1,17 @@
 <?php
 
+use Igniter\Admin\Models\Status;
+
 return [
     'fields' => [
         'setup' => [
             'type' => 'partial',
             'path' => 'igniter.payregister::stripe.info',
+        ],
+        'offsite_enabled' => [
+            'label' => 'lang:igniter.payregister::default.stripe.label_offsite_enabled',
+            'type' => 'switch',
+            'comment' => 'lang:igniter.payregister::default.stripe.help_offsite_enabled',
         ],
         'transaction_mode' => [
             'label' => 'lang:igniter.payregister::default.stripe.label_transaction_mode',
@@ -120,18 +127,19 @@ return [
             'label' => 'lang:igniter.payregister::default.label_capture_status',
             'type' => 'select',
             'span' => 'left',
-            'options' => [\Igniter\Admin\Models\Status::class, 'getDropdownOptionsForOrder'],
+            'options' => [Status::class, 'getDropdownOptionsForOrder'],
             'comment' => 'lang:igniter.payregister::default.help_capture_status',
         ],
         'order_status' => [
             'label' => 'lang:igniter.payregister::default.label_order_status',
             'type' => 'select',
-            'options' => [\Igniter\Admin\Models\Status::class, 'getDropdownOptionsForOrder'],
+            'options' => [Status::class, 'getDropdownOptionsForOrder'],
             'span' => 'right',
             'comment' => 'lang:igniter.payregister::default.help_order_status',
         ],
     ],
     'rules' => [
+        ['offsite_enabled', 'lang:igniter.payregister::default.stripe.label_offsite_enabled', 'required|boolean'],
         ['transaction_mode', 'lang:igniter.payregister::default.stripe.label_transaction_mode', 'required|string'],
         ['transaction_type', 'lang:igniter.payregister::default.stripe.label_transaction_type', 'required|string'],
         ['live_secret_key', 'lang:igniter.payregister::default.stripe.label_live_secret_key', 'nullable|required_if:transaction_mode,live|string'],

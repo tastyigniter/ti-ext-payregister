@@ -1,5 +1,7 @@
 <?php
 
+use Igniter\Admin\Models\Status;
+
 return [
     'fields' => [
         'setup' => [
@@ -96,7 +98,7 @@ return [
             'label' => 'lang:igniter.payregister::default.label_order_status',
             'type' => 'select',
             'span' => 'right',
-            'options' => [\Igniter\Admin\Models\Status::class, 'getDropdownOptionsForOrder'],
+            'options' => [Status::class, 'getDropdownOptionsForOrder'],
             'comment' => 'lang:igniter.payregister::default.help_order_status',
         ],
     ],

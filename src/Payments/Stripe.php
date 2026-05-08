@@ -19,6 +19,8 @@ use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\System\Traits\SessionMaker;
 use Igniter\User\Models\Customer;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Redirect;
 use Override;
 use Stripe\StripeClient;
 use Stripe\Webhook;
@@ -45,6 +47,8 @@ class Stripe extends BasePaymentGateway
     {
         return [
             'stripe_webhook' => 'processWebhookUrl',
+            'stripe_return_url' => 'processReturnUrl',
+            'stripe_cancel_url' => 'processCancelUrl',
         ];
     }
 
@@ -59,6 +63,11 @@ class Stripe extends BasePaymentGateway
     public function isTestMode(): bool
     {
         return $this->model->transaction_mode != 'live';
+    }
+
+    public function isOffsiteMode(): bool
+    {
+        return (bool)$this->model->offsite_enabled;
     }
 
     public function getPublishableKey()
@@ -83,14 +92,17 @@ class Stripe extends BasePaymentGateway
     #[Override]
     public function beforeRenderPaymentForm($host, $controller): void
     {
-        $controller->addJs('https://js.stripe.com/basil/stripe.js', 'stripe-js');
+        if (!$this->isOffsiteMode()) {
+            $controller->addJs('https://js.stripe.com/basil/stripe.js', 'stripe-js');
+        }
+
         $controller->addJs('igniter.payregister::/js/process.stripe.js', 'process-stripe-js');
     }
 
     #[Override]
     public function completesPaymentOnClient(): bool
     {
-        return true;
+        return !$this->isOffsiteMode();
     }
 
     #[Override]
@@ -166,11 +178,15 @@ class Stripe extends BasePaymentGateway
      * @throws ApplicationException
      */
     #[Override]
-    public function processPaymentForm($data, $host, $order): bool|RedirectResponse
+    public function processPaymentForm($data, $host, $order)
     {
         $this->validateApplicableFee($order, $host);
 
         try {
+            if ($this->isOffsiteMode()) {
+                return $this->processOffsitePayment($order, $data);
+            }
+
             if (!$intentId = $this->getSession($this->intentSessionKey)) {
                 throw new Exception('Missing payment intent identifier in session.');
             }
@@ -225,7 +241,7 @@ class Stripe extends BasePaymentGateway
             logger()->error($ex);
             $order->logPaymentAttempt('Payment error: '.$ex->getMessage(), 0, $data);
 
-            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.', $ex->getCode(), $ex);
         }
     }
 
@@ -412,7 +428,7 @@ class Stripe extends BasePaymentGateway
             logger()->error($e);
             $order->logPaymentAttempt('Payment error: '.$e->getMessage(), 0, $data, $intent ?? []);
 
-            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.', $e->getCode(), $e);
         }
     }
 
@@ -458,10 +474,121 @@ class Stripe extends BasePaymentGateway
                 $profile->setProfileData($profileData);
             }
         } catch (Exception $ex) {
-            throw new ApplicationException($ex->getMessage());
+            throw new ApplicationException($ex->getMessage(), $ex->getCode(), $ex);
         }
 
         return $profileData;
+    }
+
+    //
+    // Checkout session
+    //
+
+    public function processReturnUrl(array $params): RedirectResponse
+    {
+        $hash = $params[0] ?? null;
+        $redirectPage = input('redirect') ?: 'checkout.checkout';
+        $cancelPage = input('cancel') ?: 'checkout.checkout';
+
+        $order = $this->createOrderModel()->whereHash($hash)->first();
+
+        try {
+            throw_unless($order, new ApplicationException('No order found'));
+
+            $paymentMethod = $order->payment_method;
+            if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class) {
+                throw new ApplicationException('No valid payment method found');
+            }
+
+            if (!$order->isPaymentProcessed()) {
+                $order->logPaymentAttempt('Payment successful', 1, [], $paymentMethod, false);
+                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
+                $order->markAsPaymentProcessed();
+            }
+
+            return Redirect::to(page_url($redirectPage, [
+                'id' => $order->getKey(),
+                'hash' => $order->hash,
+            ]));
+        } catch (Exception $ex) {
+            $order?->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, [], []);
+            flash()->warning($ex->getMessage())->important();
+        }
+
+        return Redirect::to(page_url($cancelPage));
+    }
+
+    public function processCancelUrl(array $params): RedirectResponse
+    {
+        $hash = $params[0] ?? null;
+        $redirectPage = input('redirect') ?: 'checkout.checkout';
+
+        throw_unless(
+            $order = $this->createOrderModel()->whereHash($hash)->first(),
+            new ApplicationException('No order found'),
+        );
+
+        $paymentMethod = $order->payment_method;
+        if (!$paymentMethod || $paymentMethod->getGatewayClass() != static::class) {
+            throw new ApplicationException('No valid payment method found');
+        }
+
+        $order->logPaymentAttempt('Payment canceled by customer', 0, [], request()->input());
+
+        return Redirect::to(page_url($redirectPage));
+    }
+
+    protected function processOffsitePayment(Order $order, array $data)
+    {
+        $gateway = $this->createGateway();
+        $stripeOptions = $this->getStripeOptions();
+
+        $fields = $this->getPaymentCheckoutSessionFields($order, $data);
+
+        $checkoutSession = $gateway->checkout->sessions->create($fields, $stripeOptions);
+
+        return Redirect::to($checkoutSession->url);
+    }
+
+    protected function getPaymentCheckoutSessionFields($order, $data = []): array
+    {
+        $cancelUrl = $this->makeEntryPointUrl('stripe_cancel_url').'/'.$order->hash;
+        $successUrl = $this->makeEntryPointUrl('stripe_return_url').'/'.$order->hash;
+        $successUrl .= '?redirect='.array_get($data, 'successPage').'&cancel='.array_get($data, 'cancelPage');
+
+        $fields = [
+            'line_items' => [
+                [
+                    'price_data' => [
+                        'currency' => currency()->getUserCurrency(),
+                        'unit_amount_decimal' => number_format($order->order_total, 2, '.', '') * 100,
+                        'product_data' => [
+                            'name' => 'Meals',
+                        ],
+                    ],
+                    'quantity' => 1,
+                ],
+            ],
+            'cancel_url' => $cancelUrl.'?redirect='.array_get($data, 'cancelPage'),
+            'success_url' => $successUrl,
+            'mode' => 'payment',
+            'metadata' => [
+                'order_id' => $order->order_id,
+            ],
+            'payment_intent_data' => [
+                'capture_method' => $this->shouldAuthorizePayment() ? 'manual' : 'automatic',
+            ],
+        ];
+
+        if ($order->customer && ($profileData = $this->createOrFetchProfileData($order->customer))) {
+            $fields['customer'] = array_get($profileData, 'customer_id');
+        } else {
+            $fields['customer_email'] = array_get($data, 'email');
+        }
+
+        $this->fireSystemEvent('payregister.stripe.extendCheckoutSessionFields', [&$fields, $order, $data]);
+
+        return $fields;
     }
 
     //
@@ -605,12 +732,14 @@ class Stripe extends BasePaymentGateway
             return response()->json('Missing webhook event name', 400);
         }
 
+        Event::dispatch('payregister.stripe.webhook.handle', [$this->model, $eventType, $payload]);
+
         $webhookJob = new ProcessStripeWebhookJob($this->model, $eventType, $payload);
 
-        $webhookJob->checkMethod();
-
-        // Delay the job to ensure the webhook is processed after the checkout request is completed
-        dispatch($webhookJob)->delay(now()->addMinute());
+        if (method_exists($webhookJob, $webhookJob->getMethod())) {
+            // Delay the job to ensure the webhook is processed after the checkout request is completed
+            dispatch($webhookJob)->delay(now()->addMinute());
+        }
 
         return response()->json('Webhook Handled');
     }

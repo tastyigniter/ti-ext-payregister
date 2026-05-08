@@ -98,7 +98,7 @@ class AuthorizeNetClient
         return $transactionResponse;
     }
 
-    protected function getErrorMessageFromResponse(?AnetApiResponseType $response, ?TransactionResponseType $transactionResponse): string
+    protected function getErrorMessageFromResponse(?ANetApiResponseType $response, ?TransactionResponseType $transactionResponse): string
     {
         $message = "Transaction Failed \n Error Code : %s \n Error Message : %s \n";
         if ($transactionResponse != null && $transactionResponse->getErrors() != null) {

@@ -140,6 +140,8 @@ return [
         'label_locale_code' => 'Locale Code',
         'label_priority' => 'Priority',
         'label_status' => 'Status',
+        'label_offsite_enabled' => 'Offsite Mode (Stripe Checkout)',
+        'help_offsite_enabled' => 'Enabling offsite mode will redirect customers to a Stripe hosted payment page to complete the payment.',
 
         'help_locale_code' => 'See <a href="https://stripe.com/docs/js/appendix/supported_locales">Stripe.js supported locales</a',
     ],

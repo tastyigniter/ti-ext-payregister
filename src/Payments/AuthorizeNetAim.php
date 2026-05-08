@@ -123,7 +123,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields);
 
-            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.');
+            throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later.', $ex->getCode(), $ex);
         }
     }
 
@@ -157,7 +157,7 @@ class AuthorizeNetAim extends BasePaymentGateway
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Refund failed -> '.$ex->getMessage(), 0, $fields, []);
 
-            throw new ApplicationException('Refund failed, please try again later or contact system administrator');
+            throw new ApplicationException('Refund failed, please try again later or contact system administrator', $ex->getCode(), $ex);
         }
     }
 

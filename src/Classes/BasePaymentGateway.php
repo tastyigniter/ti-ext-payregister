@@ -16,7 +16,9 @@ use Igniter\PayRegister\Concerns\WithPaymentProfile;
 use Igniter\PayRegister\Concerns\WithPaymentRefund;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\System\Actions\ModelAction;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\URL;
+use Illuminate\View\Factory;
 use LogicException;
 use ReflectionClass;
 
@@ -179,7 +181,7 @@ class BasePaymentGateway extends ModelAction
      */
     public function beforeRenderPaymentForm($host, $controller) {}
 
-    public function renderPaymentForm()
+    public function renderPaymentForm(): View|Factory
     {
         $this->beforeRenderPaymentForm($this->model, controller());
 
