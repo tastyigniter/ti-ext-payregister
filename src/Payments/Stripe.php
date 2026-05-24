@@ -22,6 +22,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Redirect;
 use Override;
+use Stripe\Checkout\Session;
+use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 use Stripe\Webhook;
 
@@ -152,7 +154,7 @@ class Stripe extends BasePaymentGateway
                 $fields = $this->getPaymentFormFields($order);
                 $stripeOptions = $this->getStripeOptions();
                 $response = $this->createGateway()->paymentIntents->create(
-                    array_only($fields, ['amount', 'currency', 'capture_method', 'setup_future_usage', 'customer']), $stripeOptions,
+                    array_only($fields, ['amount', 'currency', 'metadata', 'capture_method', 'setup_future_usage', 'customer']), $stripeOptions,
                 );
 
                 $this->putSession($this->intentSessionKey, $response->id);
@@ -710,6 +712,74 @@ class Stripe extends BasePaymentGateway
         $this->fireSystemEvent('payregister.stripe.extendGateway', [$stripeClient]);
 
         return $stripeClient;
+    }
+
+    public function verifyPaymentIntentForOrder(Order $order, string $intentId): ?PaymentIntent
+    {
+        try {
+            $paymentIntent = $this->createGateway()->paymentIntents->retrieve(
+                $intentId,
+                [],
+                $this->getStripeOptions(),
+            );
+        } catch (Exception $ex) {
+            logger()->error($ex);
+
+            return null;
+        }
+
+        if ((string)array_get($paymentIntent->metadata->toArray(), 'order_id') !== (string)$order->order_id) {
+            return null;
+        }
+
+        if (!in_array($paymentIntent->status, ['requires_capture', 'succeeded'], true)) {
+            return null;
+        }
+
+        if ($paymentIntent->amount !== (int)number_format($order->order_total, 2, '', '')) {
+            return null;
+        }
+
+        return $paymentIntent;
+    }
+
+    public function verifyCheckoutSessionForOrder(Order $order, string $sessionId): ?Session
+    {
+        try {
+            $session = $this->createGateway()->checkout->sessions->retrieve(
+                $sessionId,
+                ['expand' => ['payment_intent']],
+                $this->getStripeOptions(),
+            );
+        } catch (Exception $ex) {
+            logger()->error($ex);
+
+            return null;
+        }
+
+        if ((string)array_get($session->metadata->toArray(), 'order_id') !== (string)$order->order_id) {
+            return null;
+        }
+
+        if ($session->status !== 'complete') {
+            return null;
+        }
+
+        if ($session->amount_total !== (int)number_format($order->order_total, 2, '', '')) {
+            return null;
+        }
+
+        $paymentIntent = $session->payment_intent;
+
+        if ($paymentIntent && !in_array($paymentIntent->status, ['requires_capture', 'succeeded'], true)) {
+            return null;
+        }
+
+        if ($paymentIntent->amount !== (int)number_format($order->order_total, 2, '', '')) {
+            return null;
+        }
+
+        return $session;
     }
 
     //

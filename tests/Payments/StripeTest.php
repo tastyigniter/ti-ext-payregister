@@ -23,7 +23,6 @@ use Mockery;
 use Stripe\ApiRequestor as StripeApiRequestorAlias;
 use Stripe\HttpClient\CurlClient;
 use Stripe\StripeObject;
-use Stripe\Util\CaseInsensitiveArray;
 
 beforeEach(function(): void {
     $this->payment = Payment::factory()->create([
@@ -32,17 +31,6 @@ beforeEach(function(): void {
     $this->stripe = new Stripe($this->payment);
     StripeApiRequestorAlias::setHttpClient($this->httpClient = mock(CurlClient::class)->makePartial());
 });
-
-function setupRequest(CurlClient $httpClient, string $uri, array $response, string $method = 'get', int $statusCode = 200): void
-{
-    $httpClient->shouldReceive('request')
-        ->with($method, 'https://api.stripe.com/v1/'.$uri, Mockery::any(), Mockery::any(), false)
-        ->andReturn([
-            json_encode($response),
-            200,
-            new CaseInsensitiveArray(['Request-Id' => 'req_123']),
-        ]);
-}
 
 it('returns correct payment form view for stripe', function(): void {
     expect(Stripe::$paymentFormView)->toBe('igniter.payregister::_partials.stripe.payment_form');
@@ -146,10 +134,10 @@ it('creates stripe payment intent successfully', function(): void {
         ->for(Customer::factory()->create(), 'customer')
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
-    setupRequest($this->httpClient, 'customers', [
+    setupStripeRequest($this->httpClient, 'customers', [
         'id' => 'cus_123',
     ], 'post');
-    setupRequest($this->httpClient, 'payment_intents', [
+    setupStripeRequest($this->httpClient, 'payment_intents', [
         'id' => 'pi_123',
         'client_secret' => 'secret',
     ], 'post');
@@ -164,11 +152,11 @@ it('fetches & updates stripe payment intent successfully', function(): void {
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
     $this->stripe->putSession('ti_payregister_stripe_intent', 'pi_123');
-    setupRequest($this->httpClient, 'payment_intents/pi_123', [
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_123', [
         'id' => 'pi_123',
         'status' => 'not-succeeded',
     ]);
-    setupRequest($this->httpClient, 'payment_intents', [
+    setupStripeRequest($this->httpClient, 'payment_intents', [
         'id' => 'pi_123',
         'client_secret' => 'secret',
     ], 'post');
@@ -209,7 +197,7 @@ it('processes stripe payment form successfully', function(): void {
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
     $this->stripe->putSession('ti_payregister_stripe_intent', 'pi_123');
-    setupRequest($this->httpClient, 'payment_intents/pi_123', [
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_123', [
         'id' => 'pi_123',
         'status' => 'succeeded',
     ]);
@@ -265,7 +253,7 @@ it('logs error and throws exception when payment intent status is not succeeded'
     $this->payment->test_secret_key = 'test_secret_key';
     $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
     $this->stripe->putSession('ti_payregister_stripe_intent', 'pi_123');
-    setupRequest($this->httpClient, 'payment_intents/pi_123', [
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_123', [
         'id' => 'pi_123',
         'status' => 'not_succeeded',
     ]);
@@ -285,7 +273,7 @@ it('updates payment profile on process payment form success', function(): void {
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
     $this->stripe->putSession('ti_payregister_stripe_intent', 'pi_123');
-    setupRequest($this->httpClient, 'payment_intents/pi_123', [
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_123', [
         'id' => 'pi_123',
         'status' => 'requires_capture',
         'payment_method' => [
@@ -318,7 +306,7 @@ it('captures authorized payment successfully', function(): void {
         'is_success' => 1,
         'response' => ['id' => 'pi_123'],
     ]);
-    setupRequest($this->httpClient, 'payment_intents/pi_123/capture', [
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_123/capture', [
         'id' => 'pi_123',
         'status' => 'succeeded',
     ], 'post');
@@ -410,7 +398,7 @@ it('logs error when capture authorized payment response is invalid', function():
         'is_success' => 1,
         'response' => ['id' => 'pi_123'],
     ]);
-    setupRequest($this->httpClient, 'payment_intents/pi_123/capture', [
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_123/capture', [
         'id' => 'pi_123',
         'status' => 'invalid',
     ], 'post');
@@ -436,7 +424,7 @@ it('cancels authorized stripe payment successfully', function(): void {
         'is_success' => 1,
         'response' => ['id' => 'pi_123'],
     ]);
-    setupRequest($this->httpClient, 'payment_intents/pi_123/cancel', [
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_123/cancel', [
         'id' => 'pi_123',
         'status' => 'canceled',
     ], 'post');
@@ -522,7 +510,7 @@ it('logs error when canceling authorized payment response is invalid', function(
         'is_success' => 1,
         'response' => ['id' => 'pi_123'],
     ]);
-    setupRequest($this->httpClient, 'payment_intents/pi_123/cancel', [
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_123/cancel', [
         'id' => 'pi_123',
         'status' => 'invalid',
     ], 'post');
@@ -544,7 +532,7 @@ it('returns stripe payment intent if status is requires_capture or succeeded', f
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
     $this->stripe->putSession('ti_payregister_stripe_intent', 'pi_123');
-    setupRequest($this->httpClient, 'payment_intents/pi_123', [
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_123', [
         'id' => 'pi_123',
         'status' => 'succeeded',
     ]);
@@ -560,7 +548,7 @@ it('deletes existing payment profile', function(): void {
         'payment_id' => $this->payment->getKey(),
         'profile_data' => ['card_id' => 'card_123', 'customer_id' => 'cus_123'],
     ]);
-    setupRequest($this->httpClient, 'customers/cus_123', [
+    setupStripeRequest($this->httpClient, 'customers/cus_123', [
         'id' => 'cus_123',
     ], 'delete');
 
@@ -592,14 +580,14 @@ it('creates payment successfully from stripe payment profile', function(): void 
         'payment_id' => $this->payment->getKey(),
         'profile_data' => ['card_id' => 'card_123', 'customer_id' => 'cus_123'],
     ]);
-    setupRequest($this->httpClient, 'customers/cus_123', [
+    setupStripeRequest($this->httpClient, 'customers/cus_123', [
         'id' => 'cus_123',
         'deleted' => true,
     ]);
-    setupRequest($this->httpClient, 'customers', [
+    setupStripeRequest($this->httpClient, 'customers', [
         'id' => 'cus_123',
     ], 'post');
-    setupRequest($this->httpClient, 'payment_intents', [
+    setupStripeRequest($this->httpClient, 'payment_intents', [
         'id' => 'pi_123',
         'status' => 'succeeded',
     ], 'post');
@@ -626,14 +614,14 @@ it('logs payment attempt and throws exception when payment request fails', funct
         'payment_id' => $this->payment->getKey(),
         'profile_data' => ['card_id' => 'card_123', 'customer_id' => 'cus_123'],
     ]);
-    setupRequest($this->httpClient, 'customers/cus_123', [
+    setupStripeRequest($this->httpClient, 'customers/cus_123', [
         'id' => 'cus_123',
         'deleted' => true,
     ]);
-    setupRequest($this->httpClient, 'customers', [
+    setupStripeRequest($this->httpClient, 'customers', [
         'id' => 'cus_123',
     ], 'post');
-    setupRequest($this->httpClient, 'payment_intents', [
+    setupStripeRequest($this->httpClient, 'payment_intents', [
         'id' => 'pi_123',
         'status' => 'invalid',
     ], 'post');
@@ -710,7 +698,7 @@ it('processes refund form and logs refund attempt', function(): void {
         'is_refundable' => 1,
         'response' => ['id' => 'pi_123', 'status' => 'succeeded', 'object' => 'payment_intent'],
     ]);
-    setupRequest($this->httpClient, 'refunds', [
+    setupStripeRequest($this->httpClient, 'refunds', [
         'id' => 're_123',
         'status' => 'succeeded',
     ], 'post');
@@ -784,7 +772,7 @@ it('throws exception when refund response fails', function(): void {
         'is_refundable' => 1,
         'response' => ['id' => 'pi_123', 'status' => 'succeeded', 'object' => 'payment_intent'],
     ]);
-    setupRequest($this->httpClient, 'refunds', [
+    setupStripeRequest($this->httpClient, 'refunds', [
         'id' => 're_123',
         'status' => 'failed',
     ], 'post');
@@ -813,10 +801,10 @@ it('redirects to stripe checkout when offsite mode is enabled', function(): void
         'payment_id' => $this->payment->getKey(),
         'profile_data' => ['customer_id' => 'cus_existing123'],
     ]);
-    setupRequest($this->httpClient, 'customers/cus_existing123', [
+    setupStripeRequest($this->httpClient, 'customers/cus_existing123', [
         'id' => 'cus_existing123',
     ]);
-    setupRequest($this->httpClient, 'checkout/sessions', [
+    setupStripeRequest($this->httpClient, 'checkout/sessions', [
         'id' => 'cs_123',
         'url' => 'https://checkout.stripe.com/pay/cs_123',
     ], 'post');
@@ -840,10 +828,10 @@ it('creates new customer for checkout session when profile has no customer_id', 
         ->for($customer, 'customer')
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
-    setupRequest($this->httpClient, 'customers', [
+    setupStripeRequest($this->httpClient, 'customers', [
         'id' => 'cus_new123',
     ], 'post');
-    setupRequest($this->httpClient, 'checkout/sessions', [
+    setupStripeRequest($this->httpClient, 'checkout/sessions', [
         'id' => 'cs_123',
         'url' => 'https://checkout.stripe.com/pay/cs_123',
     ], 'post');
@@ -860,7 +848,7 @@ it('does not include customer data in checkout session when order has no custome
     $order = Order::factory()
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
-    setupRequest($this->httpClient, 'checkout/sessions', [
+    setupStripeRequest($this->httpClient, 'checkout/sessions', [
         'id' => 'cs_123',
         'url' => 'https://checkout.stripe.com/pay/cs_123',
     ], 'post');
@@ -1017,7 +1005,7 @@ it('fires event to extend checkout session fields', function(): void {
         $fields['custom_field'] = 'custom_value';
     });
 
-    setupRequest($this->httpClient, 'checkout/sessions', [
+    setupStripeRequest($this->httpClient, 'checkout/sessions', [
         'id' => 'cs_123',
         'url' => 'https://checkout.stripe.com/pay/cs_123',
     ], 'post');
@@ -1135,4 +1123,155 @@ it('handles webhook event with webhook secret', function(): void {
 
     Event::assertDispatched('payregister.stripe.webhook.handle');
     Queue::assertPushed(ProcessStripeWebhookJob::class);
+});
+
+it('returns null when verifying payment intent fails due to stripe api error', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
+    $this->httpClient->shouldReceive('request')->andThrow(new Exception('Stripe API error'));
+
+    expect($this->stripe->verifyPaymentIntentForOrder($order, 'pi_test_123'))->toBeNull();
+});
+
+it('returns null when verifying payment intent with mismatched order metadata', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_test_123', [
+        'id' => 'pi_test_123',
+        'object' => 'payment_intent',
+        'status' => 'succeeded',
+        'amount' => 10000,
+        'metadata' => ['order_id' => '99999'],
+    ]);
+
+    expect($this->stripe->verifyPaymentIntentForOrder($order, 'pi_test_123'))->toBeNull();
+});
+
+it('returns null when verifying payment intent with invalid status', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_test_123', [
+        'id' => 'pi_test_123',
+        'object' => 'payment_intent',
+        'status' => 'processing',
+        'amount' => 10000,
+        'metadata' => ['order_id' => (string)$order->order_id],
+    ]);
+
+    expect($this->stripe->verifyPaymentIntentForOrder($order, 'pi_test_123'))->toBeNull();
+});
+
+it('returns null when verifying payment intent with mismatched amount', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
+    setupStripeRequest($this->httpClient, 'payment_intents/pi_test_123', [
+        'id' => 'pi_test_123',
+        'object' => 'payment_intent',
+        'status' => 'succeeded',
+        'amount' => 9999,
+        'metadata' => ['order_id' => (string)$order->order_id],
+    ]);
+
+    expect($this->stripe->verifyPaymentIntentForOrder($order, 'pi_test_123'))->toBeNull();
+});
+
+it('returns null when verifying checkout session fails due to stripe api error', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
+    $this->httpClient->shouldReceive('request')->andThrow(new Exception('Stripe API error'));
+
+    expect($this->stripe->verifyCheckoutSessionForOrder($order, 'cs_test_123'))->toBeNull();
+});
+
+it('returns null when verifying checkout session with mismatched order metadata', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
+    setupStripeRequest($this->httpClient, 'checkout/sessions/cs_test_123', [
+        'id' => 'cs_test_123',
+        'object' => 'checkout.session',
+        'status' => 'complete',
+        'amount_total' => 10000,
+        'metadata' => ['order_id' => '99999'],
+        'payment_intent' => [
+            'id' => 'pi_from_session',
+            'object' => 'payment_intent',
+            'status' => 'succeeded',
+            'amount' => 10000,
+            'metadata' => ['order_id' => '99999'],
+        ],
+    ]);
+
+    expect($this->stripe->verifyCheckoutSessionForOrder($order, 'cs_test_123'))->toBeNull();
+});
+
+it('returns null when verifying checkout session that is not complete', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
+    setupStripeRequest($this->httpClient, 'checkout/sessions/cs_test_123', [
+        'id' => 'cs_test_123',
+        'object' => 'checkout.session',
+        'status' => 'open',
+        'amount_total' => 10000,
+        'metadata' => ['order_id' => (string)$order->order_id],
+        'payment_intent' => [
+            'id' => 'pi_from_session',
+            'object' => 'payment_intent',
+            'status' => 'succeeded',
+            'amount' => 10000,
+            'metadata' => ['order_id' => (string)$order->order_id],
+        ],
+    ]);
+
+    expect($this->stripe->verifyCheckoutSessionForOrder($order, 'cs_test_123'))->toBeNull();
+});
+
+it('returns null when verifying checkout session with invalid payment intent status', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
+    setupStripeRequest($this->httpClient, 'checkout/sessions/cs_test_123', [
+        'id' => 'cs_test_123',
+        'object' => 'checkout.session',
+        'status' => 'complete',
+        'amount_total' => 10000,
+        'metadata' => ['order_id' => (string)$order->order_id],
+        'payment_intent' => [
+            'id' => 'pi_from_session',
+            'object' => 'payment_intent',
+            'status' => 'processing',
+            'amount' => 10000,
+            'metadata' => ['order_id' => (string)$order->order_id],
+        ],
+    ]);
+
+    expect($this->stripe->verifyCheckoutSessionForOrder($order, 'cs_test_123'))->toBeNull();
+});
+
+it('returns null when verifying checkout session with mismatched payment intent amount', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_secret_key = 'test_secret_key';
+    $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
+    setupStripeRequest($this->httpClient, 'checkout/sessions/cs_test_123', [
+        'id' => 'cs_test_123',
+        'object' => 'checkout.session',
+        'status' => 'complete',
+        'amount_total' => 10000,
+        'metadata' => ['order_id' => (string)$order->order_id],
+        'payment_intent' => [
+            'id' => 'pi_from_session',
+            'object' => 'payment_intent',
+            'status' => 'succeeded',
+            'amount' => 9999,
+            'metadata' => ['order_id' => (string)$order->order_id],
+        ],
+    ]);
+
+    expect($this->stripe->verifyCheckoutSessionForOrder($order, 'cs_test_123'))->toBeNull();
 });
