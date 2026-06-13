@@ -74,7 +74,7 @@ class PaypalExpress extends BasePaymentGateway
 
             $redirectUrl = collect($response->json('links', []))->where('rel', 'payer-action')->value('href');
             if ($response->ok() && $redirectUrl) {
-                return Redirect::to($redirectUrl);
+                return Redirect::to((string)$redirectUrl);
             }
 
             $order->logPaymentAttempt('Payment error -> '.$response->json('message'), 0, $fields, $response->json());
@@ -112,6 +112,14 @@ class PaypalExpress extends BasePaymentGateway
                 array_get($response, 'status') !== 'APPROVED',
                 new ApplicationException('Payment is not approved'),
             );
+
+            if (array_get($response, 'purchase_units.0.reference_id') !== $order->hash) {
+                throw new ApplicationException('Order reference does not match');
+            }
+
+            if (array_get($response, 'purchase_units.0.amount.value') !== number_format($order->order_total, 2, '.', '')) {
+                throw new ApplicationException('Payment amount does not match order total');
+            }
 
             if (array_get($response, 'intent') === 'CAPTURE') {
                 $response = $this->createClient()->captureOrder($token);
