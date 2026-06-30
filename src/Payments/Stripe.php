@@ -817,7 +817,7 @@ class Stripe extends BasePaymentGateway
     protected function getWebhookPayload(): array
     {
         if (!$webhookSecret = $this->getWebhookSecret()) {
-            return json_decode(request()->getContent(), true);
+            throw new Exception('Webhook secret is not configured. Webhooks cannot be processed securely.');
         }
 
         $event = Webhook::constructEvent(

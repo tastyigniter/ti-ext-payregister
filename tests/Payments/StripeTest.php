@@ -1057,7 +1057,7 @@ it('returns 400 if webhook payload is missing event type', function(): void {
         ->and($response->getContent())->toContain('Missing webhook event name');
 });
 
-it('handles webhook event without webhook secret', function(): void {
+it('rejects webhook event when webhook secret is not configured', function(): void {
     Queue::fake();
     Event::fake(['payregister.stripe.webhook.handle']);
     $order = Order::factory()->for($this->payment, 'payment_method')->create();
@@ -1075,19 +1075,14 @@ it('handles webhook event without webhook secret', function(): void {
             ],
         ],
     ];
-    $timestamp = time();
-    $payloadJson = json_encode($payload);
-    $signature = hash_hmac('sha256', sprintf('%d.%s', $timestamp, $payloadJson), 'whsec_test_webhook_secret');
 
-    $response = $this->postJson('/ti_payregister/stripe_webhook/handle', $payload, [
-        'Stripe-Signature' => sprintf('t=%d,v1=%s', $timestamp, $signature),
-    ]);
+    $response = $this->postJson('/ti_payregister/stripe_webhook/handle', $payload);
 
-    expect($response->getStatusCode())->toBe(200)
-        ->and($response->getContent())->toContain('Webhook Handled');
+    expect($response->getStatusCode())->toBe(400)
+        ->and($response->getContent())->toContain('Webhook secret is not configured');
 
-    Event::assertDispatched('payregister.stripe.webhook.handle');
-    Queue::assertPushed(ProcessStripeWebhookJob::class);
+    Event::assertNotDispatched('payregister.stripe.webhook.handle');
+    Queue::assertNotPushed(ProcessStripeWebhookJob::class);
 });
 
 it('handles webhook event with webhook secret', function(): void {
