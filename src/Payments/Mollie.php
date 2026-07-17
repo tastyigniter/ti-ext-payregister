@@ -113,32 +113,34 @@ class Mollie extends BasePaymentGateway
                 new ApplicationException('No valid payment method found'),
             );
 
-            $paymentId = array_get(PaymentLog::where('order_id', $order->order_id)
-                ->where('payment_code', $paymentMethod->code)
-                ->where('message', 'redirecting-to-payment-gateway')
-                ->value('response') ?? [], 'id');
+            // The notify webhook usually confirms the payment before the customer
+            // returns — an already processed order is the success case, not an error.
+            if (!$order->isPaymentProcessed()) {
+                $paymentId = array_get(PaymentLog::where('order_id', $order->order_id)
+                    ->where('payment_code', $paymentMethod->code)
+                    ->where('message', 'redirecting-to-payment-gateway')
+                    ->value('response') ?? [], 'id');
 
-            throw_unless(
-                !$paymentId,
-                new ApplicationException('Missing payment id in payment attempt records'),
-            );
+                throw_unless(
+                    $paymentId,
+                    new ApplicationException('Missing payment id in payment attempt records'),
+                );
 
-            throw_unless(
-                $payment = $this->createClient()->payments->get($paymentId),
-                new ApplicationException(sprintf('Payment not found for %s', $paymentId)),
-            );
+                throw_unless(
+                    $payment = $this->createClient()->payments->get($paymentId),
+                    new ApplicationException(sprintf('Payment not found for %s', $paymentId)),
+                );
 
-            throw_if($order->isPaymentProcessed(), new ApplicationException('Payment has already been processed'));
-
-            if ($payment->isPaid() && data_get($payment->metadata, 'order_id') == $order->order_id) {
-                $order->logPaymentAttempt('Payment successful', 1, [], [
-                    'id' => $payment->id,
-                    'status' => $payment->status,
-                    'method' => $payment->method,
-                    'amount' => $payment->amount,
-                ], true);
-                $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
-                $order->markAsPaymentProcessed();
+                if ($payment->isPaid() && data_get($payment->metadata, 'order_id') == $order->order_id) {
+                    $order->logPaymentAttempt('Payment successful', 1, [], [
+                        'id' => $payment->id,
+                        'status' => $payment->status,
+                        'method' => $payment->method,
+                        'amount' => $payment->amount,
+                    ], true);
+                    $order->updateOrderStatus($paymentMethod->order_status, ['notify' => false]);
+                    $order->markAsPaymentProcessed();
+                }
             }
 
             return Redirect::to(page_url($redirectPage, [
