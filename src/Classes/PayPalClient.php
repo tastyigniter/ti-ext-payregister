@@ -84,7 +84,9 @@ class PayPalClient
         throw_unless($this->clientId, ApplicationException::class, 'PayPal client ID is not configured');
         throw_unless($this->clientSecret, ApplicationException::class, 'PayPal client secret is not configured');
 
-        if (!cache()->has('payregister_paypal_access_token')) {
+        $cacheKey = 'payregister_paypal_access_token'.($this->sandbox ? '_sandbox' : '');
+
+        if (!cache()->has($cacheKey)) {
             $response = Http::asForm()
                 ->withBasicAuth($this->clientId, $this->clientSecret)
                 ->post($this->endpoint('v1/oauth2/token'), [
@@ -95,16 +97,16 @@ class PayPalClient
                 throw new ApplicationException('Failed to generate access token');
             }
 
-            cache()->put('payregister_paypal_access_token', $response->json('access_token'), $response->json('expires_in') - 60);
+            cache()->put($cacheKey, $response->json('access_token'), $response->json('expires_in') - 60);
         }
 
-        return 'Bearer '.cache()->get('payregister_paypal_access_token');
+        return 'Bearer '.cache()->get($cacheKey);
     }
 
     protected function endpoint(string $uri): string
     {
         $endpoint = 'https://';
-        $endpoint .= app()->environment('production') ? 'api-m.paypal.com/' : 'api-m.sandbox.paypal.com/';
+        $endpoint .= $this->sandbox ? 'api-m.sandbox.paypal.com/' : 'api-m.paypal.com/';
 
         return $endpoint.$uri;
     }

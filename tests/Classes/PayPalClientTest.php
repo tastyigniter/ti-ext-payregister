@@ -21,9 +21,9 @@ beforeEach(function(): void {
 
 function mockGenerateAccessToken(): void
 {
-    Cache::shouldReceive('has')->with('payregister_paypal_access_token')->andReturn(false);
+    Cache::shouldReceive('has')->with('payregister_paypal_access_token_sandbox')->andReturn(false);
     Cache::shouldReceive('put')->once();
-    Cache::shouldReceive('get')->with('payregister_paypal_access_token')->andReturn('testAccessToken');
+    Cache::shouldReceive('get')->with('payregister_paypal_access_token_sandbox')->andReturn('testAccessToken');
 
     Http::fake([
         'https://api-m.sandbox.paypal.com/v1/oauth2/token' => Http::response([
@@ -124,7 +124,7 @@ it('refunds payment successfully', function(): void {
 });
 
 it('throws exception if access token generation fails', function(): void {
-    Cache::shouldReceive('has')->with('payregister_paypal_access_token')->andReturn(false);
+    Cache::shouldReceive('has')->with('payregister_paypal_access_token_sandbox')->andReturn(false);
 
     Http::fake([
         'https://api-m.sandbox.paypal.com/v1/oauth2/token' => Http::response([], 400),
@@ -134,4 +134,27 @@ it('throws exception if access token generation fails', function(): void {
     $this->expectExceptionMessage('Failed to generate access token');
 
     $this->payPalClient->getOrder('123');
+});
+
+it('targets the live api host when not in sandbox mode', function(): void {
+    Cache::shouldReceive('has')->with('payregister_paypal_access_token')->andReturn(false);
+    Cache::shouldReceive('put')->once();
+    Cache::shouldReceive('get')->with('payregister_paypal_access_token')->andReturn('testAccessToken');
+
+    Http::fake([
+        'https://api-m.paypal.com/v1/oauth2/token' => Http::response([
+            'access_token' => 'testAccessToken',
+            'expires_in' => 3600,
+        ], 200),
+        'https://api-m.paypal.com/v2/checkout/orders/*' => Http::response(['id' => 'testOrderId'], 200),
+    ]);
+
+    $client = new PayPalClient;
+    $client->setClientId('testClientId');
+    $client->setClientSecret('testClientSecret');
+    $client->setSandbox(false);
+
+    $response = $client->getOrder('testOrderId');
+
+    expect($response->json('id'))->toBe('testOrderId');
 });
