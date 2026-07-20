@@ -190,7 +190,7 @@ class BasePaymentGateway extends ModelAction
         return view($viewName, ['paymentMethod' => $this->model]);
     }
 
-    public function getPaymentFormViewName()
+    public function getPaymentFormViewName(): ?string
     {
         $themeCode = resolve(ThemeManager::class)->getActiveThemeCode();
         if (view()->exists($viewName = $themeCode.'::_partials.payregister.'.$this->model->code)) {
