@@ -198,12 +198,16 @@ it('processes mollie return url and updates order status', function(): void {
         ->for(Customer::factory()->create(), 'customer')
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
+    $order->logPaymentAttempt('redirecting-to-payment-gateway', 0, [], [
+        'id' => 'tr_test123',
+        'status' => 'open',
+    ]);
 
     $molliePayment = Mockery::mock(MolliePayment::class);
     $molliePayment->shouldReceive('isPaid')->andReturn(true)->once();
     $molliePayment->metadata = ['order_id' => $order->getKey()];
     $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
-    $paymentEndpoint->shouldReceive('get')->andReturn($molliePayment)->once();
+    $paymentEndpoint->shouldReceive('get')->with('tr_test123')->andReturn($molliePayment)->once();
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
     $mollieClient->payments = $paymentEndpoint;
     app()->instance(MollieApiClient::class, $mollieClient);
@@ -218,6 +222,54 @@ it('processes mollie return url and updates order status', function(): void {
         'is_success' => 1,
         'is_refundable' => 1,
     ]);
+});
+
+it('redirects to the success page when the webhook already processed the payment', function(): void {
+    request()->merge([
+        'redirect' => 'http://redirect.url',
+        'cancel' => 'http://cancel.url',
+    ]);
+
+    Mail::fake();
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $this->payment->applyGatewayClass();
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    $order->markAsPaymentProcessed();
+
+    $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
+    $paymentEndpoint->shouldReceive('get')->never();
+    $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
+    $mollieClient->payments = $paymentEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
+
+    $response = $this->mollie->processReturnUrl([$order->hash]);
+
+    expect($response->getTargetUrl())->toContain('http://redirect.url');
+});
+
+it('redirects to cancel page when no payment attempt record exists', function(): void {
+    request()->merge([
+        'redirect' => 'http://redirect.url',
+        'cancel' => 'http://cancel.url',
+    ]);
+
+    Mail::fake();
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $this->payment->applyGatewayClass();
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+
+    $response = $this->mollie->processReturnUrl([$order->hash]);
+
+    expect($response->getTargetUrl())->toContain('http://cancel.url')
+        ->and(flash()->messages()->first())->message->toBe('Missing payment id in payment attempt records')->level->toBe('warning');
 });
 
 it('throws exception if no order found in mollie return url', function(): void {
