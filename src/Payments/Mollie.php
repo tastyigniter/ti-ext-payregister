@@ -322,7 +322,7 @@ class Mollie extends BasePaymentGateway
         return $fields;
     }
 
-    protected function getPaymentRefundFields($order, $data)
+    protected function getPaymentRefundFields($order, $data): array
     {
         $refundAmount = array_get($data, 'refund_type') == 'full'
             ? $order->order_total : array_get($data, 'refund_amount');
@@ -344,7 +344,7 @@ class Mollie extends BasePaymentGateway
 
         $eventResult = $this->fireSystemEvent('payregister.mollie.extendRefundFields', [$fields, $order, $data], false);
         if (is_array($eventResult) && array_filter($eventResult)) {
-            $fields = array_merge($fields, ...$eventResult);
+            return array_merge($fields, ...$eventResult);
         }
 
         return $fields;

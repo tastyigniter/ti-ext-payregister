@@ -357,7 +357,7 @@ class Square extends BasePaymentGateway
         }
     }
 
-    protected function getPaymentRefundFields($order, $data)
+    protected function getPaymentRefundFields($order, $data): array
     {
         $refundAmount = array_get($data, 'refund_type') !== 'full'
             ? array_get($data, 'refund_amount') : $order->order_total;
@@ -374,7 +374,7 @@ class Square extends BasePaymentGateway
 
         $eventResult = $this->fireSystemEvent('payregister.square.extendRefundFields', [$fields, $order, $data], false);
         if (is_array($eventResult) && array_filter($eventResult)) {
-            $fields = array_merge($fields, ...$eventResult);
+            return array_merge($fields, ...$eventResult);
         }
 
         return $fields;
