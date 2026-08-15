@@ -105,8 +105,8 @@ return [
         ['api_sandbox_pass', 'lang:igniter.payregister::default.paypal.label_api_sandbox_pass', 'nullable|required_if:api_mode,sandbox|string'],
         ['api_action', 'lang:igniter.payregister::default.paypal.label_api_action', 'in:sale,authorization'],
         ['order_fee_type', 'lang:igniter.payregister::default.label_order_fee_type', 'integer'],
-        ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'nullable|numeric'],
-        ['order_total', 'lang:igniter.payregister::default.label_order_total', 'nullable|numeric'],
+        ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'nullable|currency'],
+        ['order_total', 'lang:igniter.payregister::default.label_order_total', 'nullable|currency'],
         ['order_status', 'lang:igniter.payregister::default.label_order_status', 'nullable|integer'],
     ],
 ];
