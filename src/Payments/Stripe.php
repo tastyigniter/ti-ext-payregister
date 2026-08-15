@@ -120,11 +120,10 @@ class Stripe extends BasePaymentGateway
         ];
 
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendJsOptions', [$options, $order], false);
-        if (is_array($eventResult)) {
-            return array_merge($options, ...array_filter($eventResult));
-        }
 
-        return $options;
+        return is_array($eventResult)
+            ? array_merge($options, ...array_filter($eventResult))
+            : $options;
     }
 
     public function getStripeOptions(): array
@@ -132,11 +131,10 @@ class Stripe extends BasePaymentGateway
         $options = [];
 
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendOptions', [$options], false);
-        if (is_array($eventResult)) {
-            return array_merge($options, ...array_filter($eventResult));
-        }
 
-        return $options;
+        return is_array($eventResult)
+            ? array_merge($options, ...array_filter($eventResult))
+            : $options;
     }
 
     public function createOrFetchIntent($order)
