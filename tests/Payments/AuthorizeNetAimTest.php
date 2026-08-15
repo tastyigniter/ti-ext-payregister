@@ -179,7 +179,7 @@ it('processes authorizenet payment form and logs failed payment', function(): vo
     $request = mock(AuthorizeNetTransactionRequest::class);
     $response = mock(TransactionResponseType::class);
     $response->shouldReceive('getResponseCode')->andReturn('2')->twice();
-    $response->shouldReceive('getMessages')->andReturn([$messageAType])->atMost(5);
+    $response->shouldReceive('getMessages')->andReturn([$messageAType])->atMost()->times(5);
     $response->shouldReceive('getTransId')->andReturn('12345')->once();
     $response->shouldReceive('getAccountNumber')->andReturn('****1111')->once();
     $response->shouldReceive('getAccountType')->andReturn('Visa')->once();

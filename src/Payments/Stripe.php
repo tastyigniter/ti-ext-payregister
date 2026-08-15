@@ -113,30 +113,28 @@ class Stripe extends BasePaymentGateway
         return $this->model->transaction_type === 'auth_only';
     }
 
-    public function getStripeJsOptions($order)
+    public function getStripeJsOptions($order): array
     {
         $options = [
             'locale' => $this->model->locale_code ?? app()->getLocale(),
         ];
 
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendJsOptions', [$options, $order], false);
-        if (is_array($eventResult)) {
-            $options = array_merge($options, ...array_filter($eventResult));
-        }
 
-        return $options;
+        return is_array($eventResult)
+            ? array_merge($options, ...array_filter($eventResult))
+            : $options;
     }
 
-    public function getStripeOptions()
+    public function getStripeOptions(): array
     {
         $options = [];
 
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendOptions', [$options], false);
-        if (is_array($eventResult)) {
-            $options = array_merge($options, ...array_filter($eventResult));
-        }
 
-        return $options;
+        return is_array($eventResult)
+            ? array_merge($options, ...array_filter($eventResult))
+            : $options;
     }
 
     public function createOrFetchIntent($order)
@@ -669,13 +667,13 @@ class Stripe extends BasePaymentGateway
     {
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendCaptureFields', [$fields, $order], false);
         if (is_array($eventResult) && array_filter($eventResult)) {
-            $fields = array_merge($fields, ...$eventResult);
+            return array_merge($fields, ...$eventResult);
         }
 
         return $fields;
     }
 
-    protected function getPaymentRefundFields($order, $data)
+    protected function getPaymentRefundFields($order, $data): array
     {
         $refundAmount = array_get($data, 'refund_type') !== 'full'
             ? array_get($data, 'refund_amount') : $order->order_total;
@@ -690,7 +688,7 @@ class Stripe extends BasePaymentGateway
 
         $eventResult = $this->fireSystemEvent('payregister.stripe.extendRefundFields', [$fields, $order, $data], false);
         if (is_array($eventResult) && array_filter($eventResult)) {
-            $fields = array_merge($fields, ...$eventResult);
+            return array_merge($fields, ...$eventResult);
         }
 
         return $fields;

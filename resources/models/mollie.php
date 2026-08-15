@@ -65,8 +65,8 @@ return [
         ['live_api_key', 'lang:igniter.payregister::default.mollie.label_live_api_key', 'nullable|required_if:transaction_mode,live|string'],
         ['test_api_key', 'lang:igniter.payregister::default.mollie.label_test_api_key', 'nullable|required_if:transaction_mode,test|string'],
         ['order_fee_type', 'lang:igniter.payregister::default.label_order_fee_type', 'integer'],
-        ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'nullable|numeric'],
-        ['order_total', 'lang:igniter.payregister::default.label_order_total', 'nullable|numeric'],
+        ['order_fee', 'lang:igniter.payregister::default.label_order_fee', 'nullable|currency'],
+        ['order_total', 'lang:igniter.payregister::default.label_order_total', 'nullable|currency'],
         ['order_status', 'lang:igniter.payregister::default.label_order_status', 'nullable|integer'],
     ],
 ];
