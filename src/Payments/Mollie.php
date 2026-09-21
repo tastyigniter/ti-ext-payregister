@@ -17,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Response;
 use Mollie\Api\MollieApiClient;
+use Mollie\Api\Resources\Payment as MolliePayment;
 use Override;
 
 class Mollie extends BasePaymentGateway
@@ -131,7 +132,8 @@ class Mollie extends BasePaymentGateway
                     new ApplicationException(sprintf('Payment not found for %s', $paymentId)),
                 );
 
-                if ($payment->isPaid() && data_get($payment->metadata, 'order_id') == $order->order_id) {
+                if ($payment->isPaid()) {
+                    $this->assertPaymentMatchesOrder($payment, $order);
                     $order->logPaymentAttempt('Payment successful', 1, [], [
                         'id' => $payment->id,
                         'status' => $payment->status,
@@ -178,6 +180,14 @@ class Mollie extends BasePaymentGateway
             'method' => $payment->method,
             'amount' => $payment->amount,
         ];
+
+        try {
+            $this->assertPaymentMatchesOrder($payment, $order);
+        } catch (ApplicationException $ex) {
+            $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, request()->input(), $response);
+
+            throw $ex;
+        }
 
         if (!$order->isPaymentProcessed()) {
             if ($payment->isPaid()) {
@@ -296,6 +306,22 @@ class Mollie extends BasePaymentGateway
         $this->fireSystemEvent('payregister.mollie.extendGateway', [$client]);
 
         return $client;
+    }
+
+    protected function assertPaymentMatchesOrder(MolliePayment $payment, Order $order): void
+    {
+        throw_if(
+            (string)data_get($payment->metadata, 'order_id') !== (string)$order->order_id,
+            new ApplicationException('Order reference does not match'),
+        );
+
+        $paymentAmount = number_format((float)data_get($payment->amount, 'value'), 2, '.', '');
+        $orderAmount = number_format((float)$order->order_total, 2, '.', '');
+
+        throw_if(
+            $paymentAmount !== $orderAmount,
+            new ApplicationException('Payment amount does not match order total'),
+        );
     }
 
     protected function getPaymentFormFields($order, $data = []): array

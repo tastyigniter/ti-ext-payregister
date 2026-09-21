@@ -136,9 +136,7 @@ class Payment extends Model
      */
     public function applyGatewayClass(?string $class = null): bool
     {
-        if (is_null($class)) {
-            $class = $this->class_name;
-        }
+        $class ??= $this->class_name;
 
         if ($class && !class_exists($class)) {
             $class = null;

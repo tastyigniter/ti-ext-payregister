@@ -206,6 +206,7 @@ it('processes mollie return url and updates order status', function(): void {
     $molliePayment = Mockery::mock(MolliePayment::class);
     $molliePayment->shouldReceive('isPaid')->andReturn(true)->once();
     $molliePayment->metadata = ['order_id' => $order->getKey()];
+    $molliePayment->amount = (object)['value' => number_format($order->order_total, 2, '.', '')];
     $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
     $paymentEndpoint->shouldReceive('get')->with('tr_test123')->andReturn($molliePayment)->once();
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
@@ -272,6 +273,82 @@ it('redirects to cancel page when no payment attempt record exists', function():
         ->and(flash()->messages()->first())->message->toBe('Missing payment id in payment attempt records')->level->toBe('warning');
 });
 
+it('redirects to cancel page when mollie return payment order metadata does not match', function(): void {
+    request()->merge([
+        'redirect' => 'http://redirect.url',
+        'cancel' => 'http://cancel.url',
+    ]);
+
+    Mail::fake();
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $this->payment->applyGatewayClass();
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    $order->logPaymentAttempt('redirecting-to-payment-gateway', 0, [], [
+        'id' => 'tr_test123',
+        'status' => 'open',
+    ]);
+
+    $molliePayment = Mockery::mock(MolliePayment::class);
+    $molliePayment->shouldReceive('isPaid')->andReturn(true)->once();
+    $molliePayment->metadata = ['order_id' => '99999'];
+    $molliePayment->amount = (object)['value' => number_format($order->order_total, 2, '.', '')];
+    $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
+    $paymentEndpoint->shouldReceive('get')->with('tr_test123')->andReturn($molliePayment)->once();
+    $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
+    $mollieClient->payments = $paymentEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
+
+    $response = $this->mollie->processReturnUrl([$order->hash]);
+
+    expect($response->getTargetUrl())->toContain('http://cancel.url')
+        ->and(flash()->messages()->first())->message->toBe('Order reference does not match')->level->toBe('warning');
+
+    $order->refresh();
+    expect($order->isPaymentProcessed())->toBeFalse();
+});
+
+it('redirects to cancel page when mollie return payment amount does not match order total', function(): void {
+    request()->merge([
+        'redirect' => 'http://redirect.url',
+        'cancel' => 'http://cancel.url',
+    ]);
+
+    Mail::fake();
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $this->payment->applyGatewayClass();
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    $order->logPaymentAttempt('redirecting-to-payment-gateway', 0, [], [
+        'id' => 'tr_test123',
+        'status' => 'open',
+    ]);
+
+    $molliePayment = Mockery::mock(MolliePayment::class);
+    $molliePayment->shouldReceive('isPaid')->andReturn(true)->once();
+    $molliePayment->metadata = ['order_id' => $order->getKey()];
+    $molliePayment->amount = (object)['value' => '1.00'];
+    $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
+    $paymentEndpoint->shouldReceive('get')->with('tr_test123')->andReturn($molliePayment)->once();
+    $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
+    $mollieClient->payments = $paymentEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
+
+    $response = $this->mollie->processReturnUrl([$order->hash]);
+
+    expect($response->getTargetUrl())->toContain('http://cancel.url')
+        ->and(flash()->messages()->first())->message->toBe('Payment amount does not match order total')->level->toBe('warning');
+
+    $order->refresh();
+    expect($order->isPaymentProcessed())->toBeFalse();
+});
+
 it('throws exception if no order found in mollie return url', function(): void {
     request()->merge([
         'redirect' => 'http://redirect.url',
@@ -299,6 +376,8 @@ it('processes mollie notify url and updates order status', function(): void {
 
     $molliePayment = Mockery::mock(MolliePayment::class);
     $molliePayment->shouldReceive('isPaid')->andReturn(true)->once();
+    $molliePayment->metadata = ['order_id' => $order->getKey()];
+    $molliePayment->amount = (object)['value' => number_format($order->order_total, 2, '.', '')];
     $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
     $paymentEndpoint->shouldReceive('get')->andReturn($molliePayment)->once();
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
@@ -334,6 +413,8 @@ it('processes mollie notify url fails and updates order status', function(): voi
 
     $molliePayment = Mockery::mock(MolliePayment::class);
     $molliePayment->shouldReceive('isPaid')->andReturn(false)->once();
+    $molliePayment->metadata = ['order_id' => $order->getKey()];
+    $molliePayment->amount = (object)['value' => number_format($order->order_total, 2, '.', '')];
     $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
     $paymentEndpoint->shouldReceive('get')->andReturn($molliePayment)->once();
     $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
@@ -358,6 +439,80 @@ it('throws exception if no order found in mollie notify url', function(): void {
     $this->expectExceptionMessage('No order found');
 
     $this->mollie->processNotifyUrl(['invalid_hash']);
+});
+
+it('rejects mollie notify url when payment order metadata does not match', function(): void {
+    request()->merge([
+        'id' => 'payment_id',
+    ]);
+
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $this->payment->applyGatewayClass();
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+
+    $molliePayment = Mockery::mock(MolliePayment::class);
+    $molliePayment->shouldReceive('isPaid')->never();
+    $molliePayment->metadata = ['order_id' => '99999'];
+    $molliePayment->amount = (object)['value' => number_format($order->order_total, 2, '.', '')];
+    $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
+    $paymentEndpoint->shouldReceive('get')->andReturn($molliePayment)->once();
+    $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
+    $mollieClient->setApiKey('test_'.str_random(30));
+    $mollieClient->payments = $paymentEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
+
+    expect(fn() => $this->mollie->processNotifyUrl([$order->hash]))
+        ->toThrow(ApplicationException::class, 'Order reference does not match');
+
+    $order->refresh();
+    expect($order->isPaymentProcessed())->toBeFalse();
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment error -> Order reference does not match',
+        'is_success' => 0,
+    ]);
+});
+
+it('rejects mollie notify url when payment amount does not match order total', function(): void {
+    request()->merge([
+        'id' => 'payment_id',
+    ]);
+
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_api_key = 'test_'.str_random(30);
+    $this->payment->applyGatewayClass();
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+
+    $molliePayment = Mockery::mock(MolliePayment::class);
+    $molliePayment->shouldReceive('isPaid')->never();
+    $molliePayment->metadata = ['order_id' => $order->getKey()];
+    $molliePayment->amount = (object)['value' => '1.00'];
+    $paymentEndpoint = Mockery::mock(PaymentEndpoint::class);
+    $paymentEndpoint->shouldReceive('get')->andReturn($molliePayment)->once();
+    $mollieClient = Mockery::mock(MollieApiClient::class)->makePartial();
+    $mollieClient->setApiKey('test_'.str_random(30));
+    $mollieClient->payments = $paymentEndpoint;
+    app()->instance(MollieApiClient::class, $mollieClient);
+
+    expect(fn() => $this->mollie->processNotifyUrl([$order->hash]))
+        ->toThrow(ApplicationException::class, 'Payment amount does not match order total');
+
+    $order->refresh();
+    expect($order->isPaymentProcessed())->toBeFalse();
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment error -> Payment amount does not match order total',
+        'is_success' => 0,
+    ]);
 });
 
 it('processes mollie refund form and logs refund attempt', function(): void {
