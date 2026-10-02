@@ -359,7 +359,7 @@ class Square extends BasePaymentGateway
         ));
 
         $fields = [
-            'amount' => (int)(number_format($refundAmount, 2, '', '') * 100),
+            'amount' => (int)(number_format((float) $refundAmount, 2, '', '') * 100),
             'currency' => currency()->getUserCurrency(),
             'reason' => array_get($data, 'refund_reason'),
         ];
@@ -403,14 +403,14 @@ class Square extends BasePaymentGateway
 
         $fields = [
             'idempotencyKey' => uniqid(),
-            'amount' => (int)(number_format($orderAmount, 2, '.', '') * 100),
+            'amount' => (int)(number_format((float) $orderAmount, 2, '.', '') * 100),
             'currency' => currency()->getUserCurrency(),
             'note' => 'Payment for Order '.$order->order_id,
             'referenceId' => (string)$order->order_id,
         ];
 
         if ($tipAmount) {
-            $fields['tip'] = (int)(number_format($tipAmount, 2, '.', '') * 100);
+            $fields['tip'] = (int)(number_format((float) $tipAmount, 2, '.', '') * 100);
         }
 
         $this->fireSystemEvent('payregister.square.extendFields', [&$fields, $order, $data]);
