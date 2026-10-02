@@ -14,15 +14,21 @@ use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\PayRegister\Payments\Square;
 use Igniter\User\Models\Customer;
 use Mockery;
-use Square\Apis\CardsApi;
-use Square\Apis\CustomersApi;
-use Square\Apis\PaymentsApi;
-use Square\Apis\RefundsApi;
-use Square\Http\ApiResponse;
-use Square\Models\Card;
-use Square\Models\Error;
+use ReflectionMethod;
+use Square\Cards\CardsClient;
+use Square\Customers\CustomersClient;
+use Square\Exceptions\SquareApiException;
+use Square\Payments\PaymentsClient;
+use Square\Refunds\RefundsClient;
 use Square\SquareClient;
-use Square\SquareClientBuilder;
+use Square\Types\Card;
+use Square\Types\CreateCardResponse;
+use Square\Types\CreateCustomerResponse;
+use Square\Types\CreatePaymentResponse;
+use Square\Types\GetCardResponse;
+use Square\Types\GetCustomerResponse;
+use Square\Types\PaymentRefund;
+use Square\Types\RefundPaymentResponse;
 
 beforeEach(function(): void {
     $this->payment = Payment::factory()->create([
@@ -33,22 +39,62 @@ beforeEach(function(): void {
 
 function setupSquareClient(): SquareClient
 {
-    $clientBuilder = mock(SquareClientBuilder::class)->makePartial();
-    app()->instance(SquareClientBuilder::class, $clientBuilder);
     $client = Mockery::mock(SquareClient::class);
-    $clientBuilder->shouldReceive('build')->andReturn($client);
+    $square = Mockery::mock(Square::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $square->__construct(test()->payment);
+    $square->shouldReceive('createClient')->andReturn($client);
+    test()->square = $square;
 
     return $client;
 }
 
+function squareApiException(string $detail, bool $jsonBody = false): SquareApiException
+{
+    $body = [
+        'errors' => [[
+            'category' => 'INVALID_REQUEST_ERROR',
+            'code' => 'BAD_REQUEST',
+            'detail' => $detail,
+        ]],
+    ];
+
+    return new SquareApiException('API request failed', 400, $jsonBody ? json_encode($body) : $body);
+}
+
+function fakePaymentResponse(): CreatePaymentResponse
+{
+    $response = Mockery::mock(CreatePaymentResponse::class);
+    $response->shouldReceive('toJson')->andReturn(json_encode([
+        'payment' => ['id' => 'payment_id', 'status' => 'COMPLETED'],
+    ]));
+
+    return $response;
+}
+
+function fakeSquareCustomer(): \Square\Types\Customer
+{
+    $customer = Mockery::mock(\Square\Types\Customer::class);
+    $customer->shouldReceive('getId')->andReturn('cust123');
+    $customer->shouldReceive('getReferenceId')->andReturn('ref123');
+
+    return $customer;
+}
+
+function fakeSquareCard(): Card
+{
+    $card = Mockery::mock(Card::class);
+    $card->shouldReceive('getId')->andReturn('card123');
+    $card->shouldReceive('getCardBrand')->andReturn('VISA');
+    $card->shouldReceive('getLast4')->andReturn('4242');
+
+    return $card;
+}
+
 function setupSuccessfulPayment(SquareClient $client): void
 {
-    $response = Mockery::mock(ApiResponse::class);
-    $response->shouldReceive('isSuccess')->andReturn(true);
-    $response->shouldReceive('getResult')->andReturn(['payment' => 'success']);
-    $paymentsApi = Mockery::mock(PaymentsApi::class);
-    $client->shouldReceive('getPaymentsApi')->andReturn($paymentsApi);
-    $paymentsApi->shouldReceive('createPayment')->andReturn($response);
+    $payments = Mockery::mock(PaymentsClient::class);
+    $client->payments = $payments;
+    $payments->shouldReceive('create')->andReturn(fakePaymentResponse());
 }
 
 it('returns correct payment form view for square', function(): void {
@@ -171,33 +217,19 @@ it('processes square payment form with new payment profile and returns success',
         ->create(['order_total' => 100]);
     $client = setupSquareClient();
 
-    $customersApi = Mockery::mock(CustomersApi::class);
-    $client->shouldReceive('getCustomersApi')->andReturn($customersApi);
-    $createCustomerResponse = mock(ApiResponse::class);
-    $customersApi->shouldReceive('createCustomer')->andReturn($createCustomerResponse);
-    $createCustomerResponse->shouldReceive('isSuccess')->andReturn(true);
-    $createCustomerResponse->shouldReceive('getResult')->andReturnSelf();
-    $customerObject = mock(\Square\Models\Customer::class)->makePartial();
-    $customerObject->shouldReceive('getId')->andReturn('cust123');
-    $customerObject->shouldReceive('getReferenceId')->andReturn('ref123');
-    $createCustomerResponse->shouldReceive('getCustomer')->andReturn($customerObject);
+    $customers = Mockery::mock(CustomersClient::class);
+    $client->customers = $customers;
+    $createCustomerResponse = Mockery::mock(CreateCustomerResponse::class);
+    $customers->shouldReceive('create')->andReturn($createCustomerResponse);
+    $createCustomerResponse->shouldReceive('getCustomer')->andReturn(fakeSquareCustomer());
 
-    $cardsApi = Mockery::mock(CardsApi::class);
-    $client->shouldReceive('getCardsApi')->andReturn($cardsApi);
-    $createCardResponse = mock(ApiResponse::class);
-    $cardsApi->shouldReceive('createCard')->andReturn($createCardResponse);
-    $createCardResponse->shouldReceive('isSuccess')->andReturn(true);
-    $createCardResponse->shouldReceive('getResult')->andReturnSelf();
-    $cardObject = mock(Card::class)->makePartial();
-    $cardObject->shouldReceive('getId')->andReturn('card123');
-    $createCardResponse->shouldReceive('getCard')->andReturn($cardObject);
+    $cards = Mockery::mock(CardsClient::class);
+    $client->cards = $cards;
+    $createCardResponse = Mockery::mock(CreateCardResponse::class);
+    $cards->shouldReceive('create')->andReturn($createCardResponse);
+    $createCardResponse->shouldReceive('getCard')->andReturn(fakeSquareCard());
 
-    $paymentsApi = Mockery::mock(PaymentsApi::class);
-    $client->shouldReceive('getPaymentsApi')->andReturn($paymentsApi);
-    $response = mock(ApiResponse::class);
-    $response->shouldReceive('isSuccess')->andReturn(true);
-    $response->shouldReceive('getResult')->andReturn(['payment' => 'success']);
-    $paymentsApi->shouldReceive('createPayment')->andReturn($response);
+    setupSuccessfulPayment($client);
 
     $this->square->processPaymentForm([
         'create_payment_profile' => 1,
@@ -228,33 +260,19 @@ it('processes square payment form with existing payment profile and returns succ
     ]);
     $client = setupSquareClient();
 
-    $customersApi = Mockery::mock(CustomersApi::class);
-    $client->shouldReceive('getCustomersApi')->andReturn($customersApi);
-    $retrieveCustomerResponse = mock(ApiResponse::class);
-    $retrieveCustomerResponse->shouldReceive('isSuccess')->andReturn(true);
-    $customersApi->shouldReceive('retrieveCustomer')->andReturn($retrieveCustomerResponse);
-    $retrieveCustomerResponse->shouldReceive('getResult')->andReturnSelf();
-    $customerObject = mock(\Square\Models\Customer::class)->makePartial();
-    $customerObject->shouldReceive('getId')->andReturn('cust123');
-    $customerObject->shouldReceive('getReferenceId')->andReturn('ref123');
-    $retrieveCustomerResponse->shouldReceive('getCustomer')->andReturn($customerObject);
+    $customers = Mockery::mock(CustomersClient::class);
+    $client->customers = $customers;
+    $retrieveCustomerResponse = Mockery::mock(GetCustomerResponse::class);
+    $customers->shouldReceive('get')->andReturn($retrieveCustomerResponse);
+    $retrieveCustomerResponse->shouldReceive('getCustomer')->andReturn(fakeSquareCustomer());
 
-    $cardsApi = Mockery::mock(CardsApi::class);
-    $client->shouldReceive('getCardsApi')->andReturn($cardsApi);
-    $retrieveCardResponse = mock(ApiResponse::class);
-    $cardsApi->shouldReceive('retrieveCard')->andReturn($retrieveCardResponse);
-    $retrieveCardResponse->shouldReceive('isSuccess')->andReturn(true);
-    $retrieveCardResponse->shouldReceive('getResult')->andReturnSelf();
-    $cardObject = mock(Card::class)->makePartial();
-    $cardObject->shouldReceive('getId')->andReturn('card123');
-    $retrieveCardResponse->shouldReceive('getCard')->andReturn($cardObject);
+    $cards = Mockery::mock(CardsClient::class);
+    $client->cards = $cards;
+    $retrieveCardResponse = Mockery::mock(GetCardResponse::class);
+    $cards->shouldReceive('get')->andReturn($retrieveCardResponse);
+    $retrieveCardResponse->shouldReceive('getCard')->andReturn(fakeSquareCard());
 
-    $paymentsApi = Mockery::mock(PaymentsApi::class);
-    $client->shouldReceive('getPaymentsApi')->andReturn($paymentsApi);
-    $response = mock(ApiResponse::class);
-    $response->shouldReceive('isSuccess')->andReturn(true);
-    $response->shouldReceive('getResult')->andReturn(['payment' => 'success']);
-    $paymentsApi->shouldReceive('createPayment')->andReturn($response);
+    setupSuccessfulPayment($client);
 
     $this->square->processPaymentForm([
         'create_payment_profile' => 1,
@@ -280,14 +298,12 @@ it('throws exception if payment request fails', function(): void {
         ->create(['order_total' => 100]);
 
     $client = setupSquareClient();
-    $paymentsApi = Mockery::mock(PaymentsApi::class);
-    $client->shouldReceive('getPaymentsApi')->andReturn($paymentsApi);
-    $paymentsApi->shouldReceive('createPayment')->andThrow(new Exception('Payment error'));
+    $payments = Mockery::mock(PaymentsClient::class);
+    $client->payments = $payments;
+    $payments->shouldReceive('create')->andThrow(new Exception('Payment error'));
 
-    $this->expectException(ApplicationException::class);
-    $this->expectExceptionMessage('Sorry, there was an error processing your payment. Please try again later');
-
-    $this->square->processPaymentForm(['square_card_nonce' => 'nonce'], $this->payment, $order);
+    expect(fn() => $this->square->processPaymentForm(['square_card_nonce' => 'nonce'], $this->payment, $order))
+        ->toThrow(ApplicationException::class, 'Sorry, there was an error processing your payment. Please try again later');
 
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->order_id,
@@ -304,22 +320,13 @@ it('throws exception if payment response fails', function(): void {
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
 
-    $errorMock = Mockery::mock(Error::class);
-    $errorMock->shouldReceive('getDetail')->andReturn('Payment error');
-    $response = Mockery::mock(ApiResponse::class);
-    $response->shouldReceive('isSuccess')->andReturn(false);
-    $response->shouldReceive('getErrors')->andReturn([$errorMock]);
-    $response->shouldReceive('getResult')->andReturn([]);
-
     $client = setupSquareClient();
-    $paymentsApi = Mockery::mock(PaymentsApi::class);
-    $client->shouldReceive('getPaymentsApi')->andReturn($paymentsApi);
-    $paymentsApi->shouldReceive('createPayment')->andReturn($response);
+    $payments = Mockery::mock(PaymentsClient::class);
+    $client->payments = $payments;
+    $payments->shouldReceive('create')->andThrow(squareApiException('Payment error'));
 
-    $this->expectException(ApplicationException::class);
-    $this->expectExceptionMessage('Sorry, there was an error processing your payment. Please try again later');
-
-    $this->square->processPaymentForm(['square_card_nonce' => 'nonce'], $this->payment, $order);
+    expect(fn() => $this->square->processPaymentForm(['square_card_nonce' => 'nonce'], $this->payment, $order))
+        ->toThrow(ApplicationException::class, 'Sorry, there was an error processing your payment. Please try again later');
 
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->order_id,
@@ -341,25 +348,16 @@ it('throws exception when createOrFetchCustomer fails', function(): void {
         'profile_data' => ['customer_id' => 'cust123', 'card_id' => 'card123'],
     ]);
     $client = setupSquareClient();
-    $customersApi = Mockery::mock(CustomersApi::class);
-    $client->shouldReceive('getCustomersApi')->andReturn($customersApi);
-    $retrieveCustomerResponse = mock(ApiResponse::class);
-    $customersApi->shouldReceive('retrieveCustomer')->andReturn($retrieveCustomerResponse);
-    $retrieveCustomerResponse->shouldReceive('isSuccess')->andReturn(false);
-    $createCustomerResponse = mock(ApiResponse::class);
-    $customersApi->shouldReceive('createCustomer')->andReturn($createCustomerResponse);
-    $createCustomerResponse->shouldReceive('isSuccess')->andReturn(false);
-    $errorMock = Mockery::mock(Error::class);
-    $errorMock->shouldReceive('getDetail')->andReturn('Customer creation failed');
-    $createCustomerResponse->shouldReceive('getErrors')->andReturn([$errorMock]);
+    $customers = Mockery::mock(CustomersClient::class);
+    $client->customers = $customers;
+    $customers->shouldReceive('get')->andThrow(squareApiException('Customer missing'));
+    $customers->shouldReceive('create')->andThrow(squareApiException('Customer creation failed'));
 
-    $this->expectException(ApplicationException::class);
-    $this->expectExceptionMessage('Square Customer Create Error: Customer creation failed');
-
-    $this->square->processPaymentForm([
+    expect(fn() => $this->square->processPaymentForm([
         'create_payment_profile' => 1,
         'square_card_nonce' => 'nonce',
-    ], $this->payment, $order);
+    ], $this->payment, $order))
+        ->toThrow(ApplicationException::class, 'Square Customer Create Error: Customer creation failed');
 });
 
 it('throws exception when createOrFetchCard fails', function(): void {
@@ -375,38 +373,24 @@ it('throws exception when createOrFetchCard fails', function(): void {
         'profile_data' => ['customer_id' => 'cust123', 'card_id' => 'card123'],
     ]);
     $client = setupSquareClient();
-    $customersApi = Mockery::mock(CustomersApi::class);
-    $client->shouldReceive('getCustomersApi')->andReturn($customersApi);
-    $retrieveCustomerResponse = mock(ApiResponse::class);
-    $customersApi->shouldReceive('retrieveCustomer')->andReturn($retrieveCustomerResponse);
-    $retrieveCustomerResponse->shouldReceive('isSuccess')->andReturn(true);
-    $retrieveCustomerResponse->shouldReceive('getResult')->andReturnSelf();
-    $customerObject = mock(\Square\Models\Customer::class)->makePartial();
-    $customerObject->shouldReceive('getId')->andReturn('cust123');
-    $customerObject->shouldReceive('getReferenceId')->andReturn('ref123');
-    $retrieveCustomerResponse->shouldReceive('getCustomer')->andReturn($customerObject);
+    $customers = Mockery::mock(CustomersClient::class);
+    $client->customers = $customers;
+    $retrieveCustomerResponse = Mockery::mock(GetCustomerResponse::class);
+    $customers->shouldReceive('get')->andReturn($retrieveCustomerResponse);
+    $retrieveCustomerResponse->shouldReceive('getCustomer')->andReturn(fakeSquareCustomer());
 
-    $cardsApi = Mockery::mock(CardsApi::class);
-    $client->shouldReceive('getCardsApi')->andReturn($cardsApi);
-    $retrieveCardResponse = mock(ApiResponse::class);
-    $cardsApi->shouldReceive('retrieveCard')->andReturn($retrieveCardResponse);
-    $retrieveCardResponse->shouldReceive('isSuccess')->andReturn(false);
-    $createCardResponse = mock(ApiResponse::class);
-    $cardsApi->shouldReceive('createCard')->andReturn($createCardResponse);
-    $createCardResponse->shouldReceive('isSuccess')->andReturn(false);
-    $errorMock = Mockery::mock(Error::class);
-    $errorMock->shouldReceive('getDetail')->andReturn('Card creation failed');
-    $createCardResponse->shouldReceive('getErrors')->andReturn([$errorMock]);
+    $cards = Mockery::mock(CardsClient::class);
+    $client->cards = $cards;
+    $cards->shouldReceive('get')->andThrow(squareApiException('Card missing'));
+    $cards->shouldReceive('create')->andThrow(squareApiException('Card creation failed'));
 
-    $this->expectException(ApplicationException::class);
-    $this->expectExceptionMessage('Square Create Payment Card Error: Card creation failed');
-
-    $this->square->processPaymentForm([
+    expect(fn() => $this->square->processPaymentForm([
         'create_payment_profile' => 1,
         'square_card_nonce' => 'nonce',
         'first_name' => 'John',
         'last_name' => 'Doe',
-    ], $this->payment, $order);
+    ], $this->payment, $order))
+        ->toThrow(ApplicationException::class, 'Square Create Payment Card Error: Card creation failed');
 });
 
 it('returns true when payment profiles are supported', function(): void {
@@ -425,14 +409,22 @@ it('processes square refund form and logs refund attempt', function(): void {
     ]);
 
     $client = setupSquareClient();
-    $response = Mockery::mock(ApiResponse::class);
-    $response->shouldReceive('isSuccess')->andReturn(true);
-    $response->shouldReceive('getResult')->andReturn(['id' => 'refund_id']);
-    $refundsApi = Mockery::mock(RefundsApi::class);
-    $refundsApi->shouldReceive('refundPayment')->andReturn($response)->once();
-    $client->shouldReceive('getRefundsApi')->andReturn($refundsApi);
+    $refund = Mockery::mock(PaymentRefund::class);
+    $refund->shouldReceive('getId')->andReturn('refund_id');
+    $response = Mockery::mock(RefundPaymentResponse::class);
+    $response->shouldReceive('getRefund')->andReturn($refund);
+    $response->shouldReceive('toJson')->andReturn(json_encode(['refund' => ['id' => 'refund_id']]));
+    $refunds = Mockery::mock(RefundsClient::class);
+    $refunds->shouldReceive('refundPayment')->andReturn($response)->once();
+    $client->refunds = $refunds;
 
     $this->square->processRefundForm(['refund_type' => 'full'], $order, $paymentLog);
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment payment_id refunded successfully -> (full: refund_id)',
+        'is_success' => 1,
+    ]);
 });
 
 it('throws exception when charge is already refunded', function(): void {
@@ -445,10 +437,8 @@ it('throws exception when charge is already refunded', function(): void {
         'refunded_at' => now(),
     ]);
 
-    $this->expectException(ApplicationException::class);
-    $this->expectExceptionMessage('Nothing to refund, payment already refunded');
-
-    $this->square->processRefundForm(['refund_type' => 'full'], $order, $paymentLog);
+    expect(fn() => $this->square->processRefundForm(['refund_type' => 'full'], $order, $paymentLog))
+        ->toThrow(ApplicationException::class, 'Nothing to refund, payment already refunded');
 });
 
 it('throws exception when no square charge to refund', function(): void {
@@ -460,10 +450,8 @@ it('throws exception when no square charge to refund', function(): void {
         'response' => ['payment' => ['status' => 'not_completed']],
     ]);
 
-    $this->expectException(ApplicationException::class);
-    $this->expectExceptionMessage('No charge to refund');
-
-    $this->square->processRefundForm(['refund_type' => 'full'], $order, $paymentLog);
+    expect(fn() => $this->square->processRefundForm(['refund_type' => 'full'], $order, $paymentLog))
+        ->toThrow(ApplicationException::class, 'No charge to refund');
 });
 
 it('throws exception when refund response fails', function(): void {
@@ -476,12 +464,9 @@ it('throws exception when refund response fails', function(): void {
     ]);
 
     $client = setupSquareClient();
-    $response = Mockery::mock(ApiResponse::class);
-    $response->shouldReceive('isSuccess')->andReturn(false);
-    $response->shouldReceive('getResult')->andReturn(['id' => 'refund_id']);
-    $refundsApi = Mockery::mock(RefundsApi::class);
-    $refundsApi->shouldReceive('refundPayment')->andReturn($response)->once();
-    $client->shouldReceive('getRefundsApi')->andReturn($refundsApi);
+    $refunds = Mockery::mock(RefundsClient::class);
+    $refunds->shouldReceive('refundPayment')->andThrow(squareApiException('Refund failed'))->once();
+    $client->refunds = $refunds;
 
     $this->square->bindEvent('square.extendRefundFields', fn($fields, $order, $data): array => [
         'extra_field' => 'extra_value',
@@ -492,6 +477,29 @@ it('throws exception when refund response fails', function(): void {
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->order_id,
         'message' => 'Refund failed -> Refund failed',
+        'is_success' => 0,
+    ]);
+});
+
+it('logs a refund failure when the refund request throws', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_access_token = 'test_access_token';
+    $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 100]);
+    $paymentLog = PaymentLog::factory()->create([
+        'order_id' => $order->order_id,
+        'response' => ['payment' => ['status' => 'COMPLETED', 'id' => 'payment_id']],
+    ]);
+
+    $client = setupSquareClient();
+    $refunds = Mockery::mock(RefundsClient::class);
+    $refunds->shouldReceive('refundPayment')->andThrow(new Exception('Network down'))->once();
+    $client->refunds = $refunds;
+
+    $this->square->processRefundForm(['refund_type' => 'full'], $order, $paymentLog);
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Refund failed -> Network down',
         'is_success' => 0,
     ]);
 });
@@ -527,10 +535,8 @@ it('throws exception when no square payment profile is found', function(): void 
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
 
-    $this->expectException(ApplicationException::class);
-    $this->expectExceptionMessage('Payment profile not found');
-
-    $this->square->payFromPaymentProfile($order, []);
+    expect(fn() => $this->square->payFromPaymentProfile($order, []))
+        ->toThrow(ApplicationException::class, 'Payment profile not found');
 });
 
 it('throws exception when payment request fails', function(): void {
@@ -547,20 +553,69 @@ it('throws exception when payment request fails', function(): void {
     ]);
 
     $client = setupSquareClient();
-    $paymentsApi = Mockery::mock(PaymentsApi::class);
-    $client->shouldReceive('getPaymentsApi')->andReturn($paymentsApi);
-    $paymentsApi->shouldReceive('createPayment')->andThrow(new Exception('Payment error'));
+    $payments = Mockery::mock(PaymentsClient::class);
+    $client->payments = $payments;
+    $payments->shouldReceive('create')->andThrow(new Exception('Payment error'));
 
-    $this->expectException(ApplicationException::class);
-    $this->expectExceptionMessage('Sorry, there was an error processing your payment. Please try again later');
-
-    $this->square->payFromPaymentProfile($order, []);
+    expect(fn() => $this->square->payFromPaymentProfile($order, []))
+        ->toThrow(ApplicationException::class, 'Sorry, there was an error processing your payment. Please try again later');
 
     $this->assertDatabaseHas('payment_logs', [
         'order_id' => $order->order_id,
         'message' => 'Payment error -> Payment error',
         'is_success' => 0,
     ]);
+});
+
+it('logs a square api error when paying from a profile', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_access_token = 'test_access_token';
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 100]);
+    PaymentProfile::factory()->create([
+        'customer_id' => $order->customer->getKey(),
+        'payment_id' => $this->payment->getKey(),
+        'profile_data' => ['card_id' => 'card123', 'customer_id' => 'cust123'],
+    ]);
+
+    $client = setupSquareClient();
+    $payments = Mockery::mock(PaymentsClient::class);
+    $client->payments = $payments;
+    $payments->shouldReceive('create')->andThrow(squareApiException('Payment error', jsonBody: true));
+
+    expect(fn() => $this->square->payFromPaymentProfile($order, []))
+        ->toThrow(ApplicationException::class, 'Sorry, there was an error processing your payment. Please try again later');
+
+    $this->assertDatabaseHas('payment_logs', [
+        'order_id' => $order->order_id,
+        'message' => 'Payment error -> Payment error',
+        'is_success' => 0,
+    ]);
+});
+
+it('builds a sandbox square client', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_access_token = 'sandbox-token';
+    $extended = false;
+    $this->square->bindEvent('square.extendGateway', function() use (&$extended): void {
+        $extended = true;
+    });
+
+    $client = (new ReflectionMethod(Square::class, 'createClient'))->invoke($this->square);
+
+    expect($client)->toBeInstanceOf(SquareClient::class)
+        ->and($extended)->toBeTrue();
+});
+
+it('builds a live square client', function(): void {
+    $this->payment->transaction_mode = 'live';
+    $this->payment->live_access_token = 'live-token';
+
+    $client = (new ReflectionMethod(Square::class, 'createClient'))->invoke($this->square);
+
+    expect($client)->toBeInstanceOf(SquareClient::class);
 });
 
 it('deletes payment profile successfully', function(): void {
@@ -573,11 +628,9 @@ it('deletes payment profile successfully', function(): void {
         'profile_data' => ['customer_id' => 'cust123', 'card_id' => 'card123'],
     ]);
     $client = setupSquareClient();
-    $cardsApi = Mockery::mock(CardsApi::class);
-    $client->shouldReceive('getCardsApi')->andReturn($cardsApi);
-    $response = mock(ApiResponse::class);
-    $cardsApi->shouldReceive('disableCard')->andReturn($response);
-    $response->shouldReceive('isSuccess')->andReturn(true);
+    $cards = Mockery::mock(CardsClient::class);
+    $client->cards = $cards;
+    $cards->shouldReceive('disable')->once();
 
     $result = $this->square->deletePaymentProfile($customer, $profile);
 
@@ -594,13 +647,9 @@ it('throws exception when deleting payment profile fails', function(): void {
         'profile_data' => ['customer_id' => 'cust123', 'card_id' => 'card123'],
     ]);
     $client = setupSquareClient();
-    $cardsApi = Mockery::mock(CardsApi::class);
-    $client->shouldReceive('getCardsApi')->andReturn($cardsApi);
-    $cardsApi->shouldReceive('disableCard')->andReturn($response = mock(ApiResponse::class));
-    $response->shouldReceive('isSuccess')->andReturn(false);
-    $errorMock = Mockery::mock(Error::class);
-    $errorMock->shouldReceive('getDetail')->andReturn('Deleting card failed');
-    $response->shouldReceive('getErrors')->andReturn([$errorMock]);
+    $cards = Mockery::mock(CardsClient::class);
+    $client->cards = $cards;
+    $cards->shouldReceive('disable')->andThrow(squareApiException('Deleting card failed'));
 
     expect(fn() => $this->square->deletePaymentProfile($customer, $profile))
         ->toThrow(ApplicationException::class, 'Square Delete Payment Card Error: Deleting card failed');

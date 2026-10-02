@@ -28,7 +28,6 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Event;
 use Mollie\Api\MollieApiClient;
 use Override;
-use Square\SquareClientBuilder;
 
 class Extension extends BaseExtension
 {
@@ -55,7 +54,6 @@ class Extension extends BaseExtension
         MollieApiClient::class,
         PaymentGateways::class,
         PayPalClient::class,
-        SquareClientBuilder::class,
     ];
 
     #[Override]

@@ -15,16 +15,24 @@ use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentProfile;
 use Igniter\User\Models\Customer;
 use Override;
-use Square\Environment;
-use Square\Http\ApiResponse;
-use Square\Models\Card;
-use Square\Models\CreateCardRequest;
-use Square\Models\CreateCustomerRequest;
-use Square\Models\CreatePaymentRequest;
-use Square\Models\Money;
-use Square\Models\RefundPaymentRequest;
+use Square\Cards\Requests\CreateCardRequest;
+use Square\Cards\Requests\DisableCardsRequest;
+use Square\Cards\Requests\GetCardsRequest;
+use Square\Customers\Requests\CreateCustomerRequest;
+use Square\Customers\Requests\GetCustomersRequest;
+use Square\Environments;
+use Square\Exceptions\SquareApiException;
+use Square\Payments\Requests\CreatePaymentRequest;
+use Square\Refunds\Requests\RefundPaymentRequest;
 use Square\SquareClient;
-use Square\SquareClientBuilder;
+use Square\Types\Card;
+use Square\Types\CreateCardResponse;
+use Square\Types\CreateCustomerResponse;
+use Square\Types\CreatePaymentResponse;
+use Square\Types\GetCardResponse;
+use Square\Types\GetCustomerResponse;
+use Square\Types\Money;
+use Square\Types\RefundPaymentResponse;
 
 class Square extends BasePaymentGateway
 {
@@ -85,43 +93,45 @@ class Square extends BasePaymentGateway
         return true;
     }
 
-    protected function createPayment(array $fields, $order, $host): ApiResponse
+    protected function createPayment(array $fields, $order, $host): CreatePaymentResponse
     {
         $client = $this->createClient();
-        $paymentsApi = $client->getPaymentsApi();
 
         $idempotencyKey = str_random();
 
-        $amountMoney = new Money;
-        $amountMoney->setAmount((int)($fields['amount'] * 100));
-        $amountMoney->setCurrency($fields['currency']);
-
-        $body = new CreatePaymentRequest($fields['sourceId'], $idempotencyKey);
-        $body->setAmountMoney($amountMoney);
+        $values = [
+            'sourceId' => $fields['sourceId'],
+            'idempotencyKey' => $idempotencyKey,
+            'amountMoney' => new Money([
+                'amount' => (int)($fields['amount'] * 100),
+                'currency' => $fields['currency'],
+            ]),
+            'autocomplete' => true,
+            'locationId' => $this->getLocationId(),
+            'referenceId' => $fields['referenceId'],
+            'note' => $order->customer_name,
+        ];
 
         if (isset($fields['tip'])) {
-            $tipMoney = new Money;
-            $tipMoney->setAmount((int)($fields['tip'] * 100));
-            $tipMoney->setCurrency($fields['currency']);
-            $body->setTipMoney($tipMoney);
+            $values['tipMoney'] = new Money([
+                'amount' => (int)($fields['tip'] * 100),
+                'currency' => $fields['currency'],
+            ]);
         }
 
-        $body->setAutocomplete(true);
         if (isset($fields['customerReference'])) {
-            $body->setCustomerId($fields['customerReference']);
+            $values['customerId'] = $fields['customerReference'];
         }
 
         if (isset($fields['token'])) {
-            $body->setVerificationToken($fields['token']);
+            $values['verificationToken'] = $fields['token'];
         }
 
-        $body->setLocationId($this->getLocationId());
-        $body->setReferenceId($fields['referenceId']);
-        $body->setNote($order->customer_name);
+        $body = new CreatePaymentRequest($values);
 
-        $this->fireSystemEvent('payregister.square.extendCreatePaymentRequest', [$body, $paymentsApi]);
+        $this->fireSystemEvent('payregister.square.extendCreatePaymentRequest', [$body, $client->payments]);
 
-        return $paymentsApi->createPayment($body);
+        return $client->payments->create($body);
     }
 
     /**
@@ -152,9 +162,11 @@ class Square extends BasePaymentGateway
         try {
             $response = $this->createPayment($fields, $order, $host);
 
-            if ($this->handlePaymentResponse($response, $order, $host, $fields, true)) {
-                return;
-            }
+            $this->handlePaymentResponse($response, $order, $host, $fields, true);
+
+            return;
+        } catch (SquareApiException $ex) {
+            $order->logPaymentAttempt('Payment error -> '.$this->squareErrorDetail($ex), 0, $fields, $this->exceptionBody($ex));
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
         }
@@ -166,9 +178,6 @@ class Square extends BasePaymentGateway
     // Payment Profiles
     //
 
-    /**
-     * {@inheritdoc}
-     */
     #[Override]
     public function supportsPaymentProfiles(): bool
     {
@@ -204,9 +213,11 @@ class Square extends BasePaymentGateway
         try {
             $response = $this->createPayment($fields, $order, $host);
 
-            if ($this->handlePaymentResponse($response, $order, $host, $fields, true)) {
-                return;
-            }
+            $this->handlePaymentResponse($response, $order, $host, $fields, true);
+
+            return;
+        } catch (SquareApiException $ex) {
+            $order->logPaymentAttempt('Payment error -> '.$this->squareErrorDetail($ex), 0, $fields, $this->exceptionBody($ex));
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Payment error -> '.$ex->getMessage(), 0, $fields, []);
         }
@@ -214,82 +225,63 @@ class Square extends BasePaymentGateway
         throw new ApplicationException('Sorry, there was an error processing your payment. Please try again later');
     }
 
-    protected function createOrFetchCustomer($profileData, $customer)
+    protected function createOrFetchCustomer($profileData, $customer): CreateCustomerResponse|GetCustomerResponse
     {
-        $response = false;
         $client = $this->createClient();
-        $customersApi = $client->getCustomersApi();
+        $customerId = array_get($profileData, 'customer_id');
 
-        $newCustomerRequired = !array_get($profileData, 'customer_id');
-
-        if (!$newCustomerRequired) {
-            $response = $customersApi->retrieveCustomer(array_get($profileData, 'customer_id'));
-
-            if (!$response->isSuccess()) {
-                $newCustomerRequired = true;
+        if ($customerId) {
+            try {
+                return $client->customers->get(new GetCustomersRequest([
+                    'customerId' => $customerId,
+                ]));
+            } catch (SquareApiException) {
+                // The stored customer is missing, so create a new one.
             }
         }
 
-        if ($newCustomerRequired) {
-            $body = new CreateCustomerRequest;
-            $body->setGivenName($customer->first_name);
-            $body->setFamilyName($customer->last_name);
-            $body->setEmailAddress($customer->email);
-
-            $body->setReferenceId('SqCustRef#'.$customer->customer_id);
-
-            $response = $customersApi->createCustomer($body);
-
-            if (!$response->isSuccess()) {
-                $errors = $response->getErrors();
-                $errors = $errors[0]->getDetail();
-
-                throw new ApplicationException('Square Customer Create Error: '.$errors);
-            }
+        try {
+            return $client->customers->create(new CreateCustomerRequest([
+                'givenName' => $customer->first_name,
+                'familyName' => $customer->last_name,
+                'emailAddress' => $customer->email,
+                'referenceId' => 'SqCustRef#'.$customer->customer_id,
+            ]));
+        } catch (SquareApiException $exception) {
+            throw new ApplicationException('Square Customer Create Error: '.$this->squareErrorDetail($exception), $exception->getCode(), $exception);
         }
-
-        return $response->getResult();
     }
 
-    protected function createOrFetchCard(?string $customerId, ?string $referenceId, $profileData, array $data)
+    protected function createOrFetchCard(?string $customerId, ?string $referenceId, $profileData, array $data): CreateCardResponse|GetCardResponse
     {
         $cardId = array_get($profileData, 'card_id');
         $nonce = array_get($data, 'square_card_nonce');
 
-        $response = false;
         $client = $this->createClient();
-        $cardsApi = $client->getCardsApi();
 
-        $newCardRequired = !$cardId;
-
-        if (!$newCardRequired) {
-            $response = $cardsApi->retrieveCard($cardId);
-
-            if (!$response->isSuccess()) {
-                $newCardRequired = true;
+        if ($cardId) {
+            try {
+                return $client->cards->get(new GetCardsRequest([
+                    'cardId' => $cardId,
+                ]));
+            } catch (SquareApiException) {
+                // The stored card is missing, so create a new one.
             }
         }
 
-        if ($newCardRequired) {
-            $body_card = new Card;
-
-            $body_card->setCardholderName($data['first_name'].' '.$data['last_name']);
-            $body_card->setCustomerId($customerId);
-            $body_card->setReferenceId($referenceId);
-
-            $body = new CreateCardRequest(str_random(), $nonce, $body_card);
-
-            $response = $cardsApi->createCard($body);
-
-            if (!$response->isSuccess()) {
-                $errors = $response->getErrors();
-                $errors = $errors[0]->getDetail();
-
-                throw new ApplicationException('Square Create Payment Card Error: '.$errors);
-            }
+        try {
+            return $client->cards->create(new CreateCardRequest([
+                'idempotencyKey' => str_random(),
+                'sourceId' => $nonce,
+                'card' => new Card([
+                    'cardholderName' => $data['first_name'].' '.$data['last_name'],
+                    'customerId' => $customerId,
+                    'referenceId' => $referenceId,
+                ]),
+            ]));
+        } catch (SquareApiException $exception) {
+            throw new ApplicationException('Square Create Payment Card Error: '.$this->squareErrorDetail($exception), $exception->getCode(), $exception);
         }
-
-        return $response->getResult();
     }
 
     protected function updatePaymentProfileData(PaymentProfile $profile, array $profileData, Card $cardData): PaymentProfile
@@ -327,30 +319,30 @@ class Square extends BasePaymentGateway
         $fields = $this->getPaymentRefundFields($order, $data);
 
         try {
-            $idempotencyKey = str_random();
-            $amountMoney = new Money;
-            $amountMoney->setAmount($fields['amount']);
-            $amountMoney->setCurrency($fields['currency']);
-
-            $body = new RefundPaymentRequest($idempotencyKey, $amountMoney);
-            $body->setPaymentId($paymentChargeId);
-            $body->setReason($fields['reason']);
+            $body = new RefundPaymentRequest([
+                'idempotencyKey' => str_random(),
+                'amountMoney' => new Money([
+                    'amount' => $fields['amount'],
+                    'currency' => $fields['currency'],
+                ]),
+                'paymentId' => $paymentChargeId,
+                'reason' => $fields['reason'],
+            ]);
 
             $client = $this->createClient();
-            $response = $client->getRefundsApi()->refundPayment($body);
-
-            if (!$response->isSuccess()) {
-                throw new Exception('Refund failed');
-            }
+            $response = $client->refunds->refundPayment($body);
 
             $message = sprintf('Payment %s refunded successfully -> (%s: %s)',
                 $paymentChargeId,
                 array_get($data, 'refund_type'),
-                array_get($response->getResult(), 'id'),
+                $response->getRefund()?->getId(),
             );
 
-            $order->logPaymentAttempt($message, 1, $fields, $response->getResult());
+            $order->logPaymentAttempt($message, 1, $fields, $this->responsePayload($response));
             $paymentLog->markAsRefundProcessed();
+        } catch (SquareApiException $e) {
+            logger()->error($e);
+            $order->logPaymentAttempt('Refund failed -> Refund failed', 0, $fields, []);
         } catch (Exception $e) {
             logger()->error($e);
             $order->logPaymentAttempt('Refund failed -> '.$e->getMessage(), 0, $fields, []);
@@ -383,16 +375,14 @@ class Square extends BasePaymentGateway
     //
     //
     //
-    /**
-     * @return SquareClient
-     */
-    protected function createClient()
+    protected function createClient(): SquareClient
     {
-        $clientBuilder = resolve(SquareClientBuilder::class);
-        $clientBuilder->accessToken($this->getAccessToken());
-        $clientBuilder->environment($this->isTestMode() ? Environment::SANDBOX : Environment::PRODUCTION);
-
-        $client = $clientBuilder->build();
+        $client = new SquareClient(
+            token: $this->getAccessToken(),
+            options: [
+                'baseUrl' => $this->isTestMode() ? Environments::Sandbox->value : Environments::Production->value,
+            ],
+        );
 
         $this->fireSystemEvent('payregister.square.extendGateway', [$client]);
 
@@ -428,22 +418,11 @@ class Square extends BasePaymentGateway
         return $fields;
     }
 
-    protected function handlePaymentResponse(ApiResponse $response, Order $order, Payment $host, array $fields, bool $isRefundable = false): bool
+    protected function handlePaymentResponse(CreatePaymentResponse $response, Order $order, Payment $host, array $fields, bool $isRefundable = false): void
     {
-        if ($response->isSuccess()) {
-            $order->logPaymentAttempt('Payment successful', 1, $fields, $response->getResult(), $isRefundable);
-            $order->updateOrderStatus($host->order_status, ['notify' => false]);
-            $order->markAsPaymentProcessed();
-
-            return true;
-        }
-
-        $errors = $response->getErrors();
-        $errors = $errors[0]->getDetail();
-
-        $order->logPaymentAttempt('Payment error -> '.$errors, 0, $fields, $response->getResult());
-
-        return false;
+        $order->logPaymentAttempt('Payment successful', 1, $fields, $this->responsePayload($response), $isRefundable);
+        $order->updateOrderStatus($host->order_status, ['notify' => false]);
+        $order->markAsPaymentProcessed();
     }
 
     protected function handleUpdatePaymentProfile($customer, array $data)
@@ -477,17 +456,38 @@ class Square extends BasePaymentGateway
     {
         $cardId = $profile['profile_data']['card_id'];
         $client = $this->createClient();
-        $cardsApi = $client->getCardsApi();
 
-        $response = $cardsApi->disableCard($cardId);
-
-        if (!$response->isSuccess()) {
-            $errors = $response->getErrors();
-            $errors = $errors[0]->getDetail();
-
-            throw new ApplicationException('Square Delete Payment Card Error: '.$errors);
+        try {
+            $client->cards->disable(new DisableCardsRequest([
+                'cardId' => $cardId,
+            ]));
+        } catch (SquareApiException $exception) {
+            throw new ApplicationException('Square Delete Payment Card Error: '.$this->squareErrorDetail($exception), $exception->getCode(), $exception);
         }
 
         $this->deletePaymentProfileData($profile);
+    }
+
+    protected function squareErrorDetail(SquareApiException $exception): string
+    {
+        return (string)$exception->getErrors()[0]->getDetail();
+    }
+
+    protected function exceptionBody(SquareApiException $exception): array
+    {
+        $body = $exception->getBody();
+
+        if (is_string($body)) {
+            $body = json_decode($body, true);
+        }
+
+        return is_array($body) ? $body : [];
+    }
+
+    protected function responsePayload(CreatePaymentResponse|RefundPaymentResponse $response): array
+    {
+        $payload = json_decode($response->toJson(), true);
+
+        return is_array($payload) ? $payload : [];
     }
 }
