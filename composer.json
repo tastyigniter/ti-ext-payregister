@@ -25,7 +25,7 @@
         "authorizenet/authorizenet": "2.0.2",
         "stripe/stripe-php": "^7.93",
         "mollie/mollie-api-php": "^2.0",
-        "square/square": "26.0.0.20230419"
+        "square/square": "~47.0"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
