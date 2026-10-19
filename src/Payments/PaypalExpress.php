@@ -257,7 +257,32 @@ class PaypalExpress extends BasePaymentGateway
 
         $this->fireSystemEvent('payregister.paypalexpress.extendFields', [&$fields, $order, $data]);
 
+        $fields['purchase_units'][0]['amount'] = $this->withItemTotal(
+            $fields['purchase_units'][0]['amount'],
+            $currencyCode,
+            $order->totals()->where('code', 'subtotal')->value('value'),
+        );
+
         return $fields;
+    }
+
+    /**
+     * Listeners may add an amount breakdown. When they do, item_total has to be the order subtotal.
+     *
+     * @param array<string, mixed> $amount
+     */
+    protected function withItemTotal(array $amount, string $currencyCode, mixed $subtotal): array
+    {
+        if (!isset($amount['breakdown']) || !is_array($amount['breakdown'])) {
+            return $amount;
+        }
+
+        $amount['breakdown']['item_total'] = [
+            'currency_code' => $currencyCode,
+            'value' => number_format((float)$subtotal, 2, '.', ''),
+        ];
+
+        return $amount;
     }
 
     protected function getPaymentRefundFields($order, $data): array
