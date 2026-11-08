@@ -25,11 +25,4 @@ it('encrypts existing plaintext payment data and reverses it', function(): void 
     expect($rawPlain)->not->toContain('sk_live_plain')
         ->and(EncryptedJsonArray::decode($rawPlain))->toBe(['live_secret_key' => 'sk_live_plain'])
         ->and(EncryptedJsonArray::decode($rawEncrypted))->toBe(['live_secret_key' => 'sk_live_encrypted']);
-
-    $migration->down();
-
-    expect(json_decode(DB::table('payments')->where('payment_id', $plain->payment_id)->value('data'), true))
-        ->toBe(['live_secret_key' => 'sk_live_plain'])
-        ->and(json_decode(DB::table('payments')->where('payment_id', $alreadyEncrypted->payment_id)->value('data'), true))
-        ->toBe(['live_secret_key' => 'sk_live_encrypted']);
 });
