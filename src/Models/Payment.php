@@ -86,7 +86,6 @@ class Payment extends Model
     {
         $all = self::query()->select('code', 'name', 'description')->whereIsEnabled()->get();
 
-        // @phpstan-ignore-next-line argument.type
         return $all->keyBy('code')->map(fn(self $model): array => [$model->name, $model->description]);
     }
 
