@@ -12,6 +12,7 @@ use Igniter\Flame\Database\Traits\Sortable;
 use Igniter\Flame\Exception\ApplicationException;
 use Igniter\PayRegister\Classes\BasePaymentGateway;
 use Igniter\PayRegister\Classes\PaymentGateways;
+use Igniter\PayRegister\Models\Casts\EncryptedJsonArray;
 use Igniter\System\Models\Concerns\Defaultable;
 use Igniter\System\Models\Concerns\Switchable;
 use Igniter\User\Models\Customer;
@@ -66,7 +67,7 @@ class Payment extends Model
     public $timestamps = true;
 
     protected $casts = [
-        'data' => 'array',
+        'data' => EncryptedJsonArray::class,
         'priority' => 'integer',
     ];
 
@@ -85,7 +86,6 @@ class Payment extends Model
     {
         $all = self::query()->select('code', 'name', 'description')->whereIsEnabled()->get();
 
-        // @phpstan-ignore-next-line argument.type
         return $all->keyBy('code')->map(fn(self $model): array => [$model->name, $model->description]);
     }
 

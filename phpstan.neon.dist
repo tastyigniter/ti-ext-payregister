@@ -9,7 +9,3 @@ parameters:
         - resources/
     ignoreErrors:
         - '#Access to an undefined property Igniter\\PayRegister\\Models\\Payment::\$[a-zA-Z]+#'
-        - identifier: generics.notGeneric
-#    excludePaths:
-#        - ./*/*/FileToBeExcluded.php
-#    checkMissingIterableValueType: false

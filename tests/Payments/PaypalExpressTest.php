@@ -13,6 +13,7 @@ use Igniter\PayRegister\Models\PaymentLog;
 use Igniter\PayRegister\Payments\PaypalExpress;
 use Igniter\User\Models\Customer;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Event;
 use Mockery;
 
 beforeEach(function(): void {
@@ -108,6 +109,33 @@ it('processes payment form and redirects to payer action url', function(): void 
     $result = $this->paypalExpress->processPaymentForm([], $this->payment, $order);
 
     expect($result->getTargetUrl())->toBe('http://payer.action.url');
+});
+
+it('sets the paypal item total from the order subtotal when a breakdown is present', function(): void {
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 59.27]);
+    $order->totals()->create([
+        'code' => 'subtotal',
+        'title' => 'Subtotal',
+        'value' => 52.92,
+    ]);
+
+    Event::listen('payregister.paypalexpress.extendFields', function($payment, array &$fields): void {
+        $fields['purchase_units'][0]['amount']['breakdown']['tax_total'] = [
+            'currency_code' => 'GBP',
+            'value' => '6.35',
+        ];
+    });
+
+    $fields = (fn(Order $order, array $data = []): array => $this->getPaymentFormFields($order, $data))
+        ->call($this->paypalExpress, $order);
+
+    expect($fields['purchase_units'][0]['amount']['breakdown']['item_total'])->toBe([
+        'currency_code' => currency()->getUserCurrency(),
+        'value' => '52.92',
+    ])->and($fields['purchase_units'][0]['amount']['breakdown']['tax_total']['value'])->toBe('6.35');
 });
 
 it('throws exception when payment response is not successful', function(): void {
