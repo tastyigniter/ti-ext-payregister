@@ -482,13 +482,13 @@ class MyPayment extends BasePaymentGateway
         
         $response = $this->createGateway()->refundPayment($fields);
 
-        $paymentLog->markAsRefundProcessed();
+        $paymentLog->markAsRefundProcessed($this->getRefundAmount($order, $data));
         $order->logPaymentAttempt('Payment refunded', 1, $data, $response->toArray());
     }
 }
 ```
 
-> It is recommended to call the `markAsRefundProcessed` method on the payment log model to mark the refund as processed.
+> It is recommended to call the `markAsRefundProcessed` method on the payment log model to mark the refund as processed. Pass the refunded amount so that listeners of the `admin.order.beforeRefundProcessed` and `admin.order.refundProcessed` events receive it. The `getRefundAmount` method returns the order total for a full refund, or the partial amount entered on the refund form.
 
 ### Payment attempts form widget
 

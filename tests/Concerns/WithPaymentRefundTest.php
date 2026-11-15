@@ -38,3 +38,19 @@ it('throws exception if processRefundForm is not implemented', function(): void 
 
     $this->trait->processRefundForm([], $this->order, $this->paymentLog);
 });
+
+it('returns the order total as the refund amount for a full refund', function(): void {
+    $order = Order::factory()->make(['order_total' => 80]);
+    $gateway = new class
+    {
+        use WithPaymentRefund;
+
+        public function amount(Order $order, array $data): float
+        {
+            return $this->getRefundAmount($order, $data);
+        }
+    };
+
+    expect($gateway->amount($order, ['refund_type' => 'full', 'refund_amount' => '5']))->toBe(80.0)
+        ->and($gateway->amount($order, ['refund_type' => 'partial', 'refund_amount' => '12.50']))->toBe(12.5);
+});

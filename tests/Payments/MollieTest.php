@@ -524,7 +524,7 @@ it('processes mollie refund form and logs refund attempt', function(): void {
         ->for(Customer::factory()->create(), 'customer')
         ->for($this->payment, 'payment_method')
         ->create(['order_total' => 100]);
-    $this->paymentLog->shouldReceive('markAsRefundProcessed')->once();
+    $this->paymentLog->shouldReceive('markAsRefundProcessed')->with(100.0)->once();
 
     $molliePayment = Mockery::mock(MolliePayment::class);
     $molliePayment->shouldReceive('refund')->andReturn((object)[

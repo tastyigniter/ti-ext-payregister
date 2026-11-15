@@ -629,7 +629,7 @@ class Stripe extends BasePaymentGateway
             );
 
             $order->logPaymentAttempt($message, 1, $fields, $response->toArray());
-            $paymentLog->markAsRefundProcessed();
+            $paymentLog->markAsRefundProcessed($this->getRefundAmount($order, $data));
         } catch (Exception $e) {
             logger()->error($e);
             $order->logPaymentAttempt('Refund failed -> '.$e->getMessage(), 0, $fields, []);
@@ -675,8 +675,7 @@ class Stripe extends BasePaymentGateway
 
     protected function getPaymentRefundFields($order, $data): array
     {
-        $refundAmount = array_get($data, 'refund_type') !== 'full'
-            ? array_get($data, 'refund_amount') : $order->order_total;
+        $refundAmount = $this->getRefundAmount($order, $data);
 
         throw_if(!$refundAmount || $refundAmount > $order->order_total, new ApplicationException(
             'Refund amount should be be less than or equal to the order total',

@@ -19,4 +19,15 @@ trait WithPaymentRefund
     {
         throw new LogicException('Please implement the processRefundForm method on your custom payment class.');
     }
+
+    /**
+     * The amount the refund form asks to refund: the order total for a full refund,
+     * otherwise the partial amount entered.
+     */
+    protected function getRefundAmount(Order $order, array $data): float
+    {
+        return array_get($data, 'refund_type') === 'full'
+            ? (float)$order->order_total
+            : (float)array_get($data, 'refund_amount');
+    }
 }

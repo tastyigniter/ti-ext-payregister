@@ -7,8 +7,11 @@ namespace Igniter\PayRegister\Tests\Models;
 use Carbon\Carbon;
 use Igniter\Cart\Models\Order;
 use Igniter\Flame\Database\Traits\Validation;
+use Igniter\PayRegister\Events\OrderBeforeRefundProcessedEvent;
+use Igniter\PayRegister\Events\OrderRefundProcessedEvent;
 use Igniter\PayRegister\Models\Payment;
 use Igniter\PayRegister\Models\PaymentLog;
+use Illuminate\Support\Facades\Event;
 use Mockery;
 
 beforeEach(function(): void {
@@ -60,6 +63,19 @@ it('marks payment log as refund processed', function(): void {
 
     expect($result)->toBeTrue()
         ->and($this->paymentLog->refunded_at)->not->toBeNull();
+});
+
+it('dispatches refund events with the refunded amount', function(): void {
+    Event::fake(['admin.order.beforeRefundProcessed', 'admin.order.refundProcessed', OrderBeforeRefundProcessedEvent::class, OrderRefundProcessedEvent::class]);
+    $this->paymentLog->refunded_at = null;
+    $this->paymentLog->save();
+
+    $this->paymentLog->markAsRefundProcessed(25.5);
+
+    Event::assertDispatched('admin.order.beforeRefundProcessed', fn($name, $args): bool => $args[0] === $this->paymentLog && $args[1] === 25.5);
+    Event::assertDispatched('admin.order.refundProcessed', fn($name, $args): bool => $args[0] === $this->paymentLog && $args[1] === 25.5);
+    Event::assertDispatched(OrderRefundProcessedEvent::class, fn(OrderRefundProcessedEvent $event): bool => $event->refundAmount === 25.5);
+    Event::assertDispatched(OrderBeforeRefundProcessedEvent::class, fn(OrderBeforeRefundProcessedEvent $event): bool => $event->refundAmount === 25.5);
 });
 
 it('does not mark payment log as refund processed if already refunded', function(): void {

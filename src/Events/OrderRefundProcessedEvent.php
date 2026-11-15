@@ -14,7 +14,7 @@ class OrderRefundProcessedEvent
 
     protected Order $order;
 
-    public function __construct(public PaymentLog $paymentLog)
+    public function __construct(public PaymentLog $paymentLog, public ?float $refundAmount = null)
     {
         $this->order = $paymentLog->order;
     }

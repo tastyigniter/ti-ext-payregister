@@ -339,7 +339,7 @@ class Square extends BasePaymentGateway
             );
 
             $order->logPaymentAttempt($message, 1, $fields, $this->responsePayload($response));
-            $paymentLog->markAsRefundProcessed();
+            $paymentLog->markAsRefundProcessed($this->getRefundAmount($order, $data));
         } catch (SquareApiException $e) {
             logger()->error($e);
             $order->logPaymentAttempt('Refund failed -> Refund failed', 0, $fields, []);
@@ -351,15 +351,14 @@ class Square extends BasePaymentGateway
 
     protected function getPaymentRefundFields($order, $data): array
     {
-        $refundAmount = array_get($data, 'refund_type') !== 'full'
-            ? array_get($data, 'refund_amount') : $order->order_total;
+        $refundAmount = $this->getRefundAmount($order, $data);
 
         throw_if($refundAmount > $order->order_total, new ApplicationException(
             'Refund amount should be be less than or equal to the order total',
         ));
 
         $fields = [
-            'amount' => (int)(number_format((float) $refundAmount, 2, '', '') * 100),
+            'amount' => (int)(number_format($refundAmount, 2, '', '') * 100),
             'currency' => currency()->getUserCurrency(),
             'reason' => array_get($data, 'refund_reason'),
         ];
