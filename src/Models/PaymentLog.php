@@ -98,15 +98,18 @@ class PaymentLog extends Model
         return $this->created_at ? time_elapsed($this->created_at) : null;
     }
 
-    public function markAsRefundProcessed(): bool
+    /**
+     * @param float|null $refundAmount The amount refunded, when the gateway knows it.
+     */
+    public function markAsRefundProcessed(?float $refundAmount = null): bool
     {
         if (is_null($this->refunded_at)) {
-            OrderBeforeRefundProcessedEvent::dispatch($this);
+            OrderBeforeRefundProcessedEvent::dispatch($this, $refundAmount);
 
             $this->refunded_at = Carbon::now();
             $this->saveQuietly();
 
-            OrderRefundProcessedEvent::dispatch($this);
+            OrderRefundProcessedEvent::dispatch($this, $refundAmount);
         }
 
         return true;

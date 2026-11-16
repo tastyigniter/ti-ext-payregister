@@ -207,7 +207,7 @@ it('processes authorizenet payment form and logs failed payment', function(): vo
 it('processes authorizenet full refund successfully', function(): void {
     $messageAType = (new MessageAType)->setCode('2')->setDescription('Declined');
     $paymentLog = mock(PaymentLog::class)->makePartial();
-    $paymentLog->shouldReceive('markAsRefundProcessed')->once();
+    $paymentLog->shouldReceive('markAsRefundProcessed')->with(100.0)->once();
     $paymentLog->refunded_at = null;
     $paymentLog->response = ['status' => '1', 'id' => '12345', 'card_holder' => '****1111'];
 

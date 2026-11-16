@@ -199,7 +199,7 @@ class PaypalExpress extends BasePaymentGateway
             );
 
             $order->logPaymentAttempt($message, 1, $fields, $response->json());
-            $paymentLog->markAsRefundProcessed();
+            $paymentLog->markAsRefundProcessed($this->getRefundAmount($order, $data));
         } catch (Exception $ex) {
             $order->logPaymentAttempt('Refund failed -> '.$ex->getMessage(), 0, $fields, []);
 
@@ -287,8 +287,7 @@ class PaypalExpress extends BasePaymentGateway
 
     protected function getPaymentRefundFields($order, $data): array
     {
-        $refundAmount = array_get($data, 'refund_type') !== 'full'
-            ? array_get($data, 'refund_amount') : $order->order_total;
+        $refundAmount = $this->getRefundAmount($order, $data);
 
         throw_if($refundAmount > $order->order_total, new ApplicationException(
             'Refund amount should be be less than or equal to the order total',

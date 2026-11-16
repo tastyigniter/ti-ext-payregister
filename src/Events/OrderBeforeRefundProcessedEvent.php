@@ -16,7 +16,7 @@ class OrderBeforeRefundProcessedEvent
 
     use EventDispatchable;
 
-    public function __construct(public PaymentLog $paymentLog)
+    public function __construct(public PaymentLog $paymentLog, public ?float $refundAmount = null)
     {
         $this->order = $paymentLog->order;
     }

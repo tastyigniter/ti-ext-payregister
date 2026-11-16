@@ -232,7 +232,7 @@ class Mollie extends BasePaymentGateway
                 'status' => $response->status,
                 'amount' => $response->amount,
             ]);
-            $paymentLog->markAsRefundProcessed();
+            $paymentLog->markAsRefundProcessed($this->getRefundAmount($order, $data));
         } catch (Exception $exception) {
             $order->logPaymentAttempt('Refund failed -> '.$exception->getMessage(), 0, $fields, []);
 
@@ -350,8 +350,7 @@ class Mollie extends BasePaymentGateway
 
     protected function getPaymentRefundFields($order, $data): array
     {
-        $refundAmount = array_get($data, 'refund_type') == 'full'
-            ? $order->order_total : array_get($data, 'refund_amount');
+        $refundAmount = $this->getRefundAmount($order, $data);
 
         throw_if($refundAmount > $order->order_total, new ApplicationException(
             'Refund amount should be be less than or equal to the order total',
