@@ -359,7 +359,7 @@ class Square extends BasePaymentGateway
         ));
 
         $fields = [
-            'amount' => (int)round((float)$refundAmount * 100),
+            'amount' => (int)round($refundAmount * 100),
             'currency' => currency()->getUserCurrency(),
             'reason' => array_get($data, 'refund_reason'),
         ];
