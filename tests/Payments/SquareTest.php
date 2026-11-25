@@ -19,7 +19,9 @@ use Square\Cards\CardsClient;
 use Square\Customers\CustomersClient;
 use Square\Exceptions\SquareApiException;
 use Square\Payments\PaymentsClient;
+use Square\Payments\Requests\CreatePaymentRequest;
 use Square\Refunds\RefundsClient;
+use Square\Refunds\Requests\RefundPaymentRequest;
 use Square\SquareClient;
 use Square\Types\Card;
 use Square\Types\CreateCardResponse;
@@ -206,6 +208,37 @@ it('processes square payment form and returns success', function(): void {
         'is_success' => 1,
         'is_refundable' => 1,
     ]);
+});
+
+it('sends square the order and tip amounts in cents', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_access_token = 'test_access_token';
+    $order = Order::factory()
+        ->for(Customer::factory()->create(), 'customer')
+        ->for($this->payment, 'payment_method')
+        ->create(['order_total' => 19.29]);
+    $order->totals()->create(['code' => 'tip', 'title' => 'Tip', 'value' => 2.00]);
+
+    $client = setupSquareClient();
+    $request = null;
+    $payments = Mockery::mock(PaymentsClient::class);
+    $client->payments = $payments;
+    $payments->shouldReceive('create')
+        ->withArgs(function(CreatePaymentRequest $body) use (&$request): bool {
+            $request = $body;
+
+            return true;
+        })
+        ->andReturn(fakePaymentResponse());
+
+    // The request processPaymentForm() sends, without processing the order
+    $fields = (new ReflectionMethod($this->square, 'getPaymentFormFields'))->invoke($this->square, $order, []);
+    $fields['sourceId'] = 'nonce';
+    (new ReflectionMethod($this->square, 'createPayment'))->invoke($this->square, $fields, $order, $this->payment);
+
+    // 19.29 total including a 2.00 tip: 17.29 order + 2.00 tip, not 100 times that
+    expect($request->getAmountMoney()->getAmount())->toBe(1729)
+        ->and($request->getTipMoney()->getAmount())->toBe(200);
 });
 
 it('processes square payment form with new payment profile and returns success', function(): void {
@@ -425,6 +458,37 @@ it('processes square refund form and logs refund attempt', function(): void {
         'message' => 'Payment payment_id refunded successfully -> (full: refund_id)',
         'is_success' => 1,
     ]);
+});
+
+it('sends square the refund amount in cents', function(): void {
+    $this->payment->transaction_mode = 'test';
+    $this->payment->test_access_token = 'test_access_token';
+    $order = Order::factory()->for($this->payment, 'payment_method')->create(['order_total' => 19.29]);
+    $paymentLog = PaymentLog::factory()->create([
+        'order_id' => $order->order_id,
+        'response' => ['payment' => ['status' => 'COMPLETED', 'id' => 'payment_id']],
+    ]);
+
+    $client = setupSquareClient();
+    $refund = Mockery::mock(PaymentRefund::class);
+    $refund->shouldReceive('getId')->andReturn('refund_id');
+    $response = Mockery::mock(RefundPaymentResponse::class);
+    $response->shouldReceive('getRefund')->andReturn($refund);
+    $response->shouldReceive('toJson')->andReturn(json_encode(['refund' => ['id' => 'refund_id']]));
+    $request = null;
+    $refunds = Mockery::mock(RefundsClient::class);
+    $refunds->shouldReceive('refundPayment')
+        ->withArgs(function(RefundPaymentRequest $body) use (&$request): bool {
+            $request = $body;
+
+            return true;
+        })
+        ->andReturn($response)->once();
+    $client->refunds = $refunds;
+
+    $this->square->processRefundForm(['refund_type' => 'full'], $order, $paymentLog);
+
+    expect($request->getAmountMoney()->getAmount())->toBe(1929);
 });
 
 it('throws exception when charge is already refunded', function(): void {
