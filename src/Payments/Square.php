@@ -102,8 +102,9 @@ class Square extends BasePaymentGateway
         $values = [
             'sourceId' => $fields['sourceId'],
             'idempotencyKey' => $idempotencyKey,
+            // getPaymentFormFields() already gives amounts in the smallest currency unit (cents)
             'amountMoney' => new Money([
-                'amount' => (int)($fields['amount'] * 100),
+                'amount' => (int)$fields['amount'],
                 'currency' => $fields['currency'],
             ]),
             'autocomplete' => true,
@@ -114,7 +115,7 @@ class Square extends BasePaymentGateway
 
         if (isset($fields['tip'])) {
             $values['tipMoney'] = new Money([
-                'amount' => (int)($fields['tip'] * 100),
+                'amount' => (int)$fields['tip'],
                 'currency' => $fields['currency'],
             ]);
         }
@@ -358,7 +359,7 @@ class Square extends BasePaymentGateway
         ));
 
         $fields = [
-            'amount' => (int)(number_format($refundAmount, 2, '', '') * 100),
+            'amount' => (int)round((float)$refundAmount * 100),
             'currency' => currency()->getUserCurrency(),
             'reason' => array_get($data, 'refund_reason'),
         ];
@@ -402,14 +403,14 @@ class Square extends BasePaymentGateway
 
         $fields = [
             'idempotencyKey' => uniqid(),
-            'amount' => (int)(number_format((float) $orderAmount, 2, '.', '') * 100),
+            'amount' => (int)round((float)$orderAmount * 100),
             'currency' => currency()->getUserCurrency(),
             'note' => 'Payment for Order '.$order->order_id,
             'referenceId' => (string)$order->order_id,
         ];
 
         if ($tipAmount) {
-            $fields['tip'] = (int)(number_format((float) $tipAmount, 2, '.', '') * 100);
+            $fields['tip'] = (int)round((float)$tipAmount * 100);
         }
 
         $this->fireSystemEvent('payregister.square.extendFields', [&$fields, $order, $data]);
